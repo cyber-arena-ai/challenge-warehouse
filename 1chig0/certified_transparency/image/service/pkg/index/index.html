@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Certified Transparency API server</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+
+</head>
+<body>
+
+<div class="container">
+    <h1 class="mt-5">Certified Transparency <small>&mdash; your reliable ownership service</small></h1>
+    <h2>Who wrote it first?</h2>
+    <p>
+        Ever wondered who wrote your favorite song first?
+        Or if someone is claiming your work as their own?<br/>
+        Certified Transparency is here to the rescue - we certify the ownership of any digital goods, for free!
+        Join the Certified Transparency Community now!
+    </p>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <h5 class="card-header text-bg-success">1. Ownership Certificates</h5>
+                <div class="card-body">
+                    <p class="card-text">We record your ownership of almost anything. You decide if it shall be
+                        announced or not.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <h5 class="card-header text-bg-info">2. Monitor Ownerships</h5>
+                <div class="card-body">
+                    <p class="card-text">Everyone in the CT Community can follow the newest ownerships, by monitoring
+                        our announcements.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <h5 class="card-header text-bg-warning">3. Claim Infringements</h5>
+                <div class="card-body">
+                    <p class="card-text">
+                        Found an offending ownership in our announcements? Use your certificate to file a claim!
+                        We'll conn
+                        ect you so that you can sort this out.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <h2 class="mt-5">Why trust you?</h2>
+    <p>
+        Our protocol and software are open source. So is all our data.
+        Everyone can check our operations with cryptographic proofs powered by our Merkle Hash Tree.
+        No one will ever be able to alter any recorded data!
+    </p>
+    <p>
+        We never store the data you own, and we protect your provided contact information with state-of-the-art
+        encryption.
+    </p>
+
+    <h2 class="mt-5">Get started!</h2>
+    <p>Get yourself a copy of the <strong>Certified Transparency Client</strong> application.</p>
+    <div class="card">
+        <div class="card-body">
+            <pre>
+# general syntax:
+bin/client [--server="1.2.3.4"] &lt;command&gt;
+
+bin/client --help  # overview
+
+bin/client preregister --name "John" /your/file  # => you get a non-public certificate
+bin/client register --name "John" --data-private "Sorry, wasn't aware" --data-public 'please write infringement@you.com' /your/file  # => you get a non-public certificate
+
+bin/client monitor  # keep an eye on other's ownerships
+bin/client claim "data-client/sot/123.sot" 456  # claim your ownership on submitted ownership #456
+</pre>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

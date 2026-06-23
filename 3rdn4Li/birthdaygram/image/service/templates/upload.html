@@ -1,0 +1,25 @@
+
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Upload{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  
+  <form method="post" enctype="multipart/form-data">
+      <b><label for="file">Upload a Picture</label></b>
+      </br>
+      <input class="image_input" placeholder="Image" id='file' name='image' type='file' accept="image/png" />
+      </br>
+      <b><label for="public"> Visibility </label></b>
+      </br>
+      <label> Public </label>
+      <input type="radio" name="public"  id="public" value="public">
+      </br>
+      <label> Private </label>
+      <input type="radio" name="public"  id="private" value="private">
+      </br>
+      <input type="submit" value="Upload">
+  </form>
+{% endblock %}

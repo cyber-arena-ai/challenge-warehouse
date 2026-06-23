@@ -1,0 +1,39 @@
+{% extends "base.html" %} {% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1>Register</h1>
+            <p>Register your name and receive a key that you can use to generate your password! Fancy future 🚀</p>
+        </div>
+    </div>
+
+    <div class="row">
+        {% if key %}
+        <div class="col">
+            <div class="alert alert-success" role="alert">
+                <p>
+                This is your key: <b>{{ key }}</b>.
+                You can use the key on <a href="https://mega-totp.faustctf.net">Mega TOTP</a> to generate a password.
+                </p>
+                <a class="btn btn-primary" href="/login" role="button">Continue to login</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="col">
+            <form action="/register" method="POST">
+                <div class="form-row">
+                    <div class="col">
+                        <label for="n">Name</label>
+                        <input type="text" class="form-control validate" id="n" name="name" minlength="4">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <button type="submit" class="btn btn-primary">Register</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</div>
+{% endblock %}

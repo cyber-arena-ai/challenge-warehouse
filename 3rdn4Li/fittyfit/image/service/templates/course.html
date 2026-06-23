@@ -1,0 +1,36 @@
+{% extends "base.html" %} {% block content %}
+{% if cid=="1" %}
+    <h1>Waving Course</h1>
+    <h6>What <a href="https://app.inferkit.com/demo">InferKit AI</a> says about this course:</h6>
+    <p>You like creative sport? Then you will like our waving course: After 5 days you can carry yourself to the front and pick up this skill. You can study the course when you are with your children or with someone else who needs to learn a lesson. You will pick it up really quick and it is a good workout as well! With just one 10 minute lesson you will have mastered the art of waving. Class starts 10 minutes before the course begins and lasts for 10 minutes.</p>
+    <p>Since everyone is happy at the course, you will never miss it.</p>
+    <p>Click on the picture to open it.</p>
+    
+    <img class="materialboxed" style="width: 100%;" src="{{ url_for('static', filename='imgs/train1.jpg') }}">
+{% endif %}
+
+{% if cid=="2" %}
+    <h1>Yoga</h1>
+    <h6>What <a href="https://app.inferkit.com/demo">InferKit AI</a> says about this course:</h6>
+    <p>A yoga course that fits your needs. We believe in making yoga accessible to everybody and also ensure that the quality and practice meet the international standards.</p>
+    <p>Yoga improves brain health and better thinking process. Yoga calms the mind, reduces stress, and lowers blood pressure. Furthermore, yoga can have positive effects on insomnia, stroke, diabetes, and heart disease.</p>
+    <p>Yoga is a complete mind, body and soul practice. It helps people learn to be more mindful of their own well-being.</p>
+    <p>What are you waitin for? Here's your chance to enter the holy grail of yoga's luxury yoga wear. We're raffling this amazing yoga bikin kit from Championy!</p>
+    <p>Dear Friends! We are so happy to inform you!</p>
+
+    <img class="materialboxed" style="width: 100%;" src="{{ url_for('static', filename='imgs/train2.jpg') }}">
+{% endif %}
+
+{% if cid=="3"%}
+    <h1>Fitness Workout</h1>
+    <h6>What <a href="https://app.inferkit.com/demo">InferKit AI</a> says about this course:</h6>
+    <p>Our innovative fitness workout session includes the warm up, choreography and cool down of a dance routine. Get on your feet and move your body in a totally different way!</p>
+    <p>The program we have prepared for you is based on low intensity routine for a group of 8-10 people.</p>
+    <p>A total body workout. Feel the burn while you take part of this new fun fitness experience.</p>
+    <p>All exercises are performed in a group and you will be able to burn some extra calories! This session is suitable for people aged 16+.</p>
+    <p>It is important to tell you that!</p>
+
+    <img class="materialboxed" style="width: 100%;" src="{{ url_for('static', filename='imgs/stock.jpg') }}">
+{% endif %}
+
+{% endblock %}

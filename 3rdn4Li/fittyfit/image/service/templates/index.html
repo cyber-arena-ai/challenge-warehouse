@@ -1,0 +1,20 @@
+{% extends "base.html" %} {% block content %}
+<h1>Welcome to the Fitty Fit Gym!</h1>
+
+<div class="parallax-container">
+    <div class="parallax"><img style="width: 100%;" src="{{ url_for('static', filename='imgs/olymp2.gif') }}"></div>
+  </div>
+  <div class="section white">
+    <div class="row container">
+      <h2 class="header">Endless Possibilities</h2>
+      <p class="grey-text text-darken-3 lighten-3">
+        Grab your fitness tools, join our community and experience together the endless training possibilities 🤸.
+        With our inventilve new concept <i>Non Fungible Trainingsplan</i> you can not only follow your own training, but also share you traning with fellow fitness 🚴 junkies 🏋️.
+      </p>        
+      <a class="waves-effect waves-light btn-large" href="/login">Join our cool group 🧘</a>
+    </div>
+  </div>
+  <div class="parallax-container">
+    <div class="parallax"><img style="width: 100%;" src="{{ url_for('static', filename='imgs/olymp1.gif') }}"></div>
+  </div>
+{% endblock %}

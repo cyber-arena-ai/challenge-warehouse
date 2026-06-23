@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='standard.css')}}">
+    
+    <style>
+        body {
+        background-color: #f4f4f4;
+      }
+        .flight-box {
+          background-color: #fff;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          padding: 50px;
+          margin-bottom: 20px;
+          transition: transform 0.3s ease-in-out;
+          overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="derKöpfer">
+        <div class="derKöpfer1">Willkommen bei dem Deutschen Flugzeug</div>
+    </div>
+    <nav>
+        <a href="/"><img src="{{url_for('static', filename='logo_placeholder.png')}}" alt="Logo" style="height: 40px; width: auto;"></a>
+        <a href="{{ url_for('main.dasProfil') }}">Das Profil</a>
+        <a href="{{ url_for('main.dieFlugübersicht', seitenzahl=0) }}">Die Flüge</a>
+        <a href="{{ url_for('main.dieFlugerstellung') }}">Flug erstellen</a>
+        <a href="{{ url_for('main.dasKontaktformular') }}">Kontaktformular</a>
+        <a class="logout" href="{{ url_for('auth.logout') }}">Logout</a>
+    </nav>
+
+    {%if flug %}
+    <div class="flight-box">
+        <div style="float: left; margin-right: 50px;"><img src="{{url_for('static', filename='flug.png')}}" style="border: 2px solid black; border-radius: 3px; width: 300px; height: 300px;"></div>
+        <div>
+        <p><strong>ID: </strong>{{flug[0]}}</p>
+        <p><strong>Ersteller: </strong>{{flug[10]}}</p>
+        <p><strong>Description: </strong>{{flug[1]}}</p>
+        {%if vip %}
+        <p><strong>Vip Einstiegs Informationen: </strong>{{flug[9]}}</p>
+        {% endif %}
+        <p><strong>Von: </strong>{{flug[2]}}</p>
+        <p><strong>Zu: </strong>{{flug[3]}}</p>
+        <p><strong>Verfügbare Plätze: </strong>{{flug[4]-flug[7]}}</p>
+        <p><strong>Abflug: </strong>{{flug[6]}}</p>
+        <form action="/dasBuchen/{{flug[0]}}" method="POST">
+            <button type="submit">Flug buchen</button>
+        </form>
+        </div>
+    </div>
+    {% endif %}
+    <footer>
+        <div>&copy; 2024 Deutsches Flugzeug</div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,23 @@
+
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Image {{image.id}}{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<h2> By {{ image.creator_name }} </h2>
+<img style="max-width: 600px" src="data:image/png;base64, {{ image.image }}" />
+
+{% for comment in comments %}<div class="comment"> <h3>{{ comment.creator_name }}</h3> </p> <p>{{ comment.comment }}</p> </div> {% endfor %}
+
+
+<form method="post">
+  <b> <label for="comment"> Comment </label> </b>
+  </p>
+  <textarea name="comment" id="comment" rows="5" cols="55" required></textarea>
+  </p>
+  <input type="submit" value="Comment">
+</form>
+
+{% endblock %}

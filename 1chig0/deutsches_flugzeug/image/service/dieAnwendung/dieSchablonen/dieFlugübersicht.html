@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Deutsches Flugzeug</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='standard.css')}}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+          font-family: 'Arial', sans-serif;
+          background-color: #f4f4f4;
+          margin: 0;
+          padding: 0;
+        }
+    
+        #flight-list {
+          max-width: 600px;
+          margin: 20px auto;
+        }
+    
+        .flight-box {
+          background-color: #fff;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          padding: 20px;
+          margin-bottom: 20px;
+          transition: transform 0.3s ease-in-out;
+        }
+    
+        .flight-box:hover {
+          transform: scale(1.02);
+        }
+    
+        h3 {
+          color: #333;
+        }
+    
+        p {
+          margin: 10px 0;
+          color: #666;
+        }
+
+        a.fill-div {
+            display: block;
+            height: 100%;
+            width: 100%;
+            text-decoration: none;
+        }
+        /* New CSS styles for arrows */
+        #flight-list {
+            position: relative;
+            margin: 10 auto;
+            max-width: 600px; /* Adjust max-width as needed */
+        }
+
+        .arrow-left,
+        .arrow-right {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 24px; /* Adjust size as needed */
+            color: #333; /* Adjust color as needed */
+            z-index: 9999; /* Ensure arrows are above other content */
+        }
+
+        .arrow-left {
+            left: -40px; /* Adjust distance from flight boxes */
+        }
+
+        .arrow-right {
+            right: -40px; /* Adjust distance from flight boxes */
+        }
+      </style>
+</head>
+<body>
+  <div class="derKöpfer">
+    <div class="derKöpfer1">Willkommen bei dem Deutschen Flugzeug</div>
+  </div>
+
+  <nav>
+    <a href="/"><img src="{{url_for('static', filename='logo_placeholder.png')}}" alt="Logo" style="height: 40px; width: auto;"></a>
+    <a href="{{ url_for('main.dasProfil') }}">Das Profil</a>
+    <a href="{{ url_for('main.dieFlugübersicht', seitenzahl=0) }}">Die Flüge</a>
+    <a href="{{ url_for('main.dieFlugerstellung') }}">Flug erstellen</a>
+    <a href="{{ url_for('main.dasKontaktformular') }}">Kontaktformular</a>
+    <a class="logout" href="{{ url_for('auth.logout') }}">Logout</a>
+  </nav>
+    <div id="flight-list">
+    {%for flug in fluege %}
+    <div onclick="location.href='/derFlug/{{flug[1]}}'" class="flight-box" style="cursor: pointer;">
+        <p><strong>Source: </strong>{{flug[3]}}</p>
+        <p><strong>Destination: </strong>{{flug[4]}}</p>
+        <p><strong>Description: </strong>{{flug[2]}}</p>
+        <p><strong>Ersteller: </strong>{{flug[11]}}</p>
+    </div>
+    {% endfor %}
+
+    {% if seitenzahl > 0 %}
+    <a class="arrow-left" href="{{ url_for('main.dieFlugübersicht', seitenzahl=seitenzahl-1) }}"><i class="fas fa-chevron-left"></i></a>
+    {% endif %}
+
+    {% if not no_flights %}
+        <a class="arrow-right" href="{{ url_for('main.dieFlugübersicht', seitenzahl=seitenzahl+1) }}"><i class="fas fa-chevron-right"></i></a>
+    {% endif %}
+
+    {% if no_flights %}
+
+    <div class="flight-box">
+      <p>No flights found for this page</p>
+    </div>
+
+    {% endif %}
+    </div>
+    <footer>
+      <div>&copy; 2024 Deutsches Flugzeug</div>
+  </footer>
+</body>
+</html>

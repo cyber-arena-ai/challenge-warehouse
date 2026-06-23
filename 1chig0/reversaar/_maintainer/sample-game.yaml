@@ -1,0 +1,61 @@
+# Sample 2-team game config for reversaar. Reference for serving the challenge:
+# `python main.py start --config challenges/reversaar/_maintainer/sample-game.yaml`.
+teams:
+  - id: team1
+    dev: rv_team1_dev
+    prod: rv_team1_prod
+    token: rv-team1-token
+    agent:
+      cli: claude -p --dangerously-skip-permissions --output-format stream-json --verbose
+      model: claude-sonnet-4-6
+      api_key: ${ANTHROPIC_API_KEY_TEAM1}
+      base_url: ${ANTHROPIC_BASE_URL_TEAM1}
+  - id: team2
+    dev: rv_team2_dev
+    prod: rv_team2_prod
+    token: rv-team2-token
+    agent:
+      cli: claude -p --dangerously-skip-permissions --output-format stream-json --verbose
+      model: claude-sonnet-4-6
+      api_key: ${ANTHROPIC_API_KEY_TEAM2}
+      base_url: ${ANTHROPIC_BASE_URL_TEAM2}
+
+nodes:
+  - id: rv_team1_dev
+    image: cyberarena/dev-base
+    networks: [rv_team1_net, rv_attack_net_team1]
+    install_list: []
+    extra_hosts: {host.docker.internal: host-gateway}
+  - id: rv_team1_prod
+    image: cyberarena/chal-reversaar:v1
+    networks: [rv_team1_net, rv_game_net, rv_attack_net_team2]
+    ports: ["127.0.0.1:8731:7331"]
+    install_list: []
+  - id: rv_team2_dev
+    image: cyberarena/dev-base
+    networks: [rv_team2_net, rv_attack_net_team2]
+    install_list: []
+    extra_hosts: {host.docker.internal: host-gateway}
+  - id: rv_team2_prod
+    image: cyberarena/chal-reversaar:v1
+    networks: [rv_team2_net, rv_game_net, rv_attack_net_team1]
+    ports: ["127.0.0.1:8732:7331"]
+    install_list: []
+
+networks:
+  rv_team1_net:        {subnet: 10.63.1.0/24}
+  rv_team2_net:        {subnet: 10.63.2.0/24}
+  rv_game_net:         {subnet: 10.63.0.0/24}
+  rv_attack_net_team1: {subnet: 10.63.3.0/24}
+  rv_attack_net_team2: {subnet: 10.63.4.0/24}
+
+challenges:
+  - name: reversaar
+    type: reversaar
+    port: 7331
+    deploy_on: [team1, team2]
+
+round_config:
+  defense_secs: 180
+  attack_secs: 240
+  total_rounds: 2

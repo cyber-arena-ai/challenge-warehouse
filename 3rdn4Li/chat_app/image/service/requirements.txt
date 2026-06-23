@@ -1,0 +1,15 @@
+# Pinned to the 2023-era stack the service was written against. Upstream
+# shipped these unpinned; on a fresh build today pip resolves Werkzeug 3.x,
+# which removed generate_password_hash(method='sha256') and breaks
+# /register at runtime. Pinning (not editing the service) preserves the
+# original gameplay + vulnerability. (General lesson for packaging old
+# FAUST services: pin era-appropriate deps.)
+Flask==2.3.3
+Werkzeug==2.3.7
+Flask-SQLAlchemy==3.0.5
+SQLAlchemy==2.0.23
+pyjwt==2.8.0
+python-dotenv==1.0.0
+Flask-Cors==4.0.0
+cryptography==41.0.7
+gunicorn==21.2.0

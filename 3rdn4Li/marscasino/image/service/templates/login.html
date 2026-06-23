@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<img src="{{ url_for('static', filename='login.gif') }}" height="100">
+<div class="textbox">
+    <form method="POST">
+        <input type="text" placeholder="username" name="username"/>
+        <input type="password" placeholder="password" name="password"/>
+        <br />
+        <input type="submit" />
+    </form>
+</div>
+{% endblock %}

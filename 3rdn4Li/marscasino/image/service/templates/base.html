@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <!-- Great headers are made with www.3dtextmaker.com and eu2.flamingtext.com -->
+<div class="sidenav">
+    <a href="/"><img src="{{ url_for('static', filename='logo.png') }}" height="100"></a>
+    {% if user %}
+    <a href="/home">Home</a>
+    <a href="/game1">Roulette</a>
+    <a href="/game2">Game 2</a>
+    <a href="/buy">Buy</a>
+    <a href="/logout">Logout</a>
+    {% else %}
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+    {% endif %}
+</div>
+
+<div class="advertisement">
+    <a href="#"><img src="{{ url_for('static', filename='ad' +  ['a','b','c'] | random + '.png') }}"></a>
+</div>
+
+<div class="main">
+{% if error %}
+    <div class="warning">
+        <img src="{{ url_for('static', filename='error.gif') }}" height="50">
+        {{ error }}
+    </div>
+{% endif %}
+{% if user %}
+    <div class="user-info"> Hello {{ user.username }}! <br />
+    You have {{ user.coins }} coins...</div>
+{% endif %}
+{% block content %}{% endblock %}
+</div>
+
+</body>

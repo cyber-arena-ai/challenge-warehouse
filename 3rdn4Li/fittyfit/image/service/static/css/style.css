@@ -1,0 +1,13 @@
+.trainer {
+    border-radius: 45%;
+    width: 80%;
+}
+
+
+.parallax-container {
+    height: 600px;
+  }
+
+.dropdown-content li>a, .dropdown-content li>span {
+    color: #4caa00;
+}

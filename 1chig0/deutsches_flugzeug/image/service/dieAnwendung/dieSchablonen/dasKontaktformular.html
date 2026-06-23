@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Das Kontaktformular</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='standard.css')}}">
+    <style>
+      body {
+        background-color: #f4f4f4;
+      }
+        form {
+    width: 400px;
+    padding: 20px;
+    background-color: #fff; /* Adding a white background color */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Adding a subtle shadow effect */
+    margin: auto; /* Centering the form horizontally */
+}
+
+.dieFormularreihe {
+    margin-bottom: 15px; /* Increased margin for better spacing */
+    margin-right: 15px;
+}
+
+label {
+    font-weight: bold; /* Making labels bold for better readability */
+}
+
+.derFormulareingang {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+}
+
+button[type="submit"] {
+    background-color: #4CAF50; /* Making the submit button green */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover {
+  background-color: #45a049; /* Darkening the button color on hover */
+}
+    </style>
+</head>
+<body>
+  <div class="derKöpfer">
+    <div class="derKöpfer1">Willkommen bei dem Deutschen Flugzeug</div>
+  </div>
+  <nav>
+    <a href="/"><img src="{{url_for('static', filename='logo_placeholder.png')}}" alt="Logo" style="height: 40px; width: auto;"></a>
+    <a href="{{ url_for('main.dasProfil') }}">Das Profil</a>
+    <a href="{{ url_for('main.dieFlugübersicht', seitenzahl=0) }}">Die Flüge</a>
+    <a href="{{ url_for('main.dieFlugerstellung') }}">Flug erstellen</a>
+    <a href="{{ url_for('main.dasKontaktformular') }}">Kontaktformular</a>
+    <a class="logout" href="{{ url_for('auth.logout') }}">Logout</a>
+  </nav>
+  
+
+
+    <form id="das Kontaktformular" method="GET" action="">
+      <div class="derFormularfehler" style="display:none;"></div>
+      <div class="dieFormularreihe">
+        <label for="der Kontaktformularname">Ihr Name:</label>
+        <input id="der Kontaktformularname" class="derFormulareingang" type="text" name="name">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="die Kontaktformularemail">Ihre Elektronische-Mail Adresse:</label>
+        <input id="die Kontaktformularemail" class="derFormulareingang" type="email" name="email">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="die Kontaktformulartelefonnummer">Ihre Telefonnummer:</label>
+        <input id="die Kontaktformulartelefonnummer" class="derFormulareingang" type="tel" name="telefon">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="der Kontaktformularflugscheinidentifikationscode">Ihr Flugschein Identifikationscode:</label>
+        <input id="der Kontaktformularflugscheinidentifikationscode" class="derFormulareingang" type="text" name="flugschein">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="die Kontaktformularnachricht">Message:</label>
+        <textarea id="die Kontaktformularnachricht" class="derFormulareingang" name="message"></textarea>
+      </div>
+      <div class="button-container">
+      <button type="submit" formaction="/dasKontaktformular/dieBestätigung">Submit</button>
+      </div>
+    </form>
+</body>
+<footer>
+  <div>&copy; 2024 Deutsches Flugzeug</div>
+</footer>
+</html>

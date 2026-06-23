@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+    <img src="{{ url_for('static', filename='simple.gif') }}" height="100">
+    <img src="{{ url_for('static', filename='roulette.gif') }}" height="100">
+    <div class="textbox">
+        <p>Such a great game people on earth have played since the stone age.
+        Important political decisions were always made using roulette!
+        The rules are simple. Enter your bet and a field you want to bet on.</p>
+        <p>Number: x35; Zero: x36; Red: x1; Black: x1; First: x2; Second: x2; Third: x2</p>
+
+        <img src="{{ url_for('static', filename='roulette.png') }}" width="600">
+        <form method="POST">
+            <input type="number" placeholder="bet" name="bet"/>
+            <input type="text" placeholder="field" name="field"/>
+            <input value="Hit it" type="submit">
+        </form>
+
+        {% if win or number %}
+        <p>The number was {{number}} and you win {{win}} coins</p>
+        {% endif %}
+    </div>
+{% endblock %}

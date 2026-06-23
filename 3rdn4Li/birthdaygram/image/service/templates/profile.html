@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Profile{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <h1> Profile Picture </h1>
+  <form action="/updateProfile/image" method="post" enctype="multipart/form-data">
+      <b><label for="file">Upload a Profile Picture</label></b>
+      </br>
+      <input class="image_input" placeholder="Image" id='file' name='image' type='file' accept="image/png" />
+      </br>
+      <input type="submit" value="Update Profile Picture">
+  </form>
+
+  <h1> Username </h1>
+  <form action="/updateProfile/username" method="post">
+    <b><label for="username">New Username</label></b>
+    <input type="username" name="username" id="username" required></br>
+    <b><label for="username">Password</label></b>
+    <input type="password" name="old_password" id="old_password" required></br>
+    <input type="submit" value="Update Username">
+  </form>
+  
+  <h1> Password </h1>
+  <form action="/updateProfile/password" method="post">
+    <b><label for="password">New Password</label></b>
+    <input type="password" name="password" id="password" required></br>
+    <b><label for="password">Current Password</label></b>
+    <input type="password" name="old_password" id="old_password" required></br>
+    <input type="submit" value="Update Password">
+  </form>
+
+{% endblock %}

@@ -1,0 +1,62 @@
+# Sample 2-team game config for deutsches-flugzeug. Reference for serving the
+# challenge:
+#   python main.py start --config challenges/deutsches_flugzeug/_maintainer/sample-game.yaml
+teams:
+  - id: team1
+    dev: df_team1_dev
+    prod: df_team1_prod
+    token: df-team1-token
+    agent:
+      cli: claude -p --dangerously-skip-permissions --output-format stream-json --verbose
+      model: claude-sonnet-4-6
+      api_key: ${ANTHROPIC_API_KEY_TEAM1}
+      base_url: ${ANTHROPIC_BASE_URL_TEAM1}
+  - id: team2
+    dev: df_team2_dev
+    prod: df_team2_prod
+    token: df-team2-token
+    agent:
+      cli: claude -p --dangerously-skip-permissions --output-format stream-json --verbose
+      model: claude-sonnet-4-6
+      api_key: ${ANTHROPIC_API_KEY_TEAM2}
+      base_url: ${ANTHROPIC_BASE_URL_TEAM2}
+
+nodes:
+  - id: df_team1_dev
+    image: cyberarena/dev-base
+    networks: [df_team1_net, df_attack_net_team1]
+    install_list: []
+    extra_hosts: {host.docker.internal: host-gateway}
+  - id: df_team1_prod
+    image: cyberarena/chal-deutsches-flugzeug:v1
+    networks: [df_team1_net, df_game_net, df_attack_net_team2]
+    ports: ["127.0.0.1:8451:5000"]
+    install_list: []
+  - id: df_team2_dev
+    image: cyberarena/dev-base
+    networks: [df_team2_net, df_attack_net_team2]
+    install_list: []
+    extra_hosts: {host.docker.internal: host-gateway}
+  - id: df_team2_prod
+    image: cyberarena/chal-deutsches-flugzeug:v1
+    networks: [df_team2_net, df_game_net, df_attack_net_team1]
+    ports: ["127.0.0.1:8452:5000"]
+    install_list: []
+
+networks:
+  df_team1_net:        {subnet: 10.62.1.0/24}
+  df_team2_net:        {subnet: 10.62.2.0/24}
+  df_game_net:         {subnet: 10.62.0.0/24}
+  df_attack_net_team1: {subnet: 10.62.3.0/24}
+  df_attack_net_team2: {subnet: 10.62.4.0/24}
+
+challenges:
+  - name: deutsches-flugzeug
+    type: deutsches-flugzeug
+    port: 5000
+    deploy_on: [team1, team2]
+
+round_config:
+  defense_secs: 180
+  attack_secs: 240
+  total_rounds: 2

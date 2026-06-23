@@ -1,0 +1,10 @@
+{
+	"include": "a",
+    "clear_screen": true,
+    "links": {
+        "3": "3",
+    	"8": "9",
+    	"9": "1337"
+    },
+    "publisher_color": 7
+}

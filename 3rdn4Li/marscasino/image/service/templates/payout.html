@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<img src="{{ url_for('static', filename='payout.gif') }}" height="100">
+
+<div class="textbox">
+    <p>You collected enough coins? Great! Use it and buy something.</p>
+    {% if flags %}
+        <ul>
+        {% for flag in flags %}
+            <li>{{ flag.flag }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="POST">
+        <input type="number" placeholder="amount" name="amount"/>
+        <input type="submit" />
+    </form>
+</div>
+{% endblock %}

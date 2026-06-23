@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+    <img src="{{ url_for('static', filename='header.gif') }}" height="100">
+    <div class="flex-container">
+        <div class="box">
+            <div class="header">Info</div>
+            <div class="body">Hello and welcome to the Mars Ultimate Casino.
+            We are the most modern online casino on Mars.
+            Since our great arrival here, we make the best effort to meet the best practice internet standard we've studied from ancient relics of the earth.
+            Join our platform and have a great time!</div>
+        </div>
+        <div class="box">
+            <div class="header">Login</div>
+            <div class="body"> It is as simple as driving the new mars rover 9000. Click <a href="/register">here</a> to register or click <a href="/login">here</a> to login.</div>
+        </div>
+    </div>
+    <hr />
+    <img src="{{ url_for('static', filename='happy.gif') }}" height="400">
+{% endblock %}

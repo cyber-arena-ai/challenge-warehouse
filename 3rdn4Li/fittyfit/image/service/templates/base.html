@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Compiled and minified CSS -->
+    <link href="{{ url_for('static', filename='css/font.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/materialize.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <title>Fitty Fit</title>
+</head>
+
+<body>
+
+    <nav>
+        <div class="nav-wrapper purple darken-1">
+        <a href="#" class="sidenav-trigger" data-target="mobile-nav">
+			<i class="material-icons">menu</i>
+		</a>
+
+        <a href="/" class="brand-logo">Fitty Fit</a>
+
+        <ul id="nav-mobile" class="right hide-on-med-and-down">
+            <li><a class="dropdown-trigger" href="#!" data-target="dropdown1a">Courses<i class="material-icons right">arrow_drop_down</i></a></li>
+            
+            <li><a href="/trainers">Trainers</a></li>
+            <li><a href="/prices">Prices</a></li>            
+            
+            {% if user %}            
+                <li><a class="dropdown-trigger" href="#!" data-target="dropdown2a">{{ user.name }}<i class="material-icons right">arrow_drop_down</i></a></li>
+            {% else %}
+                <li><a href="/login">Login</a></li>
+            {% endif %}
+         
+        </ul>        
+        </div>
+    </nav>  
+
+    <ul class="sidenav" id="mobile-nav">
+            <li><a class="dropdown-trigger" href="#!" data-target="dropdown1b">Courses<i class="material-icons right">arrow_drop_down</i></a></li>
+            
+            <li><a href="/trainers">Trainers</a></li>
+            <li><a href="/prices">Prices</a></li>            
+            
+            {% if user %}            
+                <li><a class="dropdown-trigger" href="#!" data-target="dropdown2b">{{ user.name }}<i class="material-icons right">arrow_drop_down</i></a></li>
+            {% else %}
+                <li><a href="/login">Login</a></li>
+            {% endif %}
+        
+    </ul>
+
+    <!-- Dropdown Structure -->
+    <ul id="dropdown1a" class="dropdown-content">
+        <li><a href="/course/1">Course 1</a></li>
+        <li><a href="/course/2">Course 2</a></li>
+        <li><a href="/course/3">Course 3</a></li>
+    </ul>
+
+    <ul id="dropdown1b" class="dropdown-content">
+        <li><a href="/course/1">Course 1</a></li>
+        <li><a href="/course/2">Course 2</a></li>
+        <li><a href="/course/3">Course 3</a></li>
+    </ul>
+
+    <ul id="dropdown2a" class="dropdown-content">
+        <li><a href="/home">Profile</a></li>
+        <li><a href="/generate">Generate NFT</a></li>
+        <li><a href="/logout">Logout</a></li>
+    </ul>
+
+    <ul id="dropdown2b" class="dropdown-content">
+        <li><a href="/home">Profile</a></li>
+        <li><a href="/generate">Generate NFT</a></li>
+        <li><a href="/logout">Logout</a></li>
+    </ul>
+
+    <div class="container">
+    {% block content %}{% endblock %}
+    </div>
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="{{ url_for('static', filename='js/jquery-3.2.1.slim.min.js') }}" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/popper.min.js') }}" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/materialize.min.js') }}"></script>
+    <script>  
+        $( document ).ready(() => {
+            $(".dropdown-trigger").dropdown();            
+            $('.materialboxed').materialbox();
+            $('.collapsible').collapsible();
+            $('.parallax').parallax();
+     		$('.sidenav').sidenav();
+        });
+
+        
+        function report(path) {
+            fetch("/report?path=" + path)
+        }
+    </script>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+  {% for category, message in messages %}  
+<script>
+    // There is no user input in the message
+    var toastHTML = "<span>{{ message|safe }}</span>";
+    M.toast({html: toastHTML, classes: "{{category}}"});
+</script>
+  {% endfor %}
+{% endif %}
+{% endwith %}
+    
+    
+</body>
+
+</html>

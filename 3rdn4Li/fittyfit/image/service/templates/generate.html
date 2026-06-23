@@ -1,0 +1,67 @@
+{% extends "base.html" %} {% block content %}
+<h1>Generate your own NFT!</h1>
+<p>
+    In the first step, upload your training as a PDF file.
+    Next, you add the owner information and our algorithm will create your NFT.
+</p>
+<p>
+  What does non fungible mean?
+  It means, the ownership of your plan is recorded in our system and can be transferred by the owner, allowing NFTs to be sold and traded.
+</p>
+
+{% if step=="upload" %}  
+<form method=post enctype=multipart/form-data>
+  <input type=hidden name=step value=upload>
+  <div class="file-field input-field">
+    <div class="btn">
+      <span>File</span>
+      <input type="file" name="file">
+    </div>
+    <div class="file-path-wrapper">
+      <input class="file-path validate" type="text">
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary">Upload</button>
+</form>
+{% endif %}
+
+{% if step=="generate" %}  
+<form method=post enctype=multipart/form-data>
+  <input type=hidden name=step value=generate>
+  <input type=hidden name=filename value="{{filename}}">  
+
+  <div class="form-row">
+    <div class="col">
+      <label for="d">Creator</label>
+      <input type=text class="form-control" id="c" name="creator">
+    </div>
+    <div class="col">
+        <label for="d">Description</label>
+        <input type=text class="form-control" id="d" name="description">
+    </div>
+    <div class="col">
+      <label for="s">Rating Score (1-10)</label>
+      <input type=text class="form-control" id="s" name="score">
+    </div>
+    <div class="col">
+      <label for="l">Difficulty Level (easy, medium, high):</label>
+      <input type=text class="form-control" id="l" name="level">
+    </div>
+    <div class="col">
+      <label for="p">Trained Body Part:</label>
+      <input type=text class="form-control" id="p" name="part">
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary">Generate</button>
+</form>
+{% endif %}
+
+{% if step=="done" %}  
+  <p>Thank you!</p>
+  <a href="/generate">Generate the next NFT</a>
+{% endif %}
+
+<script>
+
+</script>
+{% endblock %}

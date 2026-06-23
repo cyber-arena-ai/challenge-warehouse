@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<img src="{{ url_for('static', filename='recruite.gif') }}" height="100">
+<div class="textbox">
+    <p>Send this code to a friend and make him happy.
+    He will start with more coins and for the first 3 friends you add, you get also some coins!</p>
+    <p>This is your code: <b>{{ user.fcode }}</b></p>
+
+    <img src="{{ url_for('static', filename='friend.gif') }}" height="200">
+</div>
+
+{% endblock %}

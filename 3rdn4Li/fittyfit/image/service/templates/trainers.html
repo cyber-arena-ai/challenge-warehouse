@@ -1,0 +1,14 @@
+{% extends "base.html" %} {% block content %}
+<h1>Trainers</h1>
+
+<p>Our highly skilled fitness trainers will help you work on those muscles while you get yourself on the right track to an improved version of yourself. If you choose the right exercise, your body will thank you - Babajum!</p>
+
+<div class="row">
+    {% for t in trainers %}
+    <div class="col s4">
+        <img class="trainer" src="{{ url_for('static', filename='trainers/' + t.id + '.jpg') }}">
+        <p class="light center">{{ t.name }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>Reversaar</title>
+  <link href="css/pico.min.css" rel="stylesheet">
+  <link href="css/pico.colors.min.css" rel="stylesheet">
+  <style>
+    [v-cloak] {
+      display: none;
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "vue": "/js/petite-vue.es.js"
+    }
+  }
+  </script>
+  <script type="module" src="js/main.js" defer></script>
+ </head>
+
+ <template id="article-view">
+  <template v-if="!data"><p><progress v-effect="mounted()"/></p></template>
+  <template v-else>
+   <textarea readonly>{{content_text}}</textarea>
+  </template>
+ </template>
+ 
+ <template id="template-view-text">
+  <template v-if="!initialized"><p><progress v-effect="mounted()"/></p></template>
+  <template v-else>
+   <textarea readonly>{{content_text}}</textarea>
+  </template>
+ </template>
+
+ 
+ <template id="template-view-array">
+  <template v-if="!initialized"><p><progress v-effect="mounted()"/></p></template>
+  <template v-else>
+   <textarea readonly>{{content_text}}</textarea>
+  </template>
+ </template>
+ 
+ <template id="template-view-audio">
+ <audio controls :src="url" />
+ </template>
+ 
+ <template id="template-listing-element">
+  <details @toggle="if($el.open && !opened){opened=true;}" :open="open_idx==idx">
+    <summary role="button"  @click.prevent="open_idx=idx">No. {{ idx }}</summary>
+    <template v-if="opened" >
+      <div v-scope="View(type, idx)"></div>
+    </template>
+    <hr/>
+  </details>
+ </template>
+ 
+ <template id="template-new-text">
+  <details :open="open_idx==0">
+    <summary role="button" @click.prevent="open_idx=0">Reverse text</summary>
+    <form @submit.prevent="send">
+      <label>
+        Text
+        <textarea v-model="content_text" :aria-invalid="!valid" placeholder="Your text here...">
+        </textarea>
+      </label>
+
+      <input type="submit" value="Reverse!" />
+    </form>
+  </details>
+ </template>
+ 
+  <template id="template-new-array">
+  <details :open="open_idx==0">
+    <summary role="button" @click.prevent="open_idx=0">Reverse an array</summary>
+    <form @submit.prevent="send">
+      <label>
+        Reverse an array
+        <textarea v-model="content_text" :aria-invalid="!valid" placeholder="[1,2,3,4]">
+        </textarea>
+      </label>
+
+      <input type="submit" value="Reverse!" />
+    </form>
+  </details>
+ </template>
+ 
+  <template id="template-new-audio">
+  <details :open="open_idx==0">
+    <summary role="button" @click.prevent="open_idx=0">Reverse audio</summary>
+    <form @submit.prevent="send">
+      <label>
+        Select Audio file
+        <input type="file" @change="selected_file=event.target.files[0];" accept=".wav" >
+      </label>
+
+      <input type="submit" value="Reverse!" />
+    </form>
+  </details>
+ </template>
+ 
+ <template id="template-listing">
+  <section>
+   <hgroup>
+    <h1>{{title}}</h1>
+    <p>Reverse {{type}} with ease...</p>
+   </hgroup>
+   <template v-for="n in count">
+    <p v-scope="ListingElement(type, n)"></p>
+   </template>
+   <p v-scope="NewElement(type)"></p>
+  </section>
+ </template>
+ <body v-scope id='main'>
+ 
+  <header class="container">
+    <nav>
+      <ul>
+        <li><strong>Reversaar</strong></li>
+      </ul>
+      <ul>
+        <li><a href="#about">About</a></li>
+        <li><a href="#blog">Blog</a></li>
+        <li v-if="logged_in"><a href="#text">Text</a></li>
+        <li v-if="logged_in"><a href="#array">Array</a></li>
+        <li v-if="logged_in"><a href="#audio">Audio</a></li>
+        <li v-if="logged_in"><a href="#logout" role="button" @click="logout()">Logout</a></li>
+        <li v-else><a href="#login">Not logged in</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main v-cloak class="container" v-effect="fetch_info()">
+  
+    <dialog v-if="!logged_in" :open="site.site=='login'" @cancel="show_login=false" @close="show_login=false">
+      <article>
+        <header>
+          <button aria-label="Close" rel="prev" @click="show_login=false"></button>
+          <h1>Login or Register</h1>
+        </header>
+        <section v-if="error">
+          <article class="pico-background-orange-400">
+            {{ error }}
+          </article>
+        </section>
+        <form method="dialog" @submit.prevent="login">
+          <input type="text" name="username" placeholder="Username" aria-label="Username" v-model="username" :aria-invalid="!username_valid">
+          <input type="password" name="password" placeholder="Password" aria-label="Password" v-model="password" :aria-invalid="!password_valid">
+          <button type="submit">Login / Register</button>
+        </form>
+      </article>
+    </dialog>
+    
+    <template v-if="site.site=='blog'" >
+    <hgroup>
+      <h1>Blog</h1>
+      <p>Our Story. Our Mission. In double-reversed chronological order.</p>
+    </hgroup>
+    <article>
+      <hgroup>
+      <h2>Hello World!</h2>
+      <p>2024-11-01</p>
+      </hgroup>
+      <p>Hello World! We have finally been able to launch reversaar inc.</p>
+      <p>For a long time, we have had the idea to offer an easy online service for people like you and me, people that just need to get things done, especially if the thing to be done is placing characters the wrong way around.</p>
+      <p>Well, we've finally made it. And believe it or not, the hardest part was actually a technical challenge. You see, neither me nor any of my co-founders are technically inclined. Speaking for myself, I can barely get by swiping away at my iPhone. So when we first came together and realized neither of us was capable of creating a website, we were <i>this</i> close to letting a dream be a dream.</p>
+      <p>But then, we realized that we could hire a consultant to do the technical stuff <i>for us</i>! This, again, was a bit of a challenge, given that our starting capital was bout tree fiddy. Luckily for us, one of my co-founders was able to find someone with a very impressive resume who would to the job <i>and</i> fit our budget. And thus, our dream of reversaar inc. came true...<p>
+      <p>Today, we're launching reversaar inc. with amazing text reversing capabilities. Turn "Hello" into "olleH". Turn "abc" into "cba". Turn "racecar" into "racecar"! <a href="#login">Create an account and try it out now!</a></p>
+    </article>
+    <article>
+      <hgroup>
+      <h2>Arrays have arrived</h2>
+      <p>2024-11-08</p>
+      </hgroup>
+      <p>It's been a week. And what a week it has been!</p>
+      <p>It's been a week since we launched reversaar inc., and people have been reversing texts without end. However, this made us think. Think about how else we could help the world...</p>
+      <p>Thankfully, the world is full of inspiration, and in our case, inspiration came from one of the most unexpected places: our accountant. Every day, they would get our account balance and append it to the end of a list. We, however, were only interested in the most recent balance. Thus, every day, they had to painstakingly take the list and swivel all the entries around, until the bottom-most entry would be placed at the top, and the (former) top-most entry would be placed at the bottom. Hence, we knew there was demand for a reversing service for lists and arrays.</p>
+      <p>We brought this idea to our technical consultant, who quickly got to work. And, thus, only a week since we launched our dream company, we can now offer array reversing to all of our customers.<sup>For technical reasons, array entries are currently limited to whole numbers between 0 and 255.<sup></p>
+    </article>
+    <article>
+      <hgroup>
+      <h2>Be kind, rewind</h2>
+      <p>2024-11-15</p>
+      </hgroup>
+      <p>Another week, another added service.</p>
+      <p>One of our co-founders spent their first salary at a record store and came home with a slightly worn tape of Led Zeppelin. After doing some research, they learned that Led Zeppelin were an English rock band formed in London in 1968. And after actually listening to their music, our co-founder became convinced that these songs must contain some hidden, satanic messages. However, when we laughed and asked them to show us these messages, they couldn't show us.</p>
+      <p>But only a few hours later, they said they had uncovered the truth: The hidden messages could only be heard, if the tape was played backwards. Unfortunately, they only had a cheap, forward-plaing tape deck and we only had our streaming services. This left us in a pickle.</p>
+      <p>So we did what we had worked well in the past for us and messaged our technical consultant. And, once again, after only a short while, they had added the ability to reverse audio recordings to our website. We, therefore, proudly announce that reversaar inc. can now offer three distinguished reversing services: text, arrays, <i>and</i> audio.</p>
+      <p>Unfortunately, we still don't know whether our co-founder was able to uncover any hidden messages...</p>
+    </article>
+    <article>
+      <hgroup>
+      <h2>A message from our CEO</h2>
+      <p>2024-11-22</p>
+      </hgroup>
+      <p>Dear reversaar inc. customers,<p>
+      <p>it is with great sadness that I have to announce that our technical consultant has been arrested on multiple charges of computer fraud and other cybercrime activities. While we never met them in person, we have always perceived <tt>MrH4x0rman</tt> (as they were known to us) as a kind and honest individual. This is reflected in the great work that they have done in building the reversaar inc. website of our dreams, for which they only requested the most modest of compensations.</p>
+      <p>For the future of reversaar inc., this likely means that we will not be able to accomodate additional services in the near future. Additionally, we have been asked by the police to scan our services for any "backdoors" that could compromise our customers' data. After a quick review, we can confidently say, that our website contains no doors and that all of your data is stored safely.</p>
+    </article>
+    </template>
+    
+    <template v-else-if="site.site=='text' && logged_in" >
+     <div v-scope="Listing('text', 'Text')"></div>
+    </template>
+    <template v-else-if="site.site=='array' && logged_in" >
+      <div v-scope="Listing('array', 'Array')"></div>
+    </template>
+    <template v-else-if="site.site=='audio' && logged_in" >
+      <div v-scope="Listing('audio', 'Audio')"></div>
+    </template>
+
+    <template v-else >
+    <hgroup>
+      <h1>Welcome to Reversaar</h1>
+      <p>Your one-stop shop for doing things <span style="transform: scale(-1, 1); display:inline-block">backwards</span>.</p>
+    </hgroup>
+    <section>
+    <h2>About</h2>
+    <p>Do you always think you've got something backwards? Do your friends always send you messages like <i>"!dlroW olleH"</i>? Does your boss want you to sort lists in reverse a lot? Do you want to decipher the hidden demonic messages on your eighties rock records?</p>
+    <p>Then fret no more! We at reversaar inc. have got you covered. Using our simple online service you can cover all these usecases and likely more. Tell your friends to <i>"!burcs ,dug tig"</i>. Confidently present to your boss that the list <tt>[1,2,3,4]</tt> is <tt>[4,3,2,1]</tt> when sorted back-to-front. Summon demons from hell and have the world's best tea party!</p>
+    <p>Simply <a href="#login">create an account</a> and start reversing today!</p>
+    </template>
+    
+  </main>
+  
+  <footer class="container">
+    (c) 2024 reversaar inc.
+  </footer>
+ </body>
+
+</html>

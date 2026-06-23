@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<img src="{{ url_for('static', filename='register.gif') }}" height="100">
+<div class="textbox">
+    {% if username %}
+        <p>Great {{ username }}! We sent a verification link to your ip: {{ ip }}</p>
+        <p>It is 5 minutes active</p>
+    {% else %}
+        <p>Email is something people on earth used. On mars everyone has a unique ip we use to verify.</p>
+        <p>If you have a friend code you can enter it here. Else leave it empty.</p>
+    {% endif %}
+    <form method="POST">
+        <input type="text" placeholder="username" name="username"/>
+        <input type="password" placeholder="password" name="password"/>
+        <input type="text" placeholder="ip" name="ip"/>
+        <input type="text" placeholder="Friend Code" name="fcode"/>
+        <br />
+        <input type="submit" />
+    </form>
+</div>
+{% endblock %}

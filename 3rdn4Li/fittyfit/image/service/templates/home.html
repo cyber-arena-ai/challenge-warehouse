@@ -1,0 +1,140 @@
+{% extends "base.html" %} {% block content %}
+<h1>Hello {{ user.name }}</h1>
+<h4>Your Non Fungible Trainingsplans</h4>
+
+<p>
+    Create now your own Non Fungible Trainingsplan (NFT) based on the exercises you will perform.
+    You can generate your NFT with our <a href="/generate">innovative tool</a> or you exchange them with fellow people.
+    If you want, download all your NFTs <a href="/download">here</a>!
+    Now, let's start with your first NFT.
+</p>
+<p>
+    <a href="https://app.inferkit.com/demo">InferKit AI</a> says, for example, you will need to perform bicep curls before doing curls for your legs and vice versa.
+    If your goal is to achieve a lot of strength you will need to include many upper-body and leg exercises along with core exercises.
+    You must include a balanced training with low-weight high- reps. So your training for your legs will be much harder than training your biceps.
+    Always use a full range of motion when doing the exercises. Let your body fully extend when performing squats and leg curls.
+    Try not to over-rely on machines and machines.
+</p>
+
+<div class="row">
+    {% if nfts|length < 1 %}
+    <p>😲 You do not have any NFTs... 😲</p>
+    {% endif %}
+
+    {% for nft in nfts %}
+    <div class="col s6">
+        <h5>{{ nft.name }}</h5>
+        {% if nft.report %}
+            <p class="light center red">This file was reported!</p>
+        {% endif %}
+        
+        <div class="video-container">
+            <iframe src="/nft?file={{ nft.data }}"></iframe>
+        </div>
+        <ul class="collapsible">
+            <li>
+                <div class="collapsible-header">
+                    <i class="material-icons">subject</i>
+                    Information
+                </div>
+                <div class="collapsible-body">          
+                    <p><b>Description</b>: {{ nft.description }}</p>
+                    <p><b>Level</b>: {{ nft.level }}</p>
+                    <p><b>Part</b>: {{ nft.part }}</p>
+                    <p><b>Score</b>: {{ nft.score }}</p>
+                </div>
+            </li>            
+            <li>
+                <div class="collapsible-header">
+                    <i class="material-icons">vpn_key</i>
+                    Entitlement
+                </div>
+                <div class="collapsible-body">                      
+                    <p><b>Creator</b>: {{ nft.creator }}</p>
+                    <p><b>Owner</b>: {{ nft.owner }}</p>
+                </div>
+            </li>
+            <li>                
+                <a href="#!" class="collection-item">
+                    <div 
+                      class="waves-effect waves-light btn modal-trigger" 
+                      href="#transfer_modal" 
+                      style="width: 100%;"
+                      onclick="update_modal('{{ nft.name }}')">
+                        Exchange NFT
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    {% endfor %}
+</div>
+
+<!-- Modal Structure -->
+<div id="transfer_modal" class="modal">
+    <div class="modal-content">
+        <h4>Transfer your NFT</h4>
+        <p>Transfer your NFT to another user. Make sure to select the correct name!</p>
+
+        <form id="transfer_form" action="/transfer">
+            <input id="filename_input" type="hidden" name="filename" value="">
+            <div class="input-field col s9">
+                <i class="material-icons prefix">textsms</i>
+                <input type="text" name="receiver" id="autocomplete-input" class="autocomplete" onkeyup="updateData()">
+                <label for="autocomplete-input">Autocomplete</label>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <a href="#!" onclick="send_nft()" class="modal-close waves-effect waves-green btn-flat">Agree</a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var elems = document.querySelectorAll('.modal');
+        var instances = M.Modal.init(elems, {});
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var elems = document.querySelectorAll('.autocomplete');
+        instances = M.Autocomplete.init(elems, {
+            data: [],
+            limit: 15,
+            minLength: 0 // Change to 4
+        });
+        
+    });
+
+    function updateData(d) {
+        var elem = document.getElementById("autocomplete-input");
+        instance = M.Autocomplete.getInstance(elem);
+        if (elem.value.length == 0) { // Change to 4
+            fetch("/search?s=" + elem.value)
+            .then(response => response.json())
+            .then(data => instance.updateData(data))
+        }
+    }
+
+    function update_modal(filename) {
+        var elem = document.getElementById('filename_input');
+        elem.value = filename;
+    }
+
+    function send_nft() {
+        var form = document.getElementById('transfer_form'); // give the form an ID
+        var xhr  = new XMLHttpRequest();              // create XMLHttpRequest
+        var data = new FormData(form);                // create formData object
+
+        xhr.onload = function() {
+            location.reload();
+        }
+
+        xhr.open("post", form.action);   
+        xhr.send(data);  
+    }
+
+</script>
+          
+{% endblock %}

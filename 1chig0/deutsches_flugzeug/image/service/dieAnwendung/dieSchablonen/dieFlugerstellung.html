@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Das Kontaktformular</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='standard.css')}}">
+    <style>
+      body {
+        background-color: #f4f4f4;
+      }
+form {
+    width: 400px;
+    padding: 20px;
+    background-color: #fff; /* Adding a white background color */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Adding a subtle shadow effect */
+    margin: auto; /* Centering the form horizontally */
+}
+
+.dieFormularreihe {
+    margin-bottom: 15px; /* Increased margin for better spacing */
+    margin-right: 15px;
+}
+
+label {
+    font-weight: bold; /* Making labels bold for better readability */
+}
+
+.derFormulareingang {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.derFormularfehler {
+    color: red;
+    margin: 10px; /* Adding margin above error messages */
+    text-align: center; /* Centering the error messages */
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+}
+
+button[type="submit"] {
+    background-color: #4CAF50; /* Making the submit button green */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover {
+  background-color: #45a049; /* Darkening the button color on hover */
+}
+    </style>
+</head>
+<body>
+  
+  <div class="derKöpfer">
+    <div class="derKöpfer1">Willkommen bei dem Deutschen Flugzeug</div>
+  </div>
+  <nav>
+    <a href="/"><img src="{{url_for('static', filename='logo_placeholder.png')}}" alt="Logo" style="height: 40px; width: auto;"></a>
+    <a href="{{ url_for('main.dasProfil') }}">Das Profil</a>
+    <a href="{{ url_for('main.dieFlugübersicht', seitenzahl=0) }}">Die Flüge</a>
+    <a href="{{ url_for('main.dieFlugerstellung') }}">Flug erstellen</a>
+    <a href="{{ url_for('main.dasKontaktformular') }}">Kontaktformular</a>
+    <a class="logout" href="{{ url_for('auth.logout') }}">Logout</a>
+</nav>
+
+    <form id="das Kontaktformular" method="POST" action="">
+      <div class="derFormularfehler" style="display:none;"></div>
+      <div class="dieFormularreihe">
+        <label for="die Beschreibung">Flugbeschreibung: </label>
+        <input id="die Beschreibung" class="derFormulareingang" type="text" name="beschreibung">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="von">Von: </label>
+        <input id="von" class="derFormulareingang" type="text" name="von">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="zu">Zu: </label>
+        <input id="zu" class="derFormulareingang" type="text" name="zu">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="vip_einstieg">VIP Einstiegs Informationen: </label>
+        <input id="vip_info" class="derFormulareingang" type="text" name="vip_info">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="Anzahl">Flugplatzanzahl: </label>
+        <input id="anzahl" class="derFormulareingang" type="number" name="anzahl">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="Wirklich Wichtige Personen">Anzahl Wichtiger Personen: </label>
+        <input id="wichtig" class="derFormulareingang" type="number" name="wichtig">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="Datum">Datum: </label>
+        <input id="datum" class="derFormulareingang" type="datetime-local" name="datum">
+      </div>
+      <div class="dieFormularreihe">
+        <label for="Passwort">Passwort: </label>
+        <input id="passwort" class="derFormulareingang" type="password" name="passwort">
+      </div>
+      {% if submitted %}
+      <div>
+        Danke, dass sie einen Flug bei uns eingetragen haben!  
+      </div>
+      {% endif %}
+      {% if auszeit %}
+      <div class="derFormularfehler">
+        Sie haben noch eine Auszeit vom Flügeerstellen! ({{sekunden}}s)
+        
+      </div>
+      {% endif %}
+      {% if passwort %}
+      <div class="derFormularfehler">
+        Falsches Passwort angegeben.
+        
+      </div>
+      {% endif %}
+      <div class="button-container">
+      <button type="submit" formaction="/dieFlugerstellung">Submit</button>
+      </div>
+    </form>
+    <footer>
+      <div>&copy; 2024 Deutsches Flugzeug</div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,184 @@
+import java.util.Random;
+import java.util.ArrayList;
+
+public class Message {
+
+    private final ArrayList<String> answers = new ArrayList<>();
+    private static Message m = null;
+    private Message() {
+        answers.add("Outlook not so good.");
+        answers.add("Don't count on it.");
+        answers.add("Ask me if I care.");
+        answers.add("Reply hazy, try again.");
+        answers.add("My sources say no.");
+        answers.add("Maybe. Maybe not.");
+        answers.add("I wouldn't hold my breath.");
+        answers.add("The stars say no.");
+        answers.add("You're kidding, right?");
+        answers.add("The answer is in a parallel universe.");
+        answers.add("Absolutely not.");
+        answers.add("As if!");
+        answers.add("Ask someone who cares.");
+        answers.add("In your dreams.");
+        answers.add("The odds are about as good as finding a unicorn.");
+        answers.add("Not even if you had a four-leaf clover and a rabbit's foot.");
+        answers.add("I'm getting a strong 'nope' signal from the cosmos.");
+        answers.add("I'm not a magic 8-ball, but the answer is still no.");
+        answers.add("Even a leprechaun wouldn't bet on that.");
+        answers.add("If 'no' were a song, this question would be its greatest hit.");
+        answers.add("The only thing rising here is the certainty of a 'no.'");
+        answers.add("I'm detecting a disturbance in the force field, and it's saying 'nope.'");
+        answers.add("The chances are slimmer than a supermodel on a diet.");
+        answers.add("Not even on Opposite Day.");
+        answers.add("If this were a multiple-choice test, 'no' would be the only option.");
+        answers.add("Even a broken magic 8-ball would say 'no' to that.");
+        answers.add("I'm not a betting person, but I'd put all my chips on 'no.'");
+        answers.add("The chances are as slim as a needle in a haystack.");
+        answers.add("You're aiming for the stars, but you're more likely to hit the ceiling.");
+        answers.add("The probability is lower than a limbo dancer's backbend.");
+        answers.add("Even a fortune cookie wouldn't touch that prediction.");
+        answers.add("I'm not just seeing clouds, I'm seeing a thunderstorm of 'no.'");
+        answers.add("Not even on a blue moon.");
+        answers.add("The chances are like trying to find a needle in a haystack during a tornado.");
+        answers.add("I'm not a meteorologist, but I can forecast a strong 'no.'");
+        answers.add("If this were a game, 'no' would be the winning move.");
+        answers.add("The probability is about as likely as finding buried treasure in your backyard.");
+        answers.add("I'm not just seeing a 'no,' I'm seeing a neon sign flashing 'no.'");
+        answers.add("The probability is lower than winning the lottery while getting struck by lightning.");
+        answers.add("Not even if you had a map and a compass.");
+        answers.add("I'm not a mind reader, but I'm picking up a strong 'no' signal.");
+        answers.add("If this were a race, 'no' would be lapping 'yes'.");
+        answers.add("The chances are like trying to find a snowflake in a sandstorm.");
+        answers.add("Even a psychic would say 'no' to that one.");
+        answers.add("The chances are slimmer than a runway model during Fashion Week.");
+        answers.add("Not even if you had a rabbit's foot and a horseshoe.");
+        answers.add("The chances are about as likely as winning a staring contest with a statue.");
+        answers.add("I'm not a gambler, but I'd bet the house on 'no.'");
+        answers.add("The probability is lower than a submarine's altitude.");
+        answers.add("I'm not a mathematician, but I'm calculating a high probability of 'no.'");
+        answers.add("Even a magic wand couldn't conjure a 'yes' for that.");
+        answers.add("The chances are like trying to find a needle in a haystack during an earthquake.");
+        answers.add("Not even if you had a genie and three wishes.");
+        answers.add("The odds are about as good as winning a marathon on crutches.");
+        answers.add("The probability is lower than a snake's belly in a wagon rut.");
+        answers.add("I'm not just hearing 'no,' I'm hearing a chorus of 'no way.'");
+        answers.add("Even Sherlock Holmes couldn't deduce a 'yes' from that.");
+        answers.add("The chances are like trying to find a polar bear in the Sahara.");
+        answers.add("Not even if you had a horseshoe, a four-leaf clover, and a lucky penny.");
+        answers.add("The probability is lower than a snail's sprint.");
+        answers.add("I'm not a betting person, but I'd wager everything on 'no.'");
+        answers.add("Even a lucky charm couldn't charm a 'yes' out of this.");
+        answers.add("The chances are about as likely as finding Atlantis.");
+        answers.add("I'm not just seeing 'no,' I'm seeing a flashing neon 'no entry' sign.");
+        answers.add("The probability is lower than a submarine's dance party.");
+        answers.add("Even if you had all the luck in the world, 'no' would still be the answer.");
+        answers.add("The odds are about as good as finding a needle in a haystack during a hurricane.");
+        answers.add("Not even if you had a magic lamp and three wishes.");
+        answers.add("The probability is lower than a groundhog's altitude.");
+        answers.add("I'm not a fortune-teller, but I foresee a 'no' in your future.");
+        answers.add("Even a crystal ball couldn't see a 'yes' in this scenario.");
+        answers.add("The chances are like trying to find a snowflake in a snowstorm.");
+        answers.add("Not even if you had a rabbit's foot, a lucky penny, and a leprechaun.");
+        answers.add("The probability is lower than a sloth's sprint.");
+        answers.add("I'm not just sensing 'no,' I'm sensing a definitive 'absolutely not.'");
+        answers.add("Even if you had all the luck in the universe, 'no' would still prevail.");
+        answers.add("The odds are about as good as winning a staring contest with a statue.");
+        answers.add("Not even if you had a genie, three wishes, and a magic carpet.");
+        answers.add("The probability is lower than a tortoise's sprint.");
+        answers.add("I'm not a magician, but I can't conjure a 'yes' out of thin air.");
+        answers.add("Even if you had a pot of gold at the end of a rainbow, 'no' would still be the answer.");
+        answers.add("The chances are like trying to find a needle in a haystack during a tornado.");
+        answers.add("Not even if you had a crystal ball, a magic wand, and a rabbit's foot.");
+        answers.add("The probability is lower than a snail's sprint.");
+        answers.add("I'm not a genie, but even if you had three wishes, 'no' would still be the outcome.");
+        answers.add("Even if you had a horseshoe, a four-leaf clover, and a lucky penny, 'no' would still be the answer.");
+        answers.add("The chances are like trying to find a polar bear in the Sahara.");
+        answers.add("Not even if you had a magic lamp, three wishes, and a genie.");
+        answers.add("The probability is lower than a submarine's altitude.");
+        answers.add("I'm not a psychic, but I can't see a 'yes' in this scenario.");
+        answers.add("Even if you had all the luck in the world, 'no' would still be the verdict.");
+        answers.add("I'm not a mind reader, but the answer is no.");
+        answers.add("Why are you even asking?");
+        answers.add("Not today, darling.");
+        answers.add("Seriously? That's your question?");
+        answers.add("Ask again when pigs fly.");
+        answers.add("Even the Magic 8-Ball can't believe you asked that.");
+        answers.add("I'm on a break. Ask someone else.");
+        answers.add("I'm too fabulous to predict that.");
+        answers.add("Did you really think the answer would be yes?");
+        answers.add("My psychic powers say no.");
+        answers.add("I see a future where this question is forgotten.");
+        answers.add("Not today, not tomorrow, not ever.");
+        answers.add("I'm not a fan of your question.");
+        answers.add("Absolutely positively not.");
+        answers.add("My karma doesn't vibe with that question.");
+        answers.add("I'm too busy being awesome to answer that.");
+        answers.add("Let me consult my crystal ball... No.");
+        answers.add("Ask me if I care. Spoiler: I don't.");
+        answers.add("I predict a 0% chance of that happening.");
+        answers.add("If wishes were fishes, we'd all cast nets. And the answer would still be no.");
+        answers.add("The universe is laughing at your question.");
+        answers.add("Not even in an alternate reality.");
+        answers.add("You must be joking.");
+        answers.add("Do I look like a mind reader? No.");
+        answers.add("I'm too cool to answer such mundane questions.");
+        answers.add("The answer is a resounding no, darling.");
+        answers.add("I'd tell you, but then I'd have to care.");
+        answers.add("I'd say the chances are slim to none.");
+        answers.add("You might want to try asking a potato.");
+        answers.add("Even Google couldn't find a positive outcome for that one.");
+        answers.add("Negative vibes all the way.");
+        answers.add("I'm allergic to that question.");
+        answers.add("I'm not saying it's impossible, but it's pretty close.");
+        answers.add("My crystal ball is showing me a big fat no.");
+        answers.add("Not even if you bribe me with chocolate.");
+        answers.add("Did you really think the answer would be yes?");
+        answers.add("I foresee disappointment in your future.");
+        answers.add("My psychic senses are tingling with a strong 'no'.");
+        answers.add("I don't need to consult the stars to know that's not happening.");
+        answers.add("I'd say the odds are about the same as winning the lottery. Slim.");
+        answers.add("I'm channeling the energy of 'no' right now.");
+        answers.add("I'm not saying it's impossible, but it's highly unlikely.");
+        answers.add("Even a broken clock is right twice a day. This isn't one of those times.");
+        answers.add("I'm not just an 8-ball; I'm a 'no' ball.");
+        answers.add("I can't even with that question.");
+        answers.add("Nope, not in this lifetime.");
+        answers.add("Let me check my schedule... nope, still not happening.");
+        answers.add("You're barking up the wrong magic tree.");
+        answers.add("I'm not buying what you're selling.");
+        answers.add("My psychic abilities are telling me to say no.");
+        answers.add("You must be new here if you thought the answer would be yes.");
+        answers.add("I'm getting a strong 'nah' vibe from the cosmos.");
+        answers.add("If wishes were horses, beggars would ride. But not on this one.");
+        answers.add("Not even in an alternate universe.");
+        answers.add("I've seen better questions on a fortune cookie.");
+        answers.add("I wouldn't bet on it.");
+        answers.add("I've consulted the spirits, and they said, 'Absolutely not.'");
+        answers.add("I'd say the chances are as slim as a strand of spaghetti.");
+        answers.add("The magic 8-ball is not in a good mood today. The answer is no.");
+        answers.add("I'm sorry, were you expecting a different answer?");
+        answers.add("Even a broken clock is right more often than your question.");
+        answers.add("My crystal ball just rolled its eyes at your question.");
+        answers.add("My magic 8-ball is on strike. No answers today.");
+        answers.add("The universe said, 'I'll pass' on that question.");
+        answers.add("I'm not a genie, but I'm pretty sure that wish won't come true.");
+        answers.add("I'm sensing a disturbance in the force, and it's saying 'no.'");
+        answers.add("I can't predict the future, but I can predict that won't happen.");
+        answers.add("I'd ask if you're serious, but I don't really care.");
+        answers.add("I'm not a pessimist, just a realist. And the reality is, no.");
+    }
+
+    public static Message getInstance()
+    {
+        if (m == null)
+            m = new Message();
+        return m;
+    }
+
+    public ArrayList<String> getMessages() {
+        return this.answers;
+    }
+
+
+
+}

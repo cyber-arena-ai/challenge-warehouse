@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Benutzer Profil</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='standard.css')}}">
+    <style>
+        body {
+        background-color: #f4f4f4;
+      }
+    .current-info {
+        max-width: 800px; /* Adjust the maximum width as needed */
+        margin: 20px auto; /* Center the box and provide margin */
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        background-color: #fff; /* Set background color if needed */
+    }
+    .derEingang {
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    text-align: center;
+    }
+
+
+
+    .derEingang label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .derEingang input,
+    .derEingang textarea {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 3px;
+        box-sizing: border-box;
+    }
+
+    button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 16px;
+    }
+
+    button:hover {
+        background-color: #45a049;
+    }
+
+    </style>
+</head>
+<body>
+    <div class="derKöpfer">
+        <div class="derKöpfer1">Willkommen bei dem Deutschen Flugzeug</div>
+    </div>
+    <nav>
+        <a href="/"><img src="{{url_for('static', filename='logo_placeholder.png')}}" alt="Logo" style="height: 40px; width: auto;"></a>
+        <a href="{{ url_for('main.dasProfil') }}">Das Profil</a>
+        <a href="{{ url_for('main.dieFlugübersicht', seitenzahl=0) }}">Die Flüge</a>
+        <a href="{{ url_for('main.dieFlugerstellung') }}">Flug erstellen</a>
+        <a href="{{ url_for('main.dasKontaktformular') }}">Kontaktformular</a>
+        <a class="logout" href="{{ url_for('auth.logout') }}">Logout</a>
+    </nav>
+
+<div class="profile-container">
+
+    {% if not änderung%}
+
+    <div class="current-info">
+        <h2>Aktuelle Informationen</h2>
+        <p><strong>Benutzername:</strong> <span id="current-username">{{benutzer}}</span></p>
+        <p><strong>Beschreibung:</strong> <span id="current-description">{{beschreibung}}</span></p>
+        <p><strong>Flugscheine:</strong> <span id="current-tickets"></span></p>
+        <div style="width: 10vw;">
+            {% for schein in scheine %}
+                <a href="/derFlug/{{funkt(schein[2])}}?flugschein={{schein[2]}}">
+                    <div class="ticket-box" style="cursor: pointer;">
+                        <img src="data:image/png;base64,{{schein[3]}}">
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+        <form action="/dasProfil" method="post">
+            <input type="hidden" value="wahr" name="ändern">
+            <button type="submit">Nutzerinformationen ändern</button>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if änderung%}
+    <div class="derEingang">
+        <div>
+            Verändern sie hier ihre Profilinformation. Lassen sie alle Felder frei welche sie nicht ändern wollen!
+        </div>
+        <form action="dasProfil/Aktualisierung" method="post" enctype="application/x-www-form-urlencoded">
+            <p>
+                <label for="benutzername">Neuer Benutzername:</label>
+                <input type="text" id="benutzername" name="benutzername">
+            </p>
+            <p>
+                <label for="passwort">
+                    <span>Neues Passwort:</span>
+                </label>
+                <input type="password" id="passwort" name="passwort">
+            </p>
+            <p>
+                <label for="beschreibung">Neue Beschreibung:</label>
+                <textarea id="beschreibung" name="beschreibung" rows="4"></textarea>
+            </p>
+            <p>
+                <label for="flugschein">Flugschein hinzufügen:</label>
+                <input type="text" id="flugschein" name="flugschein">
+            </p>
+            <p>
+                <label for="passwort">
+                    <span>Bisheriges Passwort*:</span>
+                </label>
+                <input type="password" id="passwortalt" name="passwortalt" required>
+            </p>
+            <p>
+                <button type="submit">Profil aktualisieren</button>
+            </p>
+        </form>
+        
+        <form action="/dasProfil" method="post">
+            <input type="hidden" value="falsch" name="ändern">
+            <button type="submit">Zurück zum Profil</button>
+        </form>
+        {% if fehler_benutzer %}
+        <p>Der Benutzername ist bereits vergeben.</p>
+        {% endif %}
+
+        {% if fehler_passwort %}
+            <p>Das bisherige Passwort ist falsch.</p>
+        {% endif %}
+
+        {% if fehler_flugschein %}
+            <p>Kein gültiger Flugschein wurde übergeben.</p>
+        {% endif %}
+
+        {% if aktualisiert %}
+            <p>Profil erfolgreich aktualisiert</p>
+        {% endif %}
+        
+
+    </div>
+    {% endif %}
+</div>
+<footer>
+    <div>&copy; 2024 Deutsches Flugzeug</div>
+</footer>
+</body>
+</html>

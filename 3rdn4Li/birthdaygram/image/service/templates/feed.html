@@ -1,0 +1,20 @@
+
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Feed{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+{% for image in images %}
+<div class="comment">
+  <a href="/image/{{ image.id }}">
+  <h2>  Image {{ image.id }} by {{ image.creator_name }} </h2>
+  <img style="max-width: 600px" src="data:image/png;base64, {{ image.image }}" />
+  </a>
+</div>
+</br>
+{% endfor %}
+</form>
+
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+    <img src="{{ url_for('static', filename='profile.gif') }}" height="100">
+    <div class="textbox">
+        <p>Hello and welcome. It is great to have you!</p> 
+        {% if user.item %}
+            <div> Your item <b>{{ user.item }}</b> costs {{ user.item_cost }}. <br />
+                It was sold <u>{{ user.items_sold }}</u> times</div>
+        {% else %}
+            <p>Add a item that other user can buy!</p>
+            <form method="POST">
+                <input type="text" placeholder="item" name="item"/>
+                <input type="number" placeholder="item_cost" name="item_cost"/>
+                <input type="submit" value="Sell Item"/>
+            </form>
+        {% endif %}
+        <br />
+        <a href="/payout">Payout</a>
+        <br />
+        <a href="/recruite">Recruite Friends</a>
+        <br />
+        <a href="/voucher">Use voucher</a>
+        <br />
+        <a href="/delete-account">Delete</a>
+    </div>
+{% endblock %}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Deutsches Flugzeug</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='standard.css')}}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+        background-color: #f4f4f4;
+      }
+        .slideshow-container {
+            position: relative;
+            width: 50%;
+            height: auto;
+            margin: auto;
+        }
+
+        .slide {
+            display: none;
+            transition: opacity 1s ease; /* Add transition for opacity */
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+        }
+
+        .prev,
+        .next {
+            position: absolute;
+            top: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            color: black;
+            padding: 16px;
+            margin-top: -32px;
+            z-index: 1;
+        }
+
+        .prev {
+            left: -50px;
+        }
+
+        .next {
+            right: -50px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="derKöpfer">
+    <div class="derKöpfer1">Willkommen bei dem Deutschen Flugzeug</div>
+</div>
+
+<nav>
+    <a href="/"><img src="{{url_for('static', filename='logo_placeholder.png')}}" alt="Logo" style="height: 40px; width: auto;"></a>
+    <a href="{{ url_for('main.dasProfil') }}">Das Profil</a>
+    <a href="{{ url_for('main.dieFlugübersicht', seitenzahl=0) }}">Die Flüge</a>
+    <a href="{{ url_for('main.dieFlugerstellung') }}">Flug erstellen</a>
+    <a href="{{ url_for('main.dasKontaktformular') }}">Kontaktformular</a>
+    <a class="logout" href="{{ url_for('auth.logout') }}">Logout</a>
+</nav>
+
+<div class="slideshow-container">
+    <div class="slide fade" style="display: block;">
+        <img src="{{url_for('static', filename='airport1.jpeg')}}" alt="Image 1">
+    </div>
+
+    <div class="slide fade">
+        <img src="{{url_for('static', filename='airport2.jpeg')}}" alt="Image 2">
+    </div>
+
+    <div class="slide fade">
+        <img src="{{url_for('static', filename='airport3.jpeg')}}" alt="Image 2">
+    </div>
+
+    <!-- Add more slides as needed -->
+
+    <a class="prev" onclick="nextSlide(-1)"><i class="fas fa-chevron-left"></i></a>
+    <a class="next" onclick="nextSlide(1)"><i class="fas fa-chevron-right"></i></a>
+</div>
+
+<footer>
+    &copy; 2024 Deutsches Flugzeug
+</footer>
+
+<script>
+    let slideIndex = 0;
+
+    function nextSlide(n) {
+        let slides = document.getElementsByClassName("slide");
+        for (let i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+        }
+        slideIndex += n;
+        if (slideIndex > slides.length - 1) {
+            slideIndex = 0;
+        }
+        if (slideIndex < 0) {
+            slideIndex = slides.length - 1;
+        }
+        slides[slideIndex].style.display = "block";
+    }
+</script>
+
+</body>
+</html>

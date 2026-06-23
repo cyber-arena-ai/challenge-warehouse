@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<img src="{{ url_for('static', filename='voucher.gif') }}" height="100">
+<div class="textbox">
+    <p>Enter your voucher code here. Let's see if you won something.</p>
+    {% if win %}
+        You won {{ win }}!
+    {% endif %}
+    <form method="POST">
+        <input type="string" placeholder="voucher" name="voucher"/>
+        <input type="submit" />
+    </form>
+</div>
+{% endblock %}

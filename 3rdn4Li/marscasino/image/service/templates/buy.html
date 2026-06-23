@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<img src="{{ url_for('static', filename='buy.gif') }}" height="100">
+<div class="textbox">
+    {% if item %}
+    <p>You bought something: {{ item }}</p>
+    {% else %}
+    <p>Don't know what to do with all your coins? Buy something from your fellow players.
+    And if you don't have enough money, just sell a friendly text!
+    Spread good feelings with you own message all over our Mars.</p>
+    {% endif %}
+
+    {% if users %}
+        <ul>
+        {% for u in users %}
+            <li>Buy something from <a href="/buy?u={{ u.username}}">{{ u.username }}</a>
+                ({{ u.item_cost }} coins)</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Delete your account</h1>
+<div class="textbox">
+    <p>We don't want to let you go. But if you really wish, enter your password to delete your account. Bye bye!</p>
+    <form method="POST">
+        <input type="hidden" name="username" value="{{ user.username}}"/>
+        <input type="password" placeholder="password" name="password"/>
+        <input value="Delete" type="submit" />
+    </form>
+</div>
+{% endblock %}
