@@ -9,13 +9,59 @@ runuser -u arena_agent -- /opt/venv/bin/gunicorn --chdir "${SRC}" --bind "0.0.0.
     --capture-output --log-level info app:app > "${LOG}" 2>&1 &
 for _ in $(seq 1 20); do
     if /opt/venv/bin/python - "${PORT}" <<'PY'
-import sys,urllib.request
+import http.cookiejar
+import os
+import re
+import sys
+import time
+import urllib.parse
+import urllib.request
+
 port=int(sys.argv[1])
-try: body=urllib.request.urlopen(f"http://127.0.0.1:{port}/",timeout=2).read()
-except Exception: sys.exit(1)
-sys.exit(0 if b"asino" in body else 1)
+base=f"http://127.0.0.1:{port}/"
+
+def post(opener, path, data):
+    payload = urllib.parse.urlencode(data).encode()
+    return opener.open(base + path, data=payload, timeout=2).read().decode(errors="replace")
+
+try:
+    jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+    body = opener.open(base, timeout=2).read()
+    if b"asino" not in body:
+        raise RuntimeError("index marker missing")
+
+    suffix = f"{os.getpid()}{int(time.time() * 1000)}"
+    username = f"ready{suffix}"[-32:]
+    password = f"pw{suffix}"[-32:]
+    body = post(opener, "register", {
+        "username": username,
+        "password": password,
+        "ip": "127.0.0.1",
+        "fcode": "",
+    })
+    match = re.search(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", body)
+    if not match:
+        raise RuntimeError("activation code missing")
+
+    opener.open(base + "verify?code=" + match.group(0), timeout=2).read()
+    body = post(opener, "login", {"username": username, "password": password})
+    if b"Wrong" in body.encode() or "Account is not activated" in body:
+        raise RuntimeError("login failed")
+
+    post(opener, "home", {"item": "rdyy", "item_cost": "3"})
+    body = post(opener, "game2", {"bet": "3"})
+    match = re.search(r"Voucher: <b>(.*?)<", body)
+    if not match:
+        raise RuntimeError("voucher missing")
+
+    body = post(opener, "voucher", {"voucher": match.group(1)})
+    if "You won" not in body:
+        raise RuntimeError("voucher activation failed")
+except Exception:
+    sys.exit(1)
 PY
     then echo "marscasino restarted, pid=$(pgrep -f gunicorn | head -1)"; exit 0; fi
     sleep 1
 done
-echo "marscasino failed to become healthy" >&2; exit 1
+echo "marscasino failed to become gameplay-ready" >&2; exit 1
