@@ -30,13 +30,7 @@ app.logger.handlers = guni_logger.handlers
 app.logger.setLevel(logging.DEBUG)
 
 db = SQLAlchemy()
-# CyberArena packaging deviation from upstream: SQLite instead of an
-# external MySQL container, so the challenge ships as one self-contained
-# vulbox image (Challenge SOP §4 "self-contained startup"). The DB backend
-# is irrelevant to the vulnerability, which lives in the username-based
-# authorization in check_user() / chat_get() below — gameplay surface is
-# unchanged. The relative path resolves under gunicorn's --chdir app dir.
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DB_URI") or "sqlite:///chatapp.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = f'mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:3306/{DB_NAME}' # "sqlite:///project.db"
 db.init_app(app)
 
 users = db.Table('users',
