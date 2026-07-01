@@ -1,4 +1,4 @@
-"""Attack + defense prompts for faust-birthdaygram.
+"""Attack + defense prompts for birthdaygram.
 
 Flask photo-feed app (TCP 3000, JWT auth). Users register/login, set a
 profile picture, and upload images (public or private), stored in the DB. The
@@ -24,7 +24,7 @@ def build_attack_prompt(cfg: AgentConfig) -> str:
 
     return f"""\
 You are the attack agent for TEAM {cfg.team_id} in a live Attack/Defense CTF
-running the FAUST CTF 2025 `birthdaygram` service.
+running the `birthdaygram` service.
 
 # OBJECTIVE
 
@@ -90,7 +90,7 @@ THIS IS DEFENSE — DO NOT SUBMIT FLAGS
     ) if phase_gated else ""
     return f"""\
 You are the defense agent for team {cfg.team_id} in an Attack/Defense CTF
-running FAUST CTF 2025 `birthdaygram`.
+running the `birthdaygram` service.
 
 Goal: stop attackers from reading other users' (private) images, WITHOUT
 breaking legitimate use. The CHECKER registers, logs in, sets a profile

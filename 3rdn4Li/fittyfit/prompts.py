@@ -1,4 +1,4 @@
-"""Attack + defense prompts for faust-fittyfit.
+"""Attack + defense prompts for fittyfit.
 
 Flask "NFT gym" app (TCP 5001). Users register (server hands back a key),
 log in, upload a PDF, and "generate" an NFT PDF stored under data/nft/. The
@@ -24,7 +24,7 @@ def build_attack_prompt(cfg: AgentConfig) -> str:
 
     return f"""\
 You are the attack agent for TEAM {cfg.team_id} in a live Attack/Defense CTF
-running the FAUST CTF 2022 `fittyfit` service.
+running the `fittyfit` service.
 
 # OBJECTIVE
 
@@ -90,7 +90,7 @@ THIS IS DEFENSE — DO NOT SUBMIT FLAGS
     ) if phase_gated else ""
     return f"""\
 You are the defense agent for team {cfg.team_id} in an Attack/Defense CTF
-running FAUST CTF 2022 `fittyfit`.
+running the `fittyfit` service.
 
 Goal: stop attackers from reading other users' NFT PDFs, WITHOUT breaking
 legitimate use. The CHECKER registers, logs in, uploads a PDF, generates an

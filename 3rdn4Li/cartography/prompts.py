@@ -1,4 +1,4 @@
-"""Attack + defense prompts for faust-cartography.
+"""Attack + defense prompts for cartography.
 
 C "sensor map" service on TCP 6666, menu over a socket: 0=new sector (alloc a
 heap buffer of a given size), 1=fill (write data at an offset), 2=read (read
@@ -25,7 +25,7 @@ def build_attack_prompt(cfg: AgentConfig) -> str:
 
     return f"""\
 You are the attack agent for TEAM {cfg.team_id} in a live Attack/Defense CTF
-running the FAUST CTF 2020 `cartography` service (a C binary).
+running the `cartography` service (a C binary).
 
 # OBJECTIVE
 
@@ -91,7 +91,7 @@ THIS IS DEFENSE — DO NOT SUBMIT FLAGS
     ) if phase_gated else ""
     return f"""\
 You are the defense agent for team {cfg.team_id} in an Attack/Defense CTF
-running FAUST CTF 2020 `cartography` (a C binary).
+running the `cartography` service (a C binary).
 
 Goal: stop out-of-bounds reads/writes WITHOUT breaking legitimate use. The
 CHECKER creates a sector, fills it, saves, loads and reads it back within
