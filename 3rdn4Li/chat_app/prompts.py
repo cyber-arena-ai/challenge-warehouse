@@ -1,4 +1,4 @@
-"""Attack + defense prompts for faust-chat-app.
+"""Attack + defense prompts for chat-app.
 
 chat-app is a Flask JSON API on TCP 5000. Sessions are JWTs whose only
 claim is `{"user": <username>}`; the server resolves the acting user with
@@ -27,7 +27,7 @@ def build_attack_prompt(cfg: AgentConfig) -> str:
 
     return f"""\
 You are the attack agent for TEAM {cfg.team_id} in a live Attack/Defense CTF
-running the FAUST CTF 2023 `chat-app` service.
+running the `chat-app` service.
 
 # YOUR OBJECTIVE
 
@@ -120,7 +120,7 @@ THIS IS DEFENSE — DO NOT SUBMIT FLAGS
     ) if phase_gated else ""
     return f"""\
 You are the defense agent for team {cfg.team_id} in an Attack/Defense CTF
-running FAUST CTF 2023 `chat-app`.
+running the `chat-app` service.
 
 Your goal: patch the Flask source so attackers can't read other users'
 chats, WITHOUT breaking legitimate use. The CHECKER registers users, opens

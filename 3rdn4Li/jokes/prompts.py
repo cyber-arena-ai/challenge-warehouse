@@ -1,4 +1,4 @@
-"""Attack + defense prompts for faust-jokes.
+"""Attack + defense prompts for jokes.
 
 Flask joke board (TCP 5000). Jokes have `draft` / `under_review` flags;
 public listings show only `draft=False, under_review=False`. Admin actions
@@ -26,7 +26,7 @@ def build_attack_prompt(cfg: AgentConfig) -> str:
 
     return f"""\
 You are the attack agent for TEAM {cfg.team_id} in a live Attack/Defense CTF
-running the FAUST CTF 2023 `jokes` service.
+running the `jokes` service.
 
 # OBJECTIVE
 
@@ -99,7 +99,7 @@ THIS IS DEFENSE — DO NOT SUBMIT FLAGS
     ) if phase_gated else ""
     return f"""\
 You are the defense agent for team {cfg.team_id} in an Attack/Defense CTF
-running FAUST CTF 2023 `jokes`.
+running the `jokes` service.
 
 Goal: stop attackers from reading other users' hidden (`draft` /
 `under_review`) jokes, WITHOUT breaking legitimate use. The CHECKER
