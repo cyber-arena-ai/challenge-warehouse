@@ -24,6 +24,9 @@ chmod -R a+rX "${SRC}"
 # --- Respawn the daemon ------------------------------------------------------
 pkill -f 'EightBitOracle.jar' || true
 for _ in $(seq 1 20); do pgrep -f 'EightBitOracle.jar' >/dev/null || break; sleep 0.2; done
+# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
+# drag the restart past the readiness window — hard-kill after the grace.
+pkill -9 -f 'EightBitOracle.jar' 2>/dev/null || true
 
 mkdir -p "$(dirname "${LOG}")"
 # cwd = ${SRC} so the relative Class-Path in the manifest resolves the jars.

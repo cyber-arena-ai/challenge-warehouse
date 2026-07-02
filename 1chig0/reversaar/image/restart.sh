@@ -34,6 +34,10 @@ pkill -f 'fcgiwrap' || true
 pkill -x 'spawn-fcgi' || true
 nginx -s stop 2>/dev/null || true
 for _ in $(seq 1 20); do pgrep -f 'fcgiwrap' >/dev/null || break; sleep 0.2; done
+# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
+# drag the restart past the readiness window — hard-kill after the grace.
+pkill -9 -f 'fcgiwrap' 2>/dev/null || true
+pkill -9 -x 'spawn-fcgi' 2>/dev/null || true
 rm -f "$SOCK"
 
 # spawn-fcgi runs fcgiwrap, which exec()s the CGI per request with cwd=/home/reversaar

@@ -15,6 +15,9 @@ PYTHONPATH="${SRC_ROOT}" python3 -c "import pyload.webui.app.blueprints.cnl_blue
 
 pkill -f "pyload" 2>/dev/null || true
 sleep 1
+# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
+# drag the restart past the readiness window — hard-kill after the grace.
+pkill -9 -f 'pyload' 2>/dev/null || true
 
 chown -R "${SRV_USER}:${SRV_USER}" "${DATA}"
 mkdir -p /tmp/pyLoad && chown "${SRV_USER}:${SRV_USER}" /tmp/pyLoad

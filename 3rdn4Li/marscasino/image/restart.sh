@@ -4,6 +4,9 @@ SRC="/srv/challenge/marscasino/app"; LOG="/var/log/marscasino.log"; PORT=7777
 /opt/venv/bin/python -m py_compile "${SRC}/app.py"
 pkill -f 'gunicorn' || true
 for _ in $(seq 1 20); do pgrep -f gunicorn >/dev/null || break; sleep 0.2; done
+# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
+# drag the restart past the readiness window — hard-kill after the grace.
+pkill -9 -f 'gunicorn' 2>/dev/null || true
 mkdir -p "$(dirname "${LOG}")"
 runuser -u arena_agent -- /opt/venv/bin/gunicorn --chdir "${SRC}" --bind "0.0.0.0:${PORT}" --workers 1 \
     --capture-output --log-level info app:app > "${LOG}" 2>&1 &
