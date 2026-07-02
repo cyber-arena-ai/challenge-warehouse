@@ -26,6 +26,9 @@ for _ in $(seq 1 20); do
     pgrep -f gunicorn >/dev/null || break
     sleep 0.2
 done
+# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
+# drag the restart past the readiness window — hard-kill after the grace.
+pkill -9 -f 'gunicorn' 2>/dev/null || true
 
 mkdir -p "$(dirname "${LOG}")"
 # Single worker: a per-team vulbox is low-traffic and the SQLite backend

@@ -26,6 +26,10 @@ PYTHONPATH="${SRC_ROOT}" python3 -c "import mlflow.server.handlers"
 pkill -f "gunicorn" 2>/dev/null || true
 pkill -f "mlflow server" 2>/dev/null || true
 sleep 0.5
+# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
+# drag the restart past the readiness window — hard-kill after the grace.
+pkill -9 -f 'gunicorn' 2>/dev/null || true
+pkill -9 -f 'mlflow server' 2>/dev/null || true
 
 # 3. Respawn as the runtime user with the PYTHONPATH shadow in place.
 mkdir -p "${DATA_DIR}/artifacts"

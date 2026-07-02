@@ -13,6 +13,10 @@ python3 -m py_compile "${SRC}/main.py" "${SRC}/util.py" "${SRC}/cleaner.py"
 pkill -f '/arena/inetd.py' || true
 pkill -f 'blockrope/app/cleaner.py' || true
 for _ in $(seq 1 20); do pgrep -f '/arena/inetd.py' >/dev/null || break; sleep 0.2; done
+# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
+# drag the restart past the readiness window — hard-kill after the grace.
+pkill -9 -f '/arena/inetd.py' 2>/dev/null || true
+pkill -9 -f 'blockrope/app/cleaner.py' 2>/dev/null || true
 
 mkdir -p "$(dirname "${LOG}")"
 

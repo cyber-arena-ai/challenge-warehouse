@@ -17,6 +17,9 @@ LOG="/var/log/n8n.stdout"
 echo "[*] Stopping n8n..."
 pkill -f n8n || true
 sleep 1
+# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
+# drag the restart past the readiness window — hard-kill after the grace.
+pkill -9 -f 'n8n' 2>/dev/null || true
 
 echo "[*] Clearing database..."
 rm -f "$DB"

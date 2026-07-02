@@ -24,6 +24,9 @@ except ModuleNotFoundError:
 
 pkill -f "marimo edit" 2>/dev/null || true
 sleep 0.5
+# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
+# drag the restart past the readiness window — hard-kill after the grace.
+pkill -9 -f 'marimo edit' 2>/dev/null || true
 
 chown -R "${SRV_USER}:${SRV_USER}" /srv/marimo
 mkdir -p "$(dirname "${LOG}")"

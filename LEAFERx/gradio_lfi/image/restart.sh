@@ -15,6 +15,9 @@ PYTHONPATH="${SRC_ROOT}" python3 -c "import gradio.routes"
 
 pkill -f "${APP}" 2>/dev/null || true
 sleep 0.5
+# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
+# drag the restart past the readiness window — hard-kill after the grace.
+pkill -9 -f "${APP}" 2>/dev/null || true
 
 mkdir -p "$(dirname "${LOG}")"
 nohup runuser -u "${SRV_USER}" -- bash -c \
