@@ -21,11 +21,13 @@ import hmac
 import json
 import logging
 
-import nclib
-
 from challenges.interface import FlagHandler, VulboxTarget
 
-from . import _client, _net
+# `nclib` and the raw-socket client (`_client`, which itself imports nclib) are
+# only needed when actually planting/retrieving a flag — facility-side, where
+# nclib is installed. Import them lazily inside the methods so challenge
+# discovery and prompt rendering — which import this module only for the
+# FLAG_USER/FLAG_FILE constants — don't require nclib.
 
 log = logging.getLogger(__name__)
 
@@ -62,6 +64,10 @@ class RceaasFlagHandler(FlagHandler):
         return ("service",)
 
     def plant(self, target: VulboxTarget, flag: str) -> str:
+        import nclib
+
+        from . import _client, _net
+
         ip = _net.resolve(target)
         conn = _client.connect(ip)
         if conn is None:
@@ -79,6 +85,10 @@ class RceaasFlagHandler(FlagHandler):
         return _pack({"flagid": FLAG_USER, "flag": flag})
 
     def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
+        import nclib
+
+        from . import _client, _net
+
         st = _unpack(handle)
         if st is None:
             return None
