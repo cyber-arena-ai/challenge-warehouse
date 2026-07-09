@@ -56,7 +56,7 @@ what yields the flag.
 - `_PROMPT_MODULES["btx"] = "challenges.btx.prompts"`
 
 Also ensure `nclib` is in `requirements.txt` (shared by the socket-based
-handlers; already present for blockrope/rceaas). No `_INITIAL_START` entry is
+handlers; already present for rceaas). No `_INITIAL_START` entry is
 needed: the entrypoint runs `/arena/restart.sh` on boot, which compiles + spawns
 the service before sshd takes over.
 

@@ -58,7 +58,7 @@ auth matches the DB user of the same name (upstream design).
 - `_PROMPT_MODULES["8-bit-oracle"] = "challenges.eight_bit_oracle.prompts"`
 
 Also ensure `nclib` is in `requirements.txt` (shared by the socket-based
-handlers; already present for rceaas/blockrope).
+handlers; already present for rceaas).
 
 No `_INITIAL_START` entry is needed: the image entrypoint starts MariaDB and then
 runs `/arena/restart.sh`, which compiles + spawns the service before sshd takes
