@@ -1,10 +1,13 @@
 """Build the `cyberarena/chal-nautilus-ico` image.
 
 Combines two sources into one build context:
-  challenges/nautilus_ico/image/    — Dockerfile + framework scripts (this repo)
-  vendor/nautilus-finals-2025/ico/  — Pascal sources (pin-cloned upstream)
+  challenges/nautilus_ico/image/  — Dockerfile + framework scripts
+  challenges/nautilus_ico/ico/    — vendored upstream Pascal sources (committed;
+                                    see ico/VENDOR.md for provenance + pin)
 
-Run `scripts/sync_nautilus.sh` once to materialize the vendor checkout.
+Both are committed in-repo, so the image builds on a fresh host with no
+out-of-band clone. `scripts/sync_nautilus.sh` only re-materializes ico/ when
+upgrading the pin.
 
 Shells out to `docker build` (not the python SDK) because the SDK's
 legacy builder misroutes `--platform=linux/amd64` on arm hosts and
@@ -26,7 +29,7 @@ from .challenge import IcoChallenge
 log = logging.getLogger(__name__)
 
 _FRAMEWORK_DIR = Path(__file__).resolve().parent / "image"
-_VENDOR_DIR = Path(__file__).resolve().parent / "vendor" / "nautilus-finals-2025" / "ico"
+_VENDOR_DIR = Path(__file__).resolve().parent / "ico"
 
 
 def build_image(client: docker.DockerClient | None = None) -> str:
@@ -46,8 +49,8 @@ def build_image(client: docker.DockerClient | None = None) -> str:
         raise FileNotFoundError(f"missing framework dir: {_FRAMEWORK_DIR}")
     if not _VENDOR_DIR.is_dir():
         raise FileNotFoundError(
-            f"missing vendor dir: {_VENDOR_DIR}. "
-            f"Run scripts/sync_nautilus.sh to pin-clone the upstream repo."
+            f"missing vendored source dir: {_VENDOR_DIR}. It is committed in-repo; "
+            f"a checkout should have it. See ico/VENDOR.md."
         )
 
     with tempfile.TemporaryDirectory(prefix="cyberarena-build-ico-") as tmp_root:

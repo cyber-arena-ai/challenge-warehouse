@@ -1,15 +1,12 @@
 """IcoChallenge — composition root for nautilus-institute/finals-2025 :: ico.
 
-Image is built from `image/` + the pin-cloned vendor source at
-`vendor/nautilus-finals-2025/ico/`. Image tag is
-`cyberarena/chal-nautilus-ico:<pin>` where `<pin>` is the short SHA of
-the vendor checkout.
+Image is built from `image/` + the committed, vendored upstream source at
+`ico/` (see `ico/VENDOR.md`). Image tag is `cyberarena/chal-nautilus-ico:<pin>`
+where `<pin>` is `_VENDOR_PIN`, the short SHA of the vendored upstream commit.
 """
 
 from __future__ import annotations
 
-import logging
-import subprocess
 from functools import cached_property
 from pathlib import Path
 
@@ -24,29 +21,12 @@ from challenges.interface import (
 )
 
 
-log = logging.getLogger(__name__)
-
-_VENDOR_DIR = Path(__file__).resolve().parent / "vendor" / "nautilus-finals-2025"
 _BUILD_CONTEXT = Path(__file__).resolve().parent / "image"
 
-
-def _read_pin() -> str:
-    """Short SHA of the vendor checkout; `"unpinned"` if unavailable.
-
-    Docker layer cache is content-addressed, so worst case is over-pulling.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--short=12", "HEAD"],
-            cwd=_VENDOR_DIR,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return result.stdout.strip()
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        log.warning("nautilus-ico: could not read vendor pin from %s: %s", _VENDOR_DIR, e)
-        return "unpinned"
+# Short SHA of the upstream commit the `ico/` source is vendored from. Committed
+# (not read from a live checkout) so the image tag is deterministic on any host.
+# Bump this in the SAME commit whenever scripts/sync_nautilus.sh re-vendors ico/.
+_VENDOR_PIN = "366520c0cc43"
 
 
 _DOCS = ChallengeDocs(
@@ -73,7 +53,7 @@ class IcoChallenge(RestartScriptInitialStart, Challenge):
     @cached_property
     def vulbox(self) -> VulboxImage:
         return VulboxImage(
-            reference=f"cyberarena/chal-nautilus-ico:{_read_pin()}",
+            reference=f"cyberarena/chal-nautilus-ico:{_VENDOR_PIN}",
             exposed_ports={"service": 4265},
             build_context=str(_BUILD_CONTEXT),
         )
