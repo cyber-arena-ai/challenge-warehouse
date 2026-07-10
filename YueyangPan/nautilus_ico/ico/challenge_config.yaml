@@ -1,0 +1,10 @@
+---
+# Where the flag will be mounted into your container
+flag_path: "/flag"
+
+# Port which your service expects to listen on, this will be forwarded to the teams
+listen_port: 4265
+
+# Setting this will enable a simple seccomp filter https://github.com/The-Nautilus-Institute/libkrun/blob/main/init/init.c#L74
+# It is designed to make it harder to enable seccomp and a few simple superman defs
+use_naut_seccomp: true
