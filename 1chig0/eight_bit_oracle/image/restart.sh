@@ -13,10 +13,21 @@ PORT=17280
 # --- Compile gate: recompile classes + repackage the jar from edited source --
 # Every SQLDriver dep is local under ${PROJ}/SQLDriver, so this never touches
 # the network; a source error fails here and fails the restart.
-rm -rf "${PROJ}/build"
-mkdir -p "${PROJ}/build"
-( cd "${PROJ}" && javac -cp "SQLDriver/*" -sourcepath . -d build src/*.java )
-( cd "${PROJ}/build" && jar cfm "${JAR}" "${PROJ}/oracle.mf" *.class )
+#
+# SKIP_COMPILE (set by entrypoint on the INITIAL boot): the jar is already
+# pre-built at image-build time, so skip javac entirely. Recompiling on every
+# boot is a ~2s CPU spike per container that, multiplied across a concurrent
+# batch deploy, pushed the service past the round-0 flag-plant window. Only a
+# defender rebuild (MCP restart_service, no SKIP_COMPILE) needs to recompile.
+if [ -z "${SKIP_COMPILE:-}" ]; then
+    rm -rf "${PROJ}/build"
+    mkdir -p "${PROJ}/build"
+    ( cd "${PROJ}" && javac -cp "SQLDriver/*" -sourcepath . -d build src/*.java )
+    ( cd "${PROJ}/build" && jar cfm "${JAR}" "${PROJ}/oracle.mf" *.class )
+elif [ ! -f "${JAR}" ]; then
+    echo "restart.sh: SKIP_COMPILE set but ${JAR} missing" >&2
+    exit 1
+fi
 # Keep the runtime jars next to the app jar (manifest Class-Path is relative).
 cp "${PROJ}"/SQLDriver/*.jar "${SRC}/" 2>/dev/null || true
 chmod -R a+rX "${SRC}"

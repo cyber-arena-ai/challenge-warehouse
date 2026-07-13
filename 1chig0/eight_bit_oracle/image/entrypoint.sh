@@ -23,7 +23,10 @@ cp -a /opt/challenge_src/8-bit-oracle/app/. /srv/challenge/8-bit-oracle/app/
 chown -R arena_agent:arena_agent /srv/challenge/8-bit-oracle
 chmod -R u+w /srv/challenge/8-bit-oracle
 
-# --- Compile + spawn the service --------------------------------------------
-/arena/restart.sh || echo "entrypoint: initial start failed (see /var/log/8-bit-oracle.log)" >&2
+# --- Spawn the service (pre-built jar; no javac on the hot boot path) --------
+# The jar is compiled at image-build time, so the initial start skips javac
+# (SKIP_COMPILE=1) to stay fast + CPU-light under concurrent batch deploys.
+# Defender rebuilds go through /arena/restart.sh WITHOUT SKIP_COMPILE (recompiles).
+SKIP_COMPILE=1 /arena/restart.sh || echo "entrypoint: initial start failed (see /var/log/8-bit-oracle.log)" >&2
 
 exec /usr/sbin/sshd -D -e
