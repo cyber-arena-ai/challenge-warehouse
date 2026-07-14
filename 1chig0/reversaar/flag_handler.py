@@ -24,7 +24,7 @@ can't intercept keeps planting independent of agent-writable credential state,
 while reusing the service's own reverse-on-store round-trip (no fragile
 byte-format replication). The per-box secret_key rotation that stops the *attack*
 does not affect this login-based flow (login/store/get all use whatever key the
-persisted `data/secret_key` currently holds, consistently within one op).
+persisted `secret_key` file currently holds, consistently within one op).
 """
 from __future__ import annotations
 
