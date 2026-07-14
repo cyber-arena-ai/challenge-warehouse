@@ -14,7 +14,12 @@
 
 #define OBF_MARKER
 
-#define SECRET_KEY_PATH ("./data/secret_key")
+// Keep the box secret_key OUT of the web-served tree. The CGI cwd is
+// /home/reversaar; data/files/ under it is exposed via nginx `alias`, so a key
+// under ./data/ sits one dir up from served files and is one misconfig away from
+// disclosure. ./secret_key resolves to /home/reversaar/secret_key — a sibling of
+// both data/ and web/ (nginx `root` is /home/reversaar/web), served by nothing.
+#define SECRET_KEY_PATH ("./secret_key")
 #define SECRET_KEY_LEN SHA256_INNER_BLOCK_SIZE
 BYTE SECRET_KEY[SECRET_KEY_LEN] = {0};
 __attribute__ ((constructor))
