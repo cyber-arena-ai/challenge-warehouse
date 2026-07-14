@@ -28,7 +28,7 @@ import hmac
 import json
 import logging
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 from ._const import FLAG_USER  # public — named in the attack prompt
 
@@ -65,7 +65,7 @@ def _unpack(handle: str) -> dict | None:
         return None
 
 
-class DeutschesFlugzeugFlagHandler(FlagHandler):
+class DeutschesFlugzeugFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "deutsches-flugzeug-flag-handler"
@@ -76,7 +76,7 @@ class DeutschesFlugzeugFlagHandler(FlagHandler):
         # this handler's concern (attack agents talk to the service themselves).
         return ()
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         exec_in = target.meta["exec_in_container"]
         pw = _flag_password(target.host)
         marker = "DF-" + hashlib.sha256(flag.encode()).hexdigest()[:16]

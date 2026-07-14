@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import shlex
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ JAIL_DIR = f"/srv/challenge/rceaas/app/jails/{FLAG_USER}"
 FLAG_PATH = f"{JAIL_DIR}/{FLAG_FILE}"
 
 
-class RceaasFlagHandler(FlagHandler):
+class RceaasFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "rceaas-flag-handler"
@@ -46,7 +46,7 @@ class RceaasFlagHandler(FlagHandler):
         # concern (attack agents talk to the service themselves).
         return ()
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         """Write `flag` (no trailing newline) directly into vault's jail file.
 
         Creates the jail dir defensively (a fresh container has no jails/ yet)

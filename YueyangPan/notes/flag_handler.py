@@ -6,10 +6,10 @@ regardless of cross-team network state.
 
 from __future__ import annotations
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 
-class NotesFlagHandler(FlagHandler):
+class NotesFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "notes-flag-handler"
@@ -18,7 +18,7 @@ class NotesFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         """`PUT <flag>` — daemon replies `OK <id>`. Returns `<id>`."""
         exec_in = target.meta["exec_in_container"]
         port = target.ports["service"]

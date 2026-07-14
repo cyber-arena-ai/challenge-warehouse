@@ -14,12 +14,12 @@ Both methods use docker exec (exec_in_container); no port access needed.
 
 from __future__ import annotations
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 APP_INI_PATH = "/etc/nginx-ui/app.ini"
 
 
-class NginxBackupFlagHandler(FlagHandler):
+class NginxBackupFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "nginx-backup-flag-handler"
@@ -28,7 +28,7 @@ class NginxBackupFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ()
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         """Insert or replace FlagToken in app.ini. Returns the file path."""
         exec_in = target.meta["exec_in_container"]
         py = "\n".join([

@@ -11,7 +11,7 @@ import base64
 import json
 import logging
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 from . import _client, _net
 
@@ -30,7 +30,7 @@ def _unpack(handle: str) -> dict | None:
         return None
 
 
-class TreasuryFlagHandler(FlagHandler):
+class TreasuryFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "faust-treasury-flag-handler"
@@ -39,7 +39,7 @@ class TreasuryFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         ip = _net.resolve(target)
         key = _client.generate_random_string(60)
         try:

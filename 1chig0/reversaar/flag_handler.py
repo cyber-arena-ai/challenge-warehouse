@@ -36,7 +36,7 @@ import logging
 
 import httpx
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 from . import _client, _net
 
@@ -103,7 +103,7 @@ def _unpack(handle: str) -> dict | None:
         return None
 
 
-class ReversaarFlagHandler(FlagHandler):
+class ReversaarFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "reversaar-flag-handler"
@@ -112,7 +112,7 @@ class ReversaarFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         ip = _net.resolve(target)
         pw = _flag_password(target.host)
         # Re-assert vault's credential out-of-band before the service login (so a
