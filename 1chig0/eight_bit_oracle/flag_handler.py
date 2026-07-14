@@ -81,3 +81,11 @@ class EightBitOracleFlagHandler(SingleFlagHandler):
             return None
         finally:
             conn.close()
+
+    # No flag_id() hook: the review row's id is a per-round DB auto-increment with
+    # no stable/coarse public identity to surface (reviews have no owner — the
+    # table is (id, review_text, public_key)), and the service's own `LIST`
+    # command already lets an attacker enumerate review ids. So locating the flag
+    # review is left as part of the challenge rather than handed over via
+    # get_attack_targets. See flag_id notes on the other 1chig0 challenges, which
+    # ARE victim-keyed to a fixed public identity.

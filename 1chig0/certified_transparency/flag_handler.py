@@ -1,11 +1,13 @@
 """FlagHandler for certified-transparency.
 
-Designed for THIS arena's rules: the framework hands the attacker only the
-opponent's host:port — there is no flag-id channel. The upstream service's bug
-is BLIND (the STH-hash-collision forge recovers any entry's `data_public`
-without knowing its owner), so it fits directly: `plant` writes the flag into a
-normal log entry's `data_public` field through the service's own `add-entry`
-flow, and the attack recovers it via the crypto weakness (see `_exploit.py`).
+Designed for THIS arena's rules. The upstream service's bug is BLIND (the
+STH-hash-collision forge recovers any entry's `data_public` without knowing its
+owner), so it fits directly: `plant` writes the flag into a normal log entry's
+`data_public` field through the service's own `add-entry` flow, and the attack
+recovers it via the crypto weakness (see `_exploit.py`). The public target — the
+entry `name` (`FLAG_NAME`) filing the flag leaf — is surfaced to attackers two
+ways: it's named in the attack prompt, and `flag_id()` returns it for
+`get_attack_targets()`.
 
 `plant` (mirrors the upstream checker's store_flags):
   1. POST sign-entry for a fresh content_hash -> a SOT we own.
@@ -137,3 +139,14 @@ class CertifiedTransparencyFlagHandler(SingleFlagHandler):
             return None
         finally:
             api.close()
+
+    def flag_id(self, handle: str) -> str | None:
+        """Attack-info hook: the PUBLIC identifier the attacker targets — the
+        entry `name` under which the flag leaf is filed (`FLAG_NAME`). Fixed and
+        well-known (also named in the attack prompt), so it's constant; None only
+        for an unparseable handle.
+        """
+        st = _unpack(handle)
+        if st is None:
+            return None
+        return FLAG_NAME
