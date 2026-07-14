@@ -89,3 +89,10 @@ class FittyfitFlagHandler(SingleFlagHandler):
             except Exception:  # noqa: BLE001
                 continue
         return None
+
+    def flag_id(self, handle: str) -> str | None:
+        """Attack-info hook: the PUBLIC identifier the attacker targets — the
+        account name whose PDF holds this round's flag (already computed in
+        plant). None for an unparseable handle; never the flag value."""
+        st = _unpack(handle)
+        return st.get("flagid") if st else None
