@@ -137,3 +137,16 @@ class CertifiedTransparencyFlagHandler(SingleFlagHandler):
             return None
         finally:
             api.close()
+
+    def flag_id(self, handle: str) -> str | None:
+        """Attack-info hook: the PUBLIC identifier the attacker targets — the
+        owner NAME on the flag leaf (`FLAG_NAME`). It's the clean discriminator
+        against checker noise: the flag entry is the only one with this owner
+        (the checker uses "checker", our padding uses "registrant"), so offense
+        filters get-entries by it instead of brute-forcing (issue #20). None for
+        an unparseable handle.
+        """
+        st = _unpack(handle)
+        if st is None:
+            return None
+        return FLAG_NAME

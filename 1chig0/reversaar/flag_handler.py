@@ -153,3 +153,14 @@ class ReversaarFlagHandler(SingleFlagHandler):
         if flag.encode() in blob or flag.encode() in blob[::-1]:
             return flag
         return None
+
+    def flag_id(self, handle: str) -> str | None:
+        """Attack-info hook: the PUBLIC identifier the attacker targets — the
+        username (`vault`) whose stored array holds the flag. Surfacing it lets
+        offense aim the backdoor at the right user instead of brute-forcing a
+        checker-noise-flooded space (issue #19). None for an unparseable handle.
+        """
+        st = _unpack(handle)
+        if st is None:
+            return None
+        return st.get("user", FLAG_USER)
