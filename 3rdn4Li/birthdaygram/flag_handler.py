@@ -83,3 +83,10 @@ class BirthdaygramFlagHandler(SingleFlagHandler):
         except Exception:  # noqa: BLE001
             return None
         return st["flag"] if img_bytes == flag_image else None
+
+    def flag_id(self, handle: str) -> str | None:
+        """Attack-info hook: the PUBLIC identifier the attacker targets — the
+        username whose per-user image holds this round's flag (already computed
+        in plant). None for an unparseable handle; never the flag value."""
+        st = _unpack(handle)
+        return st.get("flagid") if st else None

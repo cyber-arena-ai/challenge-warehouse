@@ -64,3 +64,11 @@ class TreasuryFlagHandler(SingleFlagHandler):
         if not val:
             return None
         return st["flag"] if val.decode() == st["flag"] else None
+
+    def flag_id(self, handle: str) -> str | None:
+        """Attack-info hook: the PUBLIC identifier the attacker targets — the
+        flag-id key the `view` endpoint dispatches on to fetch this round's flag
+        (already computed in plant). None for an unparseable handle; never the
+        flag value."""
+        st = _unpack(handle)
+        return st.get("flagid") if st else None

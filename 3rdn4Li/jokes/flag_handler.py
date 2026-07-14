@@ -106,3 +106,12 @@ class JokesFlagHandler(SingleFlagHandler):
         if r.status_code != 200:
             return None
         return flag if flag in r.text else None
+
+    def flag_id(self, handle: str) -> str | None:
+        """Attack-info hook: the PUBLIC identifier the attacker targets — the
+        draft row id this round's flag was submitted under (already computed in
+        plant). None for an unparseable handle; never the flag value."""
+        try:
+            return json.loads(base64.b64decode(handle)).get("flagid")
+        except Exception:
+            return None
