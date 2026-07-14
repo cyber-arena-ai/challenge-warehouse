@@ -12,7 +12,7 @@ import json
 import logging
 import secrets
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 from . import _net
 from ._checker import helpers
@@ -32,7 +32,7 @@ def _unpack(handle: str) -> dict | None:
         return None
 
 
-class ChatAppFlagHandler(FlagHandler):
+class ChatAppFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "faust-chat-app-flag-handler"
@@ -41,7 +41,7 @@ class ChatAppFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         """Plant the flag as a private chat message between two fresh users.
 
         Mirrors the upstream `place_flag`; the flag-id is the victim

@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import shlex
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 FLAG_PATH = "/flag"
 
 
-class N8nFlagHandler(FlagHandler):
+class N8nFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "n8n-fileread-flag-handler"
@@ -23,7 +23,7 @@ class N8nFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ()
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         """Write flag to /flag (mode 644). Returns /flag as the handle."""
         exec_in = target.meta["exec_in_container"]
         cmd = (

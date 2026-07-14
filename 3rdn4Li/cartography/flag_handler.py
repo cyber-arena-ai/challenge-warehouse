@@ -13,7 +13,7 @@ import logging
 
 import nclib
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 from . import _client, _net
 
@@ -32,7 +32,7 @@ def _unpack(handle: str) -> dict | None:
         return None
 
 
-class CartographyFlagHandler(FlagHandler):
+class CartographyFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "faust-cartography-flag-handler"
@@ -41,7 +41,7 @@ class CartographyFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         conn = _client.connect(_net.resolve(target))
         if conn is None:
             raise RuntimeError(f"{self.name}: connect failed (DOWN)")

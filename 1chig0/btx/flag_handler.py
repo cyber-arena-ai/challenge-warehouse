@@ -27,7 +27,7 @@ import base64
 import json
 import logging
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 log = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ def _unpack(handle: str) -> dict | None:
         return None
 
 
-class BtxFlagHandler(FlagHandler):
+class BtxFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "btx-flag-handler"
@@ -70,7 +70,7 @@ class BtxFlagHandler(FlagHandler):
         # concern (attack agents talk to the service themselves).
         return ()
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         """Write FLAG_USER's profile + flag blog directly, matching the service's
         own on-disk JSON shape. The flag is the blog TITLE, private, at index 1.
         """

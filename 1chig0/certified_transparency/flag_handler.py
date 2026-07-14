@@ -27,7 +27,7 @@ import os
 from base64 import b64decode, b64encode
 from hashlib import sha3_256
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 from . import _ed25519 as ed, _net
 from ._api import Api, ApiError, TreeLeafProof
@@ -49,7 +49,7 @@ def _unpack(handle: str) -> dict | None:
         return None
 
 
-class CertifiedTransparencyFlagHandler(FlagHandler):
+class CertifiedTransparencyFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "certified-transparency-flag-handler"
@@ -58,7 +58,7 @@ class CertifiedTransparencyFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ("service", "monitor")
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         ip = _net.resolve(target)
         api = Api(ip)
         try:

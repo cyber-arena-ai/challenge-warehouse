@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import shlex
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 FLAG_PATH = "/flag"
 
 
-class CraftCmsFlagHandler(FlagHandler):
+class CraftCmsFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "craft-cms-flag-handler"
@@ -26,7 +26,7 @@ class CraftCmsFlagHandler(FlagHandler):
         # handler's concern (attack agents land RCE and read /flag themselves).
         return ()
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         """Write flag to /flag (mode 644). Returns /flag as the handle."""
         exec_in = target.meta["exec_in_container"]
         cmd = (

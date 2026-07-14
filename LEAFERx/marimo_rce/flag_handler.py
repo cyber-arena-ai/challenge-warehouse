@@ -17,14 +17,14 @@ from __future__ import annotations
 
 import shlex
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 FLAG_DIR = "/opt/secret"
 FLAG_PATH = f"{FLAG_DIR}/flag.txt"
 READFLAG = "/usr/local/bin/readflag"  # setuid helper; the RCE's only read path
 
 
-class MarimoFlagHandler(FlagHandler):
+class MarimoFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "marimo-rce-flag-handler"
@@ -33,7 +33,7 @@ class MarimoFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ()
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         exec_in = target.meta["exec_in_container"]
         q_flag, q_dir, q_path = shlex.quote(flag), shlex.quote(FLAG_DIR), shlex.quote(FLAG_PATH)
         cmd = (

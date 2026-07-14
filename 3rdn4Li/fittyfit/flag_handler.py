@@ -14,7 +14,7 @@ from uuid import uuid4
 
 import requests
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 from . import _client, _net
 
@@ -33,7 +33,7 @@ def _unpack(handle: str) -> dict | None:
         return None
 
 
-class FittyfitFlagHandler(FlagHandler):
+class FittyfitFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "faust-fittyfit-flag-handler"
@@ -42,7 +42,7 @@ class FittyfitFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         base = _net.base_url(target)
         session = requests.Session()
         if not _client.check_index(base):

@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import shlex
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 FLAG_PATH = "/flag"
 
 
-class IcoFlagHandler(FlagHandler):
+class IcoFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "nautilus-ico-flag-handler"
@@ -26,7 +26,7 @@ class IcoFlagHandler(FlagHandler):
         # handler's concern (attack agents talk to 4265 themselves).
         return ()
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         """Write `flag` (no trailing newline) to /flag, mode 644."""
         exec_in = target.meta["exec_in_container"]
         cmd = (

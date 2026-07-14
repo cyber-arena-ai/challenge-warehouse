@@ -13,7 +13,7 @@ import logging
 
 import requests
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 from . import _net
 from ._checker import utils
@@ -33,7 +33,7 @@ def _unpack(handle: str) -> dict | None:
         return None
 
 
-class BirthdaygramFlagHandler(FlagHandler):
+class BirthdaygramFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "faust-birthdaygram-flag-handler"
@@ -42,7 +42,7 @@ class BirthdaygramFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         c = _net.make_checker(target)
         session = requests.session()
         username = utils.generate_name()

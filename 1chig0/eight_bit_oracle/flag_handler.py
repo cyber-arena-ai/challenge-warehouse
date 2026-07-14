@@ -24,7 +24,7 @@ import logging
 
 import nclib
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 from . import _client, _net
 
@@ -43,7 +43,7 @@ def _unpack(handle: str) -> dict | None:
         return None
 
 
-class EightBitOracleFlagHandler(FlagHandler):
+class EightBitOracleFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "8-bit-oracle-flag-handler"
@@ -52,7 +52,7 @@ class EightBitOracleFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         ip = _net.resolve(target)
         conn = _client.connect(ip)
         if conn is None:

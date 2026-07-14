@@ -19,7 +19,7 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 
-from challenges.interface import FlagHandler, VulboxTarget
+from challenges.interface import SingleFlagHandler, VulboxTarget
 
 from . import _net
 
@@ -55,7 +55,7 @@ def _authed_session(base: str) -> requests.Session | None:
     return s
 
 
-class JokesFlagHandler(FlagHandler):
+class JokesFlagHandler(SingleFlagHandler):
     @property
     def name(self) -> str:
         return "faust-jokes-flag-handler"
@@ -64,7 +64,7 @@ class JokesFlagHandler(FlagHandler):
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
-    def plant(self, target: VulboxTarget, flag: str) -> str:
+    def plant_one(self, target: VulboxTarget, flag: str) -> str:
         base = _net.base_url(target)
         s = _authed_session(base)
         if s is None:
