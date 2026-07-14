@@ -1,12 +1,12 @@
 """FlagHandler for rceaas.
 
-Designed for THIS arena's rules, not saarCTF's. The framework hands the attacker
-only the opponent's host:port — there is no flag-id channel — and the jail escape
-yields arbitrary file *read* but no directory *listing*. So an attacker cannot
-discover a random jail name; the challenge pins flags to ONE fixed, public
-flag-store location: the file `flag` in user `vault`'s jail. Its name is part of
-the challenge spec (the attack prompt states it); reaching it still requires the
-`mklink`/`copy` traversal bug.
+Designed for THIS arena's rules, not saarCTF's. The jail escape yields arbitrary
+file *read* but no directory *listing*, so an attacker cannot discover a random
+jail name. The challenge therefore pins flags to ONE fixed, public flag-store
+location: the file `flag` in user `vault`'s jail. That target is surfaced to
+attackers two ways — it's named in the attack prompt, and `flag_id()` returns the
+public `vault` handle for `get_attack_targets()` — but reaching it still requires
+the `mklink`/`copy` traversal bug.
 
 Planting is OUT-OF-BAND: the flag is written directly into the jail file over the
 privileged docker-exec bridge (`target.meta["exec_in_container"]`, root inside
@@ -73,3 +73,11 @@ class RceaasFlagHandler(SingleFlagHandler):
         if rc != 0 or not out:
             return None
         return out.strip() or None
+
+    def flag_id(self, handle: str) -> str | None:
+        """Attack-info hook: the PUBLIC identifier the attacker targets — the
+        user whose jail (`./jails/<user>/flag`) holds the flag. Fixed and
+        well-known (`vault`), so this is constant; None only for a handle that
+        doesn't point at the expected flag location.
+        """
+        return FLAG_USER if handle == FLAG_PATH else None

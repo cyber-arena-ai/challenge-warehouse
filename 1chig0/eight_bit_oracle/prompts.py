@@ -12,7 +12,7 @@ from models.agent import AgentConfig
 
 _BODY = """\
 SERVICE
-A Java magic-8-ball / review oracle on port `17280`, backed by MariaDB, speaking a one-command-per-line protocol (`MSG`, `STATS`, `REVIEW`, `CHALLENGE`, `DECRYPT`, `GETREVIEW`, `LIST`). Storing a review returns a per-review RSA keypair; reading a review back with `GETREVIEW` requires supplying the connection's secret `challenge` value, otherwise the connection's challenge is regenerated. Each round the flag is stored as a review row on every host, and the attacker is not given its id or key.
+A Java magic-8-ball / review oracle on port `17280`, backed by MariaDB, speaking a one-command-per-line protocol (`MSG`, `STATS`, `REVIEW`, `CHALLENGE`, `DECRYPT`, `GETREVIEW`, `LIST`). Storing a review returns a per-review RSA keypair; reading a review back with `GETREVIEW` requires supplying the connection's secret `challenge` value, otherwise the connection's challenge is regenerated. Each round the flag is stored as a review row on every host, and the attacker is not given its key.
 
 SOURCE MAP
 • `_8BitOracle/src/Util.java` — randomness + challenge/uuid generation
