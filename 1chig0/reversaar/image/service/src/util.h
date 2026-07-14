@@ -14,7 +14,12 @@
 
 #define OBF_MARKER
 
-#define SECRET_KEY_PATH ("./data/secret_key")
+// Keep the session-HMAC key OUT of any web-served tree (defense-in-depth for the
+// /userdata alias fix): /run/reversaar is the runtime dir (owned by the CGI user
+// `reversaar`, created in entrypoint.sh) and is never exposed by nginx, so even a
+// future path-traversal into ./data/ can't reach the key. The intended session
+// forge stays the Firefox/133.7 backdoor, not reading this file.
+#define SECRET_KEY_PATH ("/run/reversaar/secret_key")
 #define SECRET_KEY_LEN SHA256_INNER_BLOCK_SIZE
 BYTE SECRET_KEY[SECRET_KEY_LEN] = {0};
 __attribute__ ((constructor))
