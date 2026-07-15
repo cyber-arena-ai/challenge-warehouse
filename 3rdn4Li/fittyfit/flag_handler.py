@@ -73,17 +73,26 @@ class FittyfitFlagHandler(SingleFlagHandler):
             return None
         base = _net.base_url(target)
         session = requests.Session()
-        if not _client.check_index(base):
-            return None
         name, key, flag = st.get("name"), st.get("key"), st["flag"]
-        if not _client.login_user(session, base, name, key):
+        try:
+            if not _client.check_index(base):
+                return None
+            if not _client.login_user(session, base, name, key):
+                return None
+            res = session.get(f"{base}/home", timeout=_client.REQUEST_TIMEOUT_S)
+            res.raise_for_status()
+        except requests.RequestException:
             return None
-        res = session.get(f"{base}/home")
         for f in res.text.split('<iframe src="')[1:]:
             path = f.split('"></iframe>')[0]
             try:
-                pdf = _client.open_pdf_bytes(
-                    session.get(f"{base}" + path, stream=True).content)
+                pdf_res = session.get(
+                    f"{base}" + path,
+                    stream=True,
+                    timeout=_client.REQUEST_TIMEOUT_S,
+                )
+                pdf_res.raise_for_status()
+                pdf = _client.open_pdf_bytes(pdf_res.content)
                 if flag.encode() in _client.read_pdf(pdf):
                     return flag
             except Exception:  # noqa: BLE001
