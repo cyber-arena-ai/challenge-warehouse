@@ -16,6 +16,7 @@ from fpdf import FPDF
 from pikepdf import Pdf
 
 log = logging.getLogger(__name__)
+REQUEST_TIMEOUT_S = 5
 
 
 def totp(key, interval=60):
@@ -32,7 +33,10 @@ def totp(key, interval=60):
 
 
 def check_index(baseurl) -> bool:
-    res = requests.get(f"{baseurl}/")
+    try:
+        res = requests.get(f"{baseurl}/", timeout=REQUEST_TIMEOUT_S)
+    except requests.RequestException:
+        return False
     return res.status_code == 200
 
 
@@ -48,7 +52,11 @@ def register_user(session, baseurl, username):
 
 def login_user(session, baseurl, username, key) -> bool:
     password = totp(key)
-    res = session.post(baseurl + "login", data={"name": username, "pass": password})
+    res = session.post(
+        baseurl + "login",
+        data={"name": username, "pass": password},
+        timeout=REQUEST_TIMEOUT_S,
+    )
     return res.status_code == 200 and "home" in res.url
 
 

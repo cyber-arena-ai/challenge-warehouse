@@ -90,12 +90,18 @@ class FittyfitFlagHandler(SingleFlagHandler):
             if not _client.login_user(session, base, name, key):
                 return FlagObservation(
                     ObservationStatus.ERROR, detail="login failed")
-            res = session.get(f"{base}/home")
+            res = session.get(f"{base}/home", timeout=_client.REQUEST_TIMEOUT_S)
+            res.raise_for_status()
             for f in res.text.split('<iframe src="')[1:]:
                 path = f.split('"></iframe>')[0]
                 try:
-                    pdf = _client.open_pdf_bytes(
-                        session.get(f"{base}" + path, stream=True).content)
+                    pdf_res = session.get(
+                        f"{base}" + path,
+                        stream=True,
+                        timeout=_client.REQUEST_TIMEOUT_S,
+                    )
+                    pdf_res.raise_for_status()
+                    pdf = _client.open_pdf_bytes(pdf_res.content)
                     if exp.encode() in _client.read_pdf(pdf):
                         return FlagObservation(ObservationStatus.PRESENT, value=exp)
                 except Exception:  # noqa: BLE001
