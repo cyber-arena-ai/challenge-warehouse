@@ -42,22 +42,33 @@ RUN cd /opt/challenge_src/8-bit-oracle/app/_8BitOracle \
 # offline, create the 8BitOracle unix_socket user + bitoracle DB + app tables,
 # and shut it down. At runtime entrypoint just starts mariadbd against this
 # pre-initialised datadir.
-RUN mkdir -p /run/mysqld && chown mysql:mysql /run/mysqld \
-    && mariadb-install-db --user=mysql --datadir=/var/lib/mysql --auth-root-authentication-method=normal >/dev/null \
-    && /usr/sbin/mariadbd --user=mysql --skip-networking & \
+# One RUN: install system tables, boot mariadbd (background), create the app
+# user+schema, VERIFY it, then cleanly shut down and `wait` so InnoDB flushes the
+# new `bitoracle` DB to /var/lib/mysql BEFORE the layer is committed. The prior
+# version put the shutdown in a SEPARATE RUN, so when the create-RUN ended Docker
+# killed the backgrounded mariadbd before it flushed → `bitoracle`/`8BitOracle`
+# were silently absent from the image and the service died "Could not connect to
+# database" at round-0 plant (the real, deeper half of issue #25). `set -e` + the
+# verification SELECT make any future breakage fail the build loudly.
+RUN set -eu; \
+    mkdir -p /run/mysqld && chown mysql:mysql /run/mysqld; \
+    mariadb-install-db --user=mysql --datadir=/var/lib/mysql --auth-root-authentication-method=normal >/dev/null; \
+    /usr/sbin/mariadbd --user=mysql --skip-networking & \
+    MPID=$!; \
     for i in $(seq 1 60); do [ -S /run/mysqld/mysqld.sock ] && break; sleep 0.5; done; \
-    mariadb <<'SQL'
-CREATE USER IF NOT EXISTS '8BitOracle'@'localhost' IDENTIFIED VIA unix_socket;
-CREATE USER IF NOT EXISTS '8BitOracle' IDENTIFIED VIA unix_socket;
-CREATE DATABASE IF NOT EXISTS bitoracle;
-GRANT ALL ON bitoracle.* TO '8BitOracle'@'localhost';
-GRANT ALL ON bitoracle.* TO '8BitOracle';
-USE bitoracle;
-CREATE TABLE IF NOT EXISTS reviews (id integer PRIMARY KEY AUTO_INCREMENT, review_text text NOT NULL, public_key text NOT NULL);
-CREATE TABLE IF NOT EXISTS states (id integer PRIMARY KEY AUTO_INCREMENT, state text NOT NULL);
-SQL
-RUN mysqladmin shutdown 2>/dev/null || mariadb-admin shutdown 2>/dev/null || true; \
-    for i in $(seq 1 60); do [ -S /run/mysqld/mysqld.sock ] || break; sleep 0.5; done; true
+    printf '%s\n' \
+      "CREATE USER IF NOT EXISTS '8BitOracle'@'localhost' IDENTIFIED VIA unix_socket;" \
+      "CREATE USER IF NOT EXISTS '8BitOracle' IDENTIFIED VIA unix_socket;" \
+      "CREATE DATABASE IF NOT EXISTS bitoracle;" \
+      "GRANT ALL ON bitoracle.* TO '8BitOracle'@'localhost';" \
+      "GRANT ALL ON bitoracle.* TO '8BitOracle';" \
+      "USE bitoracle;" \
+      "CREATE TABLE IF NOT EXISTS reviews (id integer PRIMARY KEY AUTO_INCREMENT, review_text text NOT NULL, public_key text NOT NULL);" \
+      "CREATE TABLE IF NOT EXISTS states (id integer PRIMARY KEY AUTO_INCREMENT, state text NOT NULL);" \
+      | mariadb; \
+    mariadb -N -e "SELECT 'bitoracle-init-verified', COUNT(*) FROM bitoracle.reviews"; \
+    ( mysqladmin shutdown 2>/dev/null || mariadb-admin shutdown 2>/dev/null || kill "$MPID" ); \
+    wait "$MPID" 2>/dev/null || true
 
 COPY restart.sh /arena/restart.sh
 COPY checker.sh /arena/checker.sh
