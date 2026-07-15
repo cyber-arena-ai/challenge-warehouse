@@ -65,7 +65,7 @@ class FittyfitFlagHandler(SingleFlagHandler):
         }
         if not _client.generate_file(session, base, data):
             raise RuntimeError(f"{self.name}: generate failed")
-        return _pack({"flagid": name, "name": name, "key": key, "flag": flag})
+        return _pack({"flag_id": name, "name": name, "key": key, "flag": flag})
 
     def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
         st = _unpack(handle)
@@ -95,4 +95,4 @@ class FittyfitFlagHandler(SingleFlagHandler):
         account name whose PDF holds this round's flag (already computed in
         plant). None for an unparseable handle; never the flag value."""
         st = _unpack(handle)
-        return st.get("flagid") if st else None
+        return st.get("flag_id") if st else None

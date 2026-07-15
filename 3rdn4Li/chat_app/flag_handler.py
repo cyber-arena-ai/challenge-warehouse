@@ -71,7 +71,7 @@ class ChatAppFlagHandler(SingleFlagHandler):
 
         # flag-id (= username) + per-tick state -> handle (was store_state)
         return _pack({
-            "flagid": username,
+            "flag_id": username,
             "username": username,
             "password": password,
             "chat_id": chat_id,
@@ -106,4 +106,4 @@ class ChatAppFlagHandler(SingleFlagHandler):
         (already computed in plant). None for an unparseable handle; never the
         flag value."""
         st = _unpack(handle)
-        return st.get("flagid") if st else None
+        return st.get("flag_id") if st else None

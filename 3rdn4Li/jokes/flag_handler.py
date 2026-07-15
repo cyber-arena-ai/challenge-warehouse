@@ -84,7 +84,7 @@ class JokesFlagHandler(SingleFlagHandler):
         finally:
             s.close()
         return base64.b64encode(json.dumps(
-            {"flagid": flag_id, "flag": flag}).encode()).decode("ascii")
+            {"flag_id": flag_id, "flag": flag}).encode()).decode("ascii")
 
     def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
         try:
@@ -112,6 +112,6 @@ class JokesFlagHandler(SingleFlagHandler):
         draft row id this round's flag was submitted under (already computed in
         plant). None for an unparseable handle; never the flag value."""
         try:
-            return json.loads(base64.b64decode(handle)).get("flagid")
+            return json.loads(base64.b64decode(handle)).get("flag_id")
         except Exception:
             return None

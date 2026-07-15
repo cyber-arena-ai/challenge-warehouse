@@ -55,7 +55,7 @@ class BirthdaygramFlagHandler(SingleFlagHandler):
         except Exception as e:  # noqa: BLE001
             raise RuntimeError(f"{self.name}: plant failed: {e}") from e
         return _pack({
-            "flagid": username,
+            "flag_id": username,
             "username": username,
             "password": password,
             "flag": flag,
@@ -89,4 +89,4 @@ class BirthdaygramFlagHandler(SingleFlagHandler):
         username whose per-user image holds this round's flag (already computed
         in plant). None for an unparseable handle; never the flag value."""
         st = _unpack(handle)
-        return st.get("flagid") if st else None
+        return st.get("flag_id") if st else None

@@ -54,7 +54,7 @@ class MarscasinoFlagHandler(SingleFlagHandler):
         resp = _client.home(s, base, item=flag, item_cost=random.randint(4000, 8000))
         if resp.status_code != 200:
             raise RuntimeError(f"{self.name}: home(item) failed {resp.status_code}")
-        return _pack({"flagid": username, "username": username,
+        return _pack({"flag_id": username, "username": username,
                       "password": password, "flag": flag})
 
     def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
@@ -77,4 +77,4 @@ class MarscasinoFlagHandler(SingleFlagHandler):
         computed in plant). None for an unparseable handle; never the flag
         value."""
         st = _unpack(handle)
-        return st.get("flagid") if st else None
+        return st.get("flag_id") if st else None
