@@ -62,6 +62,17 @@ def home(session, baseurl, item=None, item_cost=None):
     return session.get(baseurl + "home")
 
 
+def buy(session, baseurl, seller):
+    return session.get(baseurl + "buy", params={"u": seller})
+
+
+def delete_account(session, baseurl, username, password):
+    return session.post(
+        baseurl + "delete-account",
+        data={"username": username, "password": password},
+    )
+
+
 def get_voucher(session, baseurl, bet):
     return session.post(baseurl + "game2", data={"bet": bet})
 
