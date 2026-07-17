@@ -53,17 +53,36 @@ class EightBitOracleFlagHandler(SingleFlagHandler):
         return ("service",)
 
     def plant_one(self, target: VulboxTarget, flag: str) -> str:
-        ip = _net.resolve(target)
-        conn = _client.connect(ip)
-        if conn is None:
-            raise RuntimeError(f"{self.name}: connect failed (DOWN)")
-        try:
-            rid, key = _client.review(conn, flag)
-        except (_client.ClientError, nclib.NetcatError, ValueError, UnicodeError) as e:
-            raise RuntimeError(f"{self.name}: plant failed: {e}") from e
-        finally:
-            conn.close()
-        return _pack({"id": rid, "key": key, "flag": flag})
+        # Plant OUT-OF-BAND: exec into prod and write the review straight into the
+        # MariaDB, replicating what the service's REVIEW does (generate an RSA
+        # keypair, store review_text + the X509 public key, keep the PKCS8 private
+        # key for retrieve). NEVER go through the live TCP service — planting must
+        # not depend on agent-writable state (issue #22): a defender that edits and
+        # crashes/patches its own service must NOT be able to stop its flag from
+        # being planted. openssl emits the exact encodings Java's getEncoded()
+        # uses (X509 SPKI / PKCS8), so the service's CHALLENGE/DECRYPT and retrieve
+        # still work against the planted row. The flag goes in as a `0x<hex>` literal
+        # so no value ever needs SQL/shell escaping.
+        exec_in = target.meta["exec_in_container"]
+        flag_hex = flag.encode().hex()
+        script = (
+            'set -e; '
+            'P=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2>/dev/null); '
+            'PRIV=$(printf %s "$P" | openssl pkcs8 -topk8 -nocrypt -outform DER 2>/dev/null | base64 -w0); '
+            'PUB=$(printf %s "$P" | openssl pkey -pubout -outform DER 2>/dev/null | base64 -w0); '
+            'RID=$(mariadb --socket=/run/mysqld/mysqld.sock -u root -N -e '
+            '"INSERT INTO bitoracle.reviews (review_text,public_key) VALUES '
+            f"(0x{flag_hex},'$PUB'); SELECT LAST_INSERT_ID();\"); "
+            'printf "%s:%s\\n" "$RID" "$PRIV"'
+        )
+        rc, out = exec_in(target.host, script)
+        if rc != 0:
+            raise RuntimeError(f"{self.name}: plant failed (exec rc={rc}): {str(out)[:200]}")
+        line = (str(out).strip().splitlines() or [""])[-1]
+        rid, _, key = line.partition(":")
+        if not rid.strip().isdigit() or not key.strip():
+            raise RuntimeError(f"{self.name}: plant failed: bad insert output {str(out)[:200]!r}")
+        return _pack({"id": rid.strip(), "key": key.strip(), "flag": flag})
 
     def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
         st = _unpack(handle)
