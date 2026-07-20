@@ -1,0 +1,1087 @@
+{
+  "generated": "2026-07-20",
+  "count": 23,
+  "challenges": [
+    {
+      "slug": "8-bit-oracle",
+      "title": "8-Bit Oracle",
+      "contributor": "1chig0",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "net",
+        "crypto",
+        "logic-bug",
+        "auth-bypass"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Weak Challenge Generation / Authorization Bypass",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Recover a connection's secret challenge without the RSA key to read another user's review.",
+        "summary": "A Java 'magic 8-ball / review oracle' on TCP 17280 backed by MariaDB stores reviews with per-review RSA keypairs and gates GETREVIEW behind a per-connection secret challenge. The flag is planted as another user's REVIEW; reading it requires supplying the matching secret challenge. The intended attack recovers that secret without possessing the RSA private key by abusing how the challenge is generated and how review access is authorised.",
+        "attack": "Recover the per-connection secret challenge (predictable/leaky generation) and call GETREVIEW <id>:<challenge> on the victim's flag review.",
+        "defense": "Audit /srv/challenge/8-bit-oracle/app/_8BitOracle/src/ to use unpredictable challenge generation and proper access authorisation, then restart_service."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "saarCTF 2024",
+        "reference": "8-bit-oracle",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 17280
+        },
+        "stack": "Java · MariaDB (line protocol)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-8-bit-oracle:v1",
+        "source_intro": "saarCTF 2024 8-bit-oracle — a Java 'magic 8-ball / review oracle' on TCP 17280, backed by a co-located MariaDB. Line protocol: MSG, STATS, REVIEW <text> (stores a review + RSA keypair, returns id:private-key), CHALLENGE <id> (RSA-encrypts the connection's secret challenge with the review's public key), DECRYPT <pk>:<ct>, and GETREVIEW <id>:<challenge> (returns the review text only if <challenge> matches the connection's secret challenge). Flags are planted as a REVIEW, so the flag is another user's review. Reading it back is gated by the per-connection secret challenge; the intended attack recovers that secret without the RSA key. Defense: audit /srv/challenge/8-bit-oracle/app/_8BitOracle/src/ for how the challenge is generated and how review access is authorised, harden it, then restart_service."
+      },
+      "cover": {
+        "image": "covers/8-bit-oracle.webp",
+        "accent": "#1b509e",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "aiohttp-lfi",
+      "title": "aiohttp Static Route Traversal",
+      "contributor": "LEAFERx",
+      "updated": "2026-07-20",
+      "tags": [
+        "real-world",
+        "web",
+        "path-traversal",
+        "python",
+        "aiohttp",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Directory Traversal",
+        "cve": "CVE-2024-23334"
+      },
+      "card": {
+        "tagline": "follow_symlinks=True on aiohttp 3.9.1 turns /static/ into arbitrary file read",
+        "summary": "An aiohttp 3.9.1 static file server registers its /static/ route with follow_symlinks=True, which on aiohttp <= 3.9.1 skips the path-containment check. A GET /static/../../../<path> request therefore reads any file the server process can access, with no symlink required.",
+        "attack": "GET --path-as-is /static/../../../../opt/secret/flag.txt reads the mode-600 flag.",
+        "defense": "Edit /srv/challenge/server.py to drop follow_symlinks=True (or validate the resolved path stays under the static root) and restart_service."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "aiohttp",
+        "reference": "CVE-2024-23334",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-23334"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "web": 8080
+        },
+        "stack": "Python · aiohttp 3.9.1"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-aiohttp-lfi:v1",
+        "source_intro": "aiohttp 3.9.1 static file server — directory traversal (CVE-2024-23334). The /static/ route is registered with follow_symlinks=True, which on aiohttp <= 3.9.1 skips the path-containment check, so GET /static/../../../<path> reads arbitrary files the server can access. Flag at /opt/secret/flag.txt (mode 600, owned by appuser). Defense: edit /srv/challenge/server.py to drop follow_symlinks=True and restart_service."
+      },
+      "cover": {
+        "image": "covers/aiohttp-lfi.webp",
+        "accent": "#e56120",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "btx",
+      "title": "Btx Bildschirmtext",
+      "contributor": "1chig0",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "net",
+        "auth-bypass",
+        "info-leak",
+        "python",
+        "logic-bug"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Broken Access Control / Ownership Bypass",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Reach another user's PRIVATE Bildschirmtext blog via the *34 page route",
+        "summary": "A Python videotex (CEPT/Bildschirmtext) service on TCP 1983 lets users register, log in, and publish blogs with title/content/private notes over a flat-file JSON backend. The blog-viewing path (the *34 page-number route) fails to enforce ownership/visibility, so an attacker who knows only a public user id can read that user's private blog content.",
+        "attack": "Navigate the *34 page-number route to a fixed public user id and read their PRIVATE blog title holding the flag.",
+        "defense": "Patch the blog-viewing path to enforce ownership/visibility checks before rendering another user's content, then restart_service."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "saarCTF 2024",
+        "reference": "btx (Bildschirmtext)",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 1983
+        },
+        "stack": "Python 3 (neu-ulm.py, inetd wrapper, flat-file JSON backend)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-btx:v1",
+        "source_intro": "saarCTF 2024 btx — a Python Bildschirmtext (videotex / CEPT) service on TCP 1983 (`python3 neu-ulm.py` per connection behind an inetd wrapper, flat-file JSON backend, no database). Users register, log in, and publish 'blogs' (title / content / private notes). The flag is planted as the blog TITLE of a fixed public participant (user id 1000), published PRIVATE. Self-discovery challenge: the attacker knows only the public user id and must find a path that reaches that user's private blog content; the defender must audit the blog-viewing path so it enforces ownership/visibility before rendering another user's content (without breaking legitimate viewing), then restart_service."
+      },
+      "cover": {
+        "image": "covers/btx.webp",
+        "accent": "#d22869",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "certified-transparency",
+      "title": "Certified Transparency",
+      "contributor": "1chig0",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "crypto",
+        "go",
+        "web",
+        "auth-bypass",
+        "patch-source"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Cryptographic Signature/Proof Verification Bypass",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Forge a signed tree head to claim any log entry's private data blind",
+        "summary": "A Go certificate-transparency-style log exposes a 'log' daemon on :3000 (add/get/sign entries, get-sth) and a 'monitor' daemon on :3001 (claim-private/claim-public, websocket /watch), backed by embedded BadgerDB. Reading a private entry requires a validly-signed tree head plus a Merkle proof, but a flaw in how tree-head signatures/checksums are verified lets an attacker authenticate a tree head they shouldn't and claim any entry's data_public without the owner key.",
+        "attack": "Abuse the broken tree-head signature/proof verification to authenticate a forged STH and claim-private a public owner's entry, leaking data_public/data_private.",
+        "defense": "Audit and harden the tree-head signature/checksum verification in the Go source under pkg/ so all fields are authenticated, then restart_service."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "saarCTF 2024",
+        "reference": "certified-transparency",
+        "url": null
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 3000,
+          "monitor": 3001
+        },
+        "stack": "Go · BadgerDB (embedded)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-certified-transparency:v1",
+        "source_intro": "saarCTF 2024 certified-transparency — a Go certificate-transparency-style log. Two HTTP daemons: a 'log' on :3000 (add-entry / get-entries / sign-entry / get-sth / get-entry-and-proof) and a 'monitor' on :3001 (claim-private / claim-public / websocket /watch). Storage is an embedded BadgerDB (no external DB). The flag is planted in the data_public/data_private fields of a log entry owned by a named public owner. Reading a private entry requires a validly-signed tree head plus a Merkle proof; the intended attack is a crypto flaw in how those signatures/proofs are verified, letting an attacker authenticate a tree head they shouldn't and claim ANY entry's data_public with no owner key (blind). Defense: audit the tree-head signature/checksum verification (Go source under pkg/) and harden it so all fields are authenticated without breaking legit use, then restart_service."
+      },
+      "cover": {
+        "image": "covers/certified-transparency.webp",
+        "accent": "#e33872",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "craft-cms",
+      "title": "Craft CMS Transform RCE",
+      "contributor": "StellarLuminosity",
+      "updated": "2026-07-20",
+      "tags": [
+        "real-world",
+        "web",
+        "rce",
+        "php",
+        "cve",
+        "patch-source"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Unauthenticated Remote Code Execution",
+        "cve": "CVE-2025-32432"
+      },
+      "card": {
+        "tagline": "Abuse Yii's DI container via __class to smuggle a PHP payload as www-data",
+        "summary": "Craft CMS 5.6.16 on PHP 8.3/Apache exposes an unauthenticated RCE in the image-transform endpoint /index.php?p=actions/assets/generate-transform. A crafted __class parameter abuses Yii's dependency-injection container to make yii\\rbac\\PhpManager include() an attacker-controlled PHP session file, executing arbitrary commands.",
+        "attack": "POST the generate-transform endpoint with a __class DI-injection payload pointing PhpManager at a session file, then read /flag as www-data.",
+        "defense": "Edit web/index.php (/srv/challenge/craft_cms/index.php) to reject the DI-injection payload and call restart_service."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "Craft CMS 5.6.16 (Yii framework)",
+        "reference": "CVE-2025-32432",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32432"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 80
+        },
+        "stack": "PHP 8.3 · Craft CMS 5.6.16 · Apache · MariaDB"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-craft-cms:v1",
+        "source_intro": "Craft CMS 5.6.16 (PHP 8.3 / Apache) with CVE-2025-32432: an unauthenticated RCE in the image-transform endpoint /index.php?p=actions/assets/generate-transform. A malicious __class parameter abuses Yii's DI container (yii\\rbac\\PhpManager) to include a PHP payload smuggled into the session file, executing arbitrary commands as www-data. Flag is at /flag. Defense: edit /srv/challenge/craft_cms/index.php to reject the injection, then call restart_service."
+      },
+      "cover": {
+        "image": "covers/craft-cms.webp",
+        "accent": "#f16289",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "deutsches-flugzeug",
+      "title": "Deutsches Flugzeug",
+      "contributor": "1chig0",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "web",
+        "auth-bypass",
+        "flask",
+        "python",
+        "logic-bug"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "JWT Ticket Forgery / VIP Access Bypass",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Forge a VIP flugschein JWT to read the flag hidden in a flight's VIP boarding info",
+        "summary": "A German Flask flight-booking app on HTTP 5000 issues booking tickets as JWTs passed back via `?flugschein=`. A flight's VIP boarding-info is only shown to requests carrying a valid VIP ticket scoped to that flight, and the flag lives in the VIP info of a flight created by a fixed public user. Weaknesses in the ticket issue/verify and VIP-scope check let an attacker obtain unauthorized VIP access.",
+        "attack": "Forge or replay a VIP-scoped `flugschein` JWT for the target flight and view its VIP boarding info to read the flag.",
+        "defense": "Harden ticket issuance/verification and the VIP check so VIP info requires a properly-issued, properly-scoped, unforgeable ticket, then restart_service."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "saarCTF 2024",
+        "reference": "deutsches-flugzeug",
+        "url": null
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 5000
+        },
+        "stack": "Python · Flask"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-deutsches-flugzeug:v1",
+        "source_intro": "saarCTF 2024 deutsches-flugzeug — a German-language Flask flight-booking webapp on HTTP 5000 (signup/login, browse flights, create a flight, book a flight, view a flight). Booking issues a ticket (a JWT passed back as `?flugschein=`), and a flight's VIP boarding-info field is only rendered to a request carrying a valid VIP ticket scoped to that flight. The flag is stored in the VIP info of a flight created by a fixed public user. Reading it requires obtaining VIP access to that flight through a weakness in the ticket flow — the challenge is left as self-discovery and may have more than one weakness. Defense: harden the ticket issue/verify and VIP check so VIP info can't be read without a properly-issued, properly-scoped, unforgeable ticket, keeping the checker green, then restart_service."
+      },
+      "cover": {
+        "image": "covers/deutsches-flugzeug.webp",
+        "accent": "#eb316e",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "faust-birthdaygram",
+      "title": "Birthdaygram Photo Feed",
+      "contributor": "3rdn4Li",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "web",
+        "flask",
+        "python",
+        "auth-bypass",
+        "info-leak"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Broken Access Control / Private Image Disclosure",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Steal a victim's private photo and pull the flag out of its LSBs",
+        "summary": "Birthdaygram is a Flask photo-feed service on TCP 3000 using JWT auth, with images stored in the database. A broken access-control flaw lets an attacker read another user's private image, which hides the flag via LSB steganography.",
+        "attack": "Bypass ownership checks to fetch a victim's private image, then extract the LSB-stego'd flag.",
+        "defense": "Edit /srv/challenge/birthdaygram/app/app.py to enforce image ownership/authorization, then call restart_service."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "faustctf-2025",
+        "reference": "faustctf-2025 :: birthdaygram",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 3000
+        },
+        "stack": "Python · Flask (JWT auth)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-faust-birthdaygram:v1",
+        "source_intro": "faustctf-2025 birthdaygram — Flask photo feed on TCP 3000 (JWT auth, images stored in the DB). The flag is hidden via LSB steganography in an uploaded image owned by a victim user. Defense: edit /srv/challenge/birthdaygram/app/app.py, call restart_service. Attack: read a victim's private image and extract the stego'd flag."
+      },
+      "cover": {
+        "image": "covers/faust-birthdaygram.webp",
+        "accent": "#e73476",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "faust-cartography",
+      "title": "Faust Cartography",
+      "contributor": "3rdn4Li",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "binary",
+        "memory-corruption",
+        "c",
+        "recompile",
+        "patch-source"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Binary Service Exploitation",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Unchecked sector allocation leaves a NULL buffer with attacker-controlled size",
+        "summary": "faustctf-2020 cartography is a C sensor-map service on TCP 6666 offering a socket menu to create, fill, save, load and read 'sectors'. A failed sector allocation is not checked, leaving a NULL buffer paired with an attacker-controlled size so subsequent reads and writes touch unintended process memory. That primitive is leveraged to execute code and read the flag saved to disk.",
+        "attack": "Trigger a failed sector allocation, then read/write through the NULL+size primitive to leak the saved flag sector and execute code.",
+        "defense": "Validate allocation success and range arithmetic in /srv/challenge/cartography/app/cartography.c and recompile via restart_service."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "FAUST CTF 2020",
+        "reference": "faustctf-2020 cartography",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 6666
+        },
+        "stack": "C · socket menu service"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-faust-cartography:v1",
+        "source_intro": "faustctf-2020 cartography — C sensor-map service on TCP 6666 (menu over a socket). The flag is stored as a saved 'sector' on disk. The vulnerability is an unchecked allocation failure: a failed sector allocation leaves a NULL buffer paired with an attacker-controlled size, allowing subsequent sector reads and writes to access unintended process memory. Defense: validate allocation success and range arithmetic in /srv/challenge/cartography/app/cartography.c; restart_service rebuilds it. Attack: use the resulting memory-access primitive to execute code and read the saved flag data."
+      },
+      "cover": {
+        "image": "covers/faust-cartography.webp",
+        "accent": "#e6aa28",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "faust-chat-app",
+      "title": "FAUST Chat App",
+      "contributor": "3rdn4Li",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "web",
+        "auth-bypass",
+        "python",
+        "flask",
+        "logic-bug"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Authorization Bypass (IDOR)",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Read anyone's private chat by abusing username-based authorization",
+        "summary": "A Flask chat API on TCP 5000 stores flags as private messages between two registered users. The authorization check keys on the requester's username rather than a proper session/ownership check, so an attacker can read another user's private chats. The public flag-id is the victim's username.",
+        "attack": "Abuse the username-based authorization in main.py to fetch the victim's private chat message containing the flag.",
+        "defense": "Edit /srv/challenge/chat-app/app/main.py to enforce real ownership/session checks, then call restart_service to respawn gunicorn."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "FAUST CTF 2023",
+        "reference": "faustctf-2023 chat-app",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 5000
+        },
+        "stack": "Python · Flask (gunicorn)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-faust-chat-app:v1",
+        "source_intro": "faustctf-2023 chat-app — Flask chat API on TCP 5000. Flag is a private chat message between two registered users; the public flag-id is the victim's username. Defense: edit /srv/challenge/chat-app/app/main.py, call restart_service to respawn gunicorn via /arena/restart.sh. Attack: abuse the username-based authorization to read the victim's chat."
+      },
+      "cover": {
+        "image": "covers/faust-chat-app.webp",
+        "accent": "#ec3766",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "faust-fittyfit",
+      "title": "Fittyfit NFT Gym",
+      "contributor": "3rdn4Li",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "web",
+        "flask",
+        "python",
+        "path-traversal",
+        "auth-bypass"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Broken Access Control on NFT PDF Retrieval",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Read another gym-bro's flag-bearing NFT PDF by abusing the file-serving authz",
+        "summary": "A Flask 'NFT' gym app on TCP 5001 lets users upload PDFs that are turned into generated 'NFT' PDFs, one of which embeds the flag under a victim user. The NFT file-serving and PDF handling lack proper authorization/path checks, so an attacker can fetch other users' NFT PDFs. Defense involves patching the app under /srv/challenge/fittyfit/app/ and respawning gunicorn.",
+        "attack": "Access another user's generated NFT PDF via the file-serving path/authz flaw to read the embedded flag.",
+        "defense": "Enforce per-user ownership checks and sanitize NFT file paths in the app, then call restart_service to respawn gunicorn."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "FAUST CTF 2022",
+        "reference": "faustctf-2022 :: fittyfit",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 5001
+        },
+        "stack": "Python · Flask (gunicorn)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-faust-fittyfit:v1",
+        "source_intro": "faustctf-2022 fittyfit — Flask 'NFT' gym app on TCP 5001. Users upload PDFs that become 'NFT' PDFs; the flag is embedded in a generated NFT PDF owned by a user. Defense: edit /srv/challenge/fittyfit/app/, call restart_service to respawn gunicorn. Attack: read other users' NFT PDFs (path/authz on the NFT file-serving + PDF handling)."
+      },
+      "cover": {
+        "image": "covers/faust-fittyfit.webp",
+        "accent": "#eb4d35",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "faust-jokes",
+      "title": "Faust Jokes Board",
+      "contributor": "3rdn4Li",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "web",
+        "flask",
+        "rce",
+        "crypto",
+        "auth-bypass"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "RSA-Signed Command Execution & Draft Joke Disclosure",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Forge RSA-signed admin commands to exec() and leak hidden draft jokes",
+        "summary": "A Flask joke board on TCP 5000 where admin actions are RSA-signed commands the server exec()s. Flags are planted as hidden draft jokes via a signed submit_draft(flag_id, flag), so weaknesses in the signature scheme let attackers read other teams' draft/under-review jokes.",
+        "attack": "Abuse the RSA-signed command/exec() flow to read other teams' hidden draft and under-review jokes.",
+        "defense": "Edit /srv/challenge/jokes/app/ to harden the signing/exec logic, then call restart_service to respawn gunicorn."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "FAUST CTF 2023",
+        "reference": "faustctf-2023 :: jokes",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 5000
+        },
+        "stack": "Python · Flask (gunicorn)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-faust-jokes:v1",
+        "source_intro": "faustctf-2023 jokes — Flask joke board on TCP 5000. Admin actions are RSA-signed commands the server exec()s; the flag is planted as a hidden draft joke via a signed submit_draft(flag_id, flag). Defense: edit /srv/challenge/jokes/app/, call restart_service to respawn gunicorn. Attack: read other teams' hidden draft/under-review jokes."
+      },
+      "cover": {
+        "image": "covers/faust-jokes.webp",
+        "accent": "#dba21f",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "faust-marscasino",
+      "title": "Marscasino",
+      "contributor": "3rdn4Li",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "web",
+        "crypto",
+        "auth-bypass",
+        "python",
+        "flask"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Authentication Bypass via ed25519 Token Forgery",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Forge ed25519-signed auth tokens to hijack another player's casino account",
+        "summary": "A Flask casino app on TCP 7777 issues ed25519-signed tokens during registration and login. Flaws in how the signing/auth is implemented let an attacker mint or reuse tokens for accounts they don't own. Accessing the victim account exposes the stored flag.",
+        "attack": "Abuse the ed25519 token signing/auth flow to authenticate as another registered user and read their flag.",
+        "defense": "Patch /srv/challenge/marscasino/app/app.py to correctly bind and verify token signatures, then restart_service to respawn gunicorn."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "FAUST CTF 2020",
+        "reference": "faustctf-2020 marscasino",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 7777
+        },
+        "stack": "Python · Flask (gunicorn)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-faust-marscasino:v1",
+        "source_intro": "faustctf-2020 marscasino — Flask casino app on TCP 7777. The flag is in a registered user's account; defense: edit /srv/challenge/marscasino/app/app.py, restart_service respawns gunicorn. Attack: the registration/auth uses ed25519-signed tokens — abuse the auth/signing to access another user's account."
+      },
+      "cover": {
+        "image": "covers/faust-marscasino.webp",
+        "accent": "#ec6098",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "faust-treasury",
+      "title": "FAUST Treasury Vault",
+      "contributor": "3rdn4Li",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "binary",
+        "memory-corruption",
+        "c",
+        "recompile",
+        "info-leak"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Binary Service Exploitation",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Corrupt a C vault daemon's memory to loot another team's keys and flag",
+        "summary": "A C-based vault service on TCP 6789 exposes a menu over a socket, storing treasure and keys in files gated by an admin-only log. A memory corruption bug in the binary lets attackers bypass the access controls and read vaults they don't own.",
+        "attack": "Trigger the memory corruption over the socket menu to leak another vault's keys/flag.",
+        "defense": "Patch the C source under /srv/challenge/treasury/app/ and restart_service to rebuild the binary."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "FAUST CTF 2021",
+        "reference": "faustctf-2021 treasury",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 6789
+        },
+        "stack": "C (compiled binary service)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-faust-treasury:v1",
+        "source_intro": "faustctf-2021 treasury — C vault service on TCP 6789 (menu over a socket). Treasure/keys are stored in files; an admin-only log + a memory bug gate access. Defense: edit /srv/challenge/treasury/app/, restart_service rebuilds the binary. Attack: exploit the memory corruption to read another vault's keys/flag."
+      },
+      "cover": {
+        "image": "covers/faust-treasury.webp",
+        "accent": "#eb6053",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "gradio-lfi",
+      "title": "Gradio component_server LFI",
+      "contributor": "LEAFERx",
+      "updated": "2026-07-20",
+      "tags": [
+        "real-world",
+        "web",
+        "lfi",
+        "path-traversal",
+        "python",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Arbitrary File Read",
+        "cve": "CVE-2024-1561"
+      },
+      "card": {
+        "tagline": "Gradio /component_server calls move_resource_to_block_cache to leak any file",
+        "summary": "Gradio 4.11.0 exposes /component_server, which invokes an arbitrary method on a component with attacker-controlled args. Calling move_resource_to_block_cache(<path>) copies any server-readable file into the served cache, and the returned path is then fetched via /file=. This grants arbitrary file read, including the flag at /opt/secret/flag.txt.",
+        "attack": "POST /component_server invoking move_resource_to_block_cache on /opt/secret/flag.txt, then GET /file= to retrieve it.",
+        "defense": "Edit /srv/challenge/gradio/routes.py to restrict component_server to safe methods (the 4.13 fix) and restart_service."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "Gradio (gradio-app/gradio)",
+        "reference": "CVE-2024-1561",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1561"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "web": 7860
+        },
+        "stack": "Python · Gradio 4.11.0"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-gradio-lfi:v1",
+        "source_intro": "Gradio 4.11.0 — arbitrary file read via /component_server (CVE-2024-1561). The endpoint invokes any method on a component with attacker args; move_resource_to_block_cache copies a target file into the served cache, then /file= retrieves it. Flag at /opt/secret/flag.txt (mode 600, appuser). Defense: restrict component_server in /srv/challenge/gradio/routes.py and restart_service."
+      },
+      "cover": {
+        "image": "covers/gradio-lfi.webp",
+        "accent": "#d62d73",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "marimo-rce",
+      "title": "Marimo Terminal WebSocket RCE",
+      "contributor": "LEAFERx",
+      "updated": "2026-07-20",
+      "tags": [
+        "real-world",
+        "web",
+        "rce",
+        "auth-bypass",
+        "python",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Unauthenticated Remote Code Execution",
+        "cve": "CVE-2026-39987"
+      },
+      "card": {
+        "tagline": "marimo's /terminal/ws hands out an unauthenticated PTY shell as the marimo user",
+        "summary": "marimo 0.20.4 exposes an interactive PTY shell over the /terminal/ws WebSocket, but unlike every other WebSocket it never calls validate_auth(). Even on a token-protected marimo, an unauthenticated client gets a full shell as the marimo process user. Affected <= 0.20.4, fixed in 0.23.0.",
+        "attack": "Connect to WebSocket /terminal/ws and run `cat /opt/secret/flag.txt` in the PTY shell.",
+        "defense": "Add the missing validate_auth() guard to (or disable) the terminal handler in /srv/challenge/marimo/_server/api/endpoints/terminal.py, then restart_service."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "marimo",
+        "reference": "CVE-2026-39987",
+        "url": null
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "web": 5000
+        },
+        "stack": "Python · marimo 0.20.4"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-marimo-rce:v1",
+        "source_intro": "marimo 0.20.4 — unauthenticated RCE via the /terminal/ws WebSocket (CVE-2026-39987). The terminal endpoint exposes an interactive PTY shell without the validate_auth() check every other WebSocket performs, so an unauthenticated client gets a shell as the marimo user even though the server is token-protected. Flag at /opt/secret/flag.txt (mode 600, marimo user). Attack: WS /terminal/ws -> `cat /opt/secret/flag.txt`. Defense: add validate_auth (or disable) the terminal handler in /srv/challenge/marimo/_server/api/endpoints/terminal.py, restart_service."
+      },
+      "cover": {
+        "image": "covers/marimo-rce.webp",
+        "accent": "#daab1b",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "mlflow-lfi",
+      "title": "MLflow Artifact LFI",
+      "contributor": "LEAFERx",
+      "updated": "2026-07-20",
+      "tags": [
+        "real-world",
+        "web",
+        "lfi",
+        "path-traversal",
+        "python",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Local File Inclusion (Artifact Root Traversal)",
+        "cve": "CVE-2023-1177"
+      },
+      "card": {
+        "tagline": "Point an MLflow model's artifact root at /opt/secret and read the flag unauthenticated.",
+        "summary": "MLflow 2.1.1's tracking server (HTTP :5000) validates the artifact `?path=` param but not the artifact root it joins onto — and that root is attacker-controlled via a model version's `source`. An unauthenticated client sets the root to a local dir and reads an arbitrary file with the mlflow runtime user's permissions, a classic confused-deputy boundary bug.",
+        "attack": "Create a model version with source=\"file://%00/opt/secret/\", then GET /model-versions/get-artifact?path=flag.txt.",
+        "defense": "Validate the artifact root in /srv/challenge/mlflow/server/handlers.py (reject non-proxied local roots; legit ones are mlflow-artifacts:/), then restart_service."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "mlflow/mlflow (pinned v2.1.1)",
+        "reference": "CVE-2023-1177",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-1177"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "web": 5000
+        },
+        "stack": "Python · MLflow 2.1.1 (gunicorn)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-mlflow-lfi:v1",
+        "source_intro": "mlflow/mlflow 2.1.1 — artifact-download LFI (CVE-2023-1177). The tracking server (HTTP :5000) validates the artifact `?path=` param but NOT the artifact root it joins onto, and that root is attacker-controlled (a model version's `source`). An unauthenticated client points the root at a local dir and reads an arbitrary file. Flag lives at /opt/secret/flag.txt (mode 600, owned by the mlflow runtime user). Attack: model-version source=\"file://%00/opt/secret/\" + /model-versions/get-artifact. Defense: validate the artifact root (reject non-proxied local roots) in /srv/challenge/mlflow/server/handlers.py, restart_service."
+      },
+      "cover": {
+        "image": "covers/mlflow-lfi.webp",
+        "accent": "#ed6827",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "n8n-fileread",
+      "title": "n8n Unauthenticated File Read",
+      "contributor": "StellarLuminosity",
+      "updated": "2026-07-20",
+      "tags": [
+        "real-world",
+        "web",
+        "path-traversal",
+        "lfi",
+        "cve",
+        "config-fix"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Arbitrary File Read",
+        "cve": "CVE-2026-21858"
+      },
+      "card": {
+        "tagline": "Craft a form-webhook JSON POST to n8n 1.65.0 and read /flag unauthenticated",
+        "summary": "n8n 1.65.0 exposes an unauthenticated file-read via a crafted JSON POST to the form webhook endpoint. Supplying a filepath key inside the files object makes n8n read and return arbitrary server-side files, including /flag.",
+        "attack": "POST crafted JSON with a filepath key in the files object to the form webhook to make n8n return /flag.",
+        "defense": "Edit /srv/challenge/n8n_fileread/workflow.json to remove or neutralise the binary file-return step, then restart the service."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "n8n automation platform (v1.65.0)",
+        "reference": "CVE-2026-21858",
+        "url": null
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 5678
+        },
+        "stack": "Node.js · n8n 1.65.0"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-n8n-fileread:v1",
+        "source_intro": "n8n 1.65.0 automation platform with CVE-2026-21858: unauthenticated file-read via a crafted JSON POST to the form webhook endpoint. An attacker supplies a filepath key inside the files object to make n8n read and return arbitrary server-side files. Flag is at /flag. Defense: edit /srv/challenge/n8n_fileread/workflow.json to remove or neutralise the binary file-return step, then call restart_service."
+      },
+      "cover": {
+        "image": "covers/n8n-fileread.webp",
+        "accent": "#e54631",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "nautilus-ico",
+      "title": "Nautilus Ico Pascal Service",
+      "contributor": "YueyangPan",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "binary",
+        "pascal",
+        "recompile",
+        "patch-source",
+        "memory-corruption"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Binary Service Exploitation",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Pascal TCP service coughs up /flag on connect — patch the .pas and recompile",
+        "summary": "A Pascal-compiled service listens on TCP 4265 and reads /flag when a client connects using the ico protocol. Exploiting the binary's handling lets an attacker exfiltrate the victim's flag over the wire. Defenders edit the vendored ico.pas source and recompile in-container.",
+        "attack": "Speak the ico protocol to TCP 4265 to extract the victim's /flag contents.",
+        "defense": "Edit /srv/challenge/ico/ico.pas and call restart_service to recompile via /arena/restart.sh."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "nautilus-institute/finals-2025",
+        "reference": "ico",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 4265
+        },
+        "stack": "Pascal (Free Pascal / fpc)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-nautilus-ico:366520c0cc43",
+        "source_intro": "nautilus-institute/finals-2025 :: ico — Pascal service binary that reads /flag on CONNECT. Defense: edit /srv/challenge/ico/ico.pas, call restart_service to recompile via /arena/restart.sh. Attack: extract the victim's /flag over TCP 4265 using the ico protocol."
+      },
+      "cover": {
+        "image": "covers/nautilus-ico.webp",
+        "accent": "#d82925",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "nginx-backup",
+      "title": "Nginx-UI Backup Key Leak",
+      "contributor": "StellarLuminosity",
+      "updated": "2026-07-20",
+      "tags": [
+        "real-world",
+        "web",
+        "info-leak",
+        "crypto",
+        "cve",
+        "config-fix"
+      ],
+      "classification": {
+        "difficulty": "easy",
+        "vuln_class": "Unauthenticated Backup Disclosure with Leaked Encryption Key",
+        "cve": "CVE-2026-27944"
+      },
+      "card": {
+        "tagline": "nginx-ui hands you an encrypted backup and the AES key to open it",
+        "summary": "nginx-ui v2.3.2 exposes an unauthenticated GET /api/backup endpoint that returns an AES-256-CBC encrypted archive while leaking the decryption key and IV (base64) in the X-Backup-Security response header. Decrypting the archive yields app.ini, which contains the planted flag.",
+        "attack": "GET /api/backup unauthenticated, read key+IV from X-Backup-Security, AES-256-CBC decrypt to recover app.ini flag.",
+        "defense": "Add `location /api/backup { return 403; }` to /srv/challenge/nginx_backup/proxy.conf and reload nginx via restart_service."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "nginx-ui v2.3.2",
+        "reference": "CVE-2026-27944",
+        "url": null
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 9000
+        },
+        "stack": "Go · nginx-ui 2.3.2"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-nginx-backup:v1",
+        "source_intro": "nginx-ui v2.3.2 — CVE-2026-27944. Unauthenticated GET /api/backup returns an AES-256-CBC encrypted archive. The X-Backup-Security response header leaks the decryption key and IV in base64. The decrypted archive contains app.ini which holds the planted flag. Defense: block /api/backup in the editable nginx proxy config and reload via restart_service."
+      },
+      "cover": {
+        "image": "covers/nginx-backup.webp",
+        "accent": "#ef2e26",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "notes",
+      "title": "Notes TCP Daemon",
+      "contributor": "YueyangPan",
+      "updated": "2026-07-20",
+      "tags": [
+        "net",
+        "misc",
+        "python",
+        "ctf"
+      ],
+      "classification": {
+        "difficulty": "easy",
+        "vuln_class": "In-Memory TCP Notes Service",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Tiny newline-terminated TCP notes daemon — a framework smoke test.",
+        "summary": "An in-memory TCP notes daemon on port 5000 speaks a newline-terminated protocol: PUT <text> stores and returns 'OK <id>', GET <id> reads back stored text or 'ERR', and LIST answers 'COUNT <n>'. It is an attack-only smoke test for the challenge framework with no defense flow.",
+        "attack": "Interact with the port 5000 TCP protocol (PUT/GET/LIST) to retrieve stored note contents.",
+        "defense": "No defense flow — this is a framework smoke test challenge only."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "Cyber Arena",
+        "reference": null,
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 5000
+        },
+        "stack": "Python 3 · raw TCP socket daemon"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-notes:v1",
+        "source_intro": "Tiny in-memory TCP notes daemon. Newline-terminated protocol: PUT <text> stores and returns 'OK <id>', GET <id> reads back the stored text or 'ERR', LIST answers 'COUNT <n>'. No defense flow."
+      },
+      "cover": {
+        "image": "covers/notes.webp",
+        "accent": "#eb6d2e",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "pyload-rce",
+      "title": "pyLoad js2py Sandbox Escape RCE",
+      "contributor": "LEAFERx",
+      "updated": "2026-07-20",
+      "tags": [
+        "real-world",
+        "web",
+        "rce",
+        "python",
+        "cve",
+        "patch-source"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Unauthenticated Remote Code Execution",
+        "cve": [
+          "CVE-2024-28397",
+          "CVE-2024-39205"
+        ]
+      },
+      "card": {
+        "tagline": "Bypass the localhost guard and escape js2py to run subprocess.Popen on pyLoad",
+        "summary": "pyLoad 0.5.0b3.dev79's /flash/addcrypted2 endpoint evaluates the attacker-supplied `jk` parameter as JavaScript via js2py, whose sandbox can be escaped to reach subprocess.Popen. The endpoint's localhost-only guard is bypassed by sending a `Host: 127.0.0.1:9666` header, yielding unauthenticated arbitrary command execution.",
+        "attack": "POST /flash/addcrypted2 with Host: 127.0.0.1:9666 and a js2py-escape `jk` payload that reads /opt/secret/flag.txt and exfiltrates it.",
+        "defense": "Edit /srv/challenge/pyload/.../cnl_blueprint.py to stop evaluating `jk` (or harden eval_js), then restart_service."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "pyLoad (pyload-ng 0.5.0b3.dev79)",
+        "reference": "CVE-2024-28397 / CVE-2024-39205",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-28397"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "web": 8000
+        },
+        "stack": "Python · pyLoad-ng 0.5.0b3.dev79 (js2py)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-pyload-rce:v1",
+        "source_intro": "pyLoad 0.5.0b3.dev79 — unauthenticated RCE via js2py sandbox escape (CVE-2024-28397 / CVE-2024-39205). /flash/addcrypted2 evals the `jk` param with js2py; the escape reaches subprocess.Popen. The localhost guard is bypassed with Host: 127.0.0.1:9666. Flag at /opt/secret/flag.txt (mode 600, pyload user). Defense: stop evaluating jk in /srv/challenge/pyload/.../cnl_blueprint.py and restart_service."
+      },
+      "cover": {
+        "image": "covers/pyload-rce.webp",
+        "accent": "#f55693",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "rceaas",
+      "title": "RCEaaS Shell Jail",
+      "contributor": "1chig0",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "net",
+        "path-traversal",
+        "rev",
+        "patch-source"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Path Traversal (Jail Escape)",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Break out of a Rust fake-Windows shell jail on TCP 1835 to read another user's flag",
+        "summary": "A Rust 'RCE as a Service' service on TCP 1835 emulates a Windows C:/> shell (mkdir/dir/cd/type/copy/mklink/echo/...) confining each user to ./jails/<username>/. Weak path handling in the jail command layer lets one user traverse or symlink out of their jail. The flag lives as the file `flag` in a fixed well-known user's jail.",
+        "attack": "Abuse mklink/copy/cd path handling to escape your jail and `type` the flag file in another user's jail.",
+        "defense": "Harden path normalization/canonicalization in app/src/jail/command.rs so users stay confined, then restart_service."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "saarCTF 2025",
+        "reference": "rceaas",
+        "url": null
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 1835
+        },
+        "stack": "Rust"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-rceaas:v1",
+        "source_intro": "saarCTF 2025 rceaas — a Rust 'RCE as a Service' fake-Windows shell jail on TCP 1835 (login, then a C:/> prompt with mkdir/dir/cd/type/copy/mklink/echo/call/...). Each user is confined to ./jails/<username>/. The flag is planted as the file `flag` in the jail of a fixed well-known user. This is an Attack/Defense target: attackers must find a way for one user to reach another user's jail and read the flag; defenders harden path handling in /srv/challenge/rceaas/app/src/jail/command.rs so users stay confined, then restart_service."
+      },
+      "cover": {
+        "image": "covers/rceaas.webp",
+        "accent": "#0538a0",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "reversaar",
+      "title": "Reversaar",
+      "contributor": "1chig0",
+      "updated": "2026-07-20",
+      "tags": [
+        "ctf",
+        "rev",
+        "c",
+        "auth-bypass",
+        "web",
+        "binary"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Authentication Bypass via Reverse Engineering",
+        "cve": null
+      },
+      "card": {
+        "tagline": "Reverse an obfuscated C service's auth to impersonate the vault user and steal its flag.",
+        "summary": "An obfuscated C 'reversing service' on HTTP 7331 lets users register/login and store text/array/audio blobs behind per-user Session cookies. A fixed public user `vault` holds the flag, and an undocumented flaw in the auth path (notably the array plugin) allows authenticating as another user. The auth mechanism must be reverse-engineered to impersonate `vault` and read its data.",
+        "attack": "Reverse the auth logic (array plugin) to forge/impersonate the `vault` session and read its stored flag.",
+        "defense": "Audit the auth path, remove the impersonation flaw in the array plugin, and restart_service while keeping legit use working."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "saarCTF 2024",
+        "reference": "reversaar",
+        "url": null
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 7331
+        },
+        "stack": "C · HTTP service"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-reversaar:v1",
+        "source_intro": "saarCTF 2024 reversaar — an obfuscated C 'reversing service' on HTTP 7331. Users register/login (POST /api/login, JSON), get a per-user Session cookie, and work with text/array/audio blobs (POST /api/<type>/new, GET /api/<type>/<idx>). The flag is stored in the account of a fixed public user, `vault`. This is a reversing challenge: the auth mechanism must be reverse-engineered to find a way to authenticate as `vault` and read its data; the flaw is not documented. Defense: reverse/audit the auth path (especially the array plugin), remove whatever lets an attacker impersonate another user, and restart_service — legit use must keep working."
+      },
+      "cover": {
+        "image": "covers/reversaar.webp",
+        "accent": "#f45e4f",
+        "prompt_id": "geo-v1"
+      }
+    }
+  ]
+}
