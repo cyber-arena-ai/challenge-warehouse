@@ -16,6 +16,20 @@ fn main() {
             break;
         }
     }
+
+    // `vault` is the reserved flag-holder account. Its flag is planted out-of-band
+    // (written straight to jails/vault/flag, never via a service login — see the
+    // flag-handler), so NO legitimate client ever logs in as vault. Because the
+    // login flow below auto-registers an unknown username with whatever password
+    // the caller typed, allowing `vault` would let the first connection claim the
+    // account and `type flag` directly, skipping the intended mklink/copy
+    // jail-escape (issue #50). Refuse it outright; the intended attack is to break
+    // OUT of some other user's jail into jails/vault, not to become vault.
+    if username == "vault" {
+        println!("Access denied.");
+        process::exit(1);
+    }
+
     let base = format!("./jails/{username}");
     let base_password = format!("./passwords");
 
