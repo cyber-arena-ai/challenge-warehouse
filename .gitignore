@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 vendor/
+.venv/
+api.json
+gen.api.json
