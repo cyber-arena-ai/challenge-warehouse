@@ -51,10 +51,9 @@ RUN chmod 555 /arena/build_service.sh \
     && chmod -R 555 /opt/challenge_src
 
 COPY restart.sh /arena/restart.sh
-COPY checker.sh /arena/checker.sh
 COPY entrypoint.sh /arena/entrypoint.sh
-RUN chmod 555 /arena/restart.sh /arena/checker.sh /arena/entrypoint.sh \
-    && chown root:root /arena/restart.sh /arena/checker.sh /arena/entrypoint.sh /arena/build_service.sh
+RUN chmod 555 /arena/restart.sh /arena/entrypoint.sh \
+    && chown root:root /arena/restart.sh /arena/entrypoint.sh /arena/build_service.sh
 
 # nginx site: port 7331, static web root + /api via fcgiwrap socket + /userdata
 COPY nginx-reversaar.conf /etc/nginx/sites-available/reversaar

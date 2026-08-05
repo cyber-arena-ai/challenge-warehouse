@@ -41,9 +41,8 @@ RUN mkdir -p /tmp/gradio && chown -R appuser:appuser /tmp/gradio
 RUN mkdir -p /opt/secret && chmod 755 /opt/secret
 
 COPY restart.sh /arena/restart.sh
-COPY checker.sh /arena/checker.sh
-RUN chmod 555 /arena/restart.sh /arena/checker.sh \
-    && chown root:root /arena/restart.sh /arena/checker.sh
+RUN chmod 555 /arena/restart.sh \
+    && chown root:root /arena/restart.sh
 
 RUN mkdir -p /run/sshd /home/arena_agent/.ssh \
     && chown arena_agent:arena_agent /home/arena_agent/.ssh \

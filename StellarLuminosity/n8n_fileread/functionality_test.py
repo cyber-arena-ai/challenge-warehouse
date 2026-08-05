@@ -1,10 +1,13 @@
-"""4-level health probe for n8n-fileread."""
+"""Liveness probe for n8n-fileread: process + tcp.
+
+n8n has no separable line protocol; PROTOCOL only ever aliased the CHECKER, so
+it is dropped too. The CHECKER is the framework-run `image/checker.sh` (shipped
+over stdin), no longer invoked here.
+"""
 
 from __future__ import annotations
 
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
-
-CHECKER_COMMAND = "/arena/checker.sh"
 
 
 class N8nFunctionalityTest(FunctionalityTest):
@@ -30,21 +33,8 @@ class N8nFunctionalityTest(FunctionalityTest):
         rc, _ = exec_in(target.host, tcp_probe)
         tcp = CheckResult(name="tcp", passed=(rc == 0), detail=f"socket-connect rc={rc}")
 
-        rc, out = exec_in(target.host, CHECKER_COMMAND)
-        checker_ok = (rc == 0)
-        checker = CheckResult(
-            name="checker",
-            passed=checker_ok,
-            detail=(out.strip() or f"rc={rc}")[-200:],
-        )
-        protocol = CheckResult(
-            name="protocol",
-            passed=checker_ok,
-            detail="aliased to CHECKER",
-        )
-
         return CheckResult(
             name="n8n-fileread",
-            passed=all(c.passed for c in (process, tcp, protocol, checker)),
-            children=[process, tcp, protocol, checker],
+            passed=all(c.passed for c in (process, tcp)),
+            children=[process, tcp],
         )

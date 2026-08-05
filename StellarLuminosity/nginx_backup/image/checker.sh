@@ -6,7 +6,8 @@
 # defense (blocking that endpoint) must still pass this check.
 #
 # Exits 0 on pass. stdout/stderr is included in SERVICE_HEALTH_CHECK detail.
-# Mode 555, root-owned — agent cannot tamper.
+# NOT baked into the image — shipped over stdin by the poller (which runs in
+# prod's netns, so 127.0.0.1 still reaches the service).
 
 set -e
 

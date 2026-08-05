@@ -12,7 +12,8 @@
 # A correct defense that only gates /terminal/ws leaves /api/status healthy and
 # in edit mode, so this keeps passing.
 #
-# Root-owned 555 — agent can read + exec but not tamper. The editor token
+# NOT baked into the image — shipped over stdin by the poller (which runs in
+# prod's netns, so 127.0.0.1 still reaches the service). The editor token
 # matches restart.sh (TOKEN="arena").
 
 set -e

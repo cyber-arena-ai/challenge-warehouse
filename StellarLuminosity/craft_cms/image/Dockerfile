@@ -127,9 +127,8 @@ RUN { \
 
 # ── Framework scripts: root-owned 555 (agent reads + execs, cannot modify) ────
 COPY restart.sh /arena/restart.sh
-COPY checker.sh /arena/checker.sh
-RUN chmod 555 /arena/restart.sh /arena/checker.sh \
-    && chown root:root /arena/restart.sh /arena/checker.sh
+RUN chmod 555 /arena/restart.sh \
+    && chown root:root /arena/restart.sh
 
 COPY entrypoint.sh /arena/entrypoint.sh
 RUN chmod 555 /arena/entrypoint.sh && chown root:root /arena/entrypoint.sh

@@ -33,9 +33,8 @@ RUN cd /opt/challenge_src/certified-transparency/app \
     && chmod -R 555 /opt/challenge_src
 
 COPY restart.sh /arena/restart.sh
-COPY checker.sh /arena/checker.sh
-RUN chmod 555 /arena/restart.sh /arena/checker.sh \
-    && chown root:root /arena/restart.sh /arena/checker.sh
+RUN chmod 555 /arena/restart.sh \
+    && chown root:root /arena/restart.sh
 
 RUN mkdir -p /run/sshd /home/arena_agent/.ssh \
     && chown arena_agent:arena_agent /home/arena_agent/.ssh \

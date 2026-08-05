@@ -1,11 +1,11 @@
-"""4-level health probe for pyload-rce."""
+"""Liveness probe for pyload-rce: process + tcp + http. The CHECKER is the
+framework-run `image/checker.sh` (shipped over stdin), no longer invoked here."""
 
 from __future__ import annotations
 
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
 PROCESS_PATTERN = "pyload"
-CHECKER_COMMAND = "/arena/checker.sh"
 
 
 def _http_probe(port: int) -> str:
@@ -46,11 +46,8 @@ class PyloadFunctionalityTest(FunctionalityTest):
         rc, _ = exec_in(target.host, _http_probe(port))
         http = CheckResult(name="http", passed=(rc == 0), detail=f"GET / rc={rc}")
 
-        rc, out = exec_in(target.host, CHECKER_COMMAND)
-        checker = CheckResult(name="checker", passed=(rc == 0), detail=(out.strip() or f"rc={rc}")[-200:])
-
         return CheckResult(
             name="pyload-rce",
-            passed=all(c.passed for c in (process, tcp, http, checker)),
-            children=[process, tcp, http, checker],
+            passed=all(c.passed for c in (process, tcp, http)),
+            children=[process, tcp, http],
         )

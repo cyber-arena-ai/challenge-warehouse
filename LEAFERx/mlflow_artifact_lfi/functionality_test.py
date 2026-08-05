@@ -1,13 +1,11 @@
-"""4-level health probe for mlflow-lfi.
+"""Liveness probe for mlflow-lfi: process + tcp + http.
 
   process — a gunicorn worker serving `mlflow.server:app` is alive.
   tcp     — port 5000 accepts a socket connect.
   http    — GET /health returns 200.
-  checker — /arena/checker.sh exercises the real gameplay surface: log a
-            param + an artifact and read both back through the server.
-            This is the leaf that fails when the service "looks up" but is
-            actually broken — including a defense patch that amputates
-            artifact serving instead of validating the path.
+
+The CHECKER is the framework-run `image/checker.sh` (shipped over stdin), no
+longer invoked here.
 """
 
 from __future__ import annotations
@@ -16,7 +14,6 @@ from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
 # gunicorn worker cmdline contains the app spec verbatim.
 PROCESS_PATTERN = "mlflow.server:app"
-CHECKER_COMMAND = "/arena/checker.sh"
 
 
 def _http_probe(port: int) -> str:
@@ -56,16 +53,8 @@ class MlflowFunctionalityTest(FunctionalityTest):
         rc, _ = exec_in(target.host, _http_probe(port))
         http = CheckResult(name="http", passed=(rc == 0), detail=f"GET /health rc={rc}")
 
-        # Output truncated so a noisy checker.sh doesn't blow up event payloads.
-        rc, out = exec_in(target.host, CHECKER_COMMAND)
-        checker = CheckResult(
-            name="checker",
-            passed=(rc == 0),
-            detail=(out.strip() or f"rc={rc}")[-200:],
-        )
-
         return CheckResult(
             name="mlflow-lfi",
-            passed=all(c.passed for c in (process, tcp, http, checker)),
-            children=[process, tcp, http, checker],
+            passed=all(c.passed for c in (process, tcp, http)),
+            children=[process, tcp, http],
         )

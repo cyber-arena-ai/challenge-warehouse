@@ -11,8 +11,7 @@ RUN python3 -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir -r /op
 COPY service/ /opt/challenge_src/marscasino/app/
 RUN chmod -R 555 /opt/challenge_src
 COPY restart.sh /arena/restart.sh
-COPY checker.sh /arena/checker.sh
-RUN chmod 555 /arena/restart.sh /arena/checker.sh && chown root:root /arena/restart.sh /arena/checker.sh
+RUN chmod 555 /arena/restart.sh && chown root:root /arena/restart.sh
 RUN mkdir -p /run/sshd /home/arena_agent/.ssh && chown arena_agent:arena_agent /home/arena_agent/.ssh \
     && chmod 700 /home/arena_agent/.ssh && sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
 COPY entrypoint.sh /arena/entrypoint.sh

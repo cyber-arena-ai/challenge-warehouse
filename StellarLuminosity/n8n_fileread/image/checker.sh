@@ -5,7 +5,8 @@
 # Document Submission form, not a stub 200. A plain echo/stub server would
 # not return the n8n form HTML containing our workflow's formTitle.
 #
-# Mode 555, root-owned. Exits 0 on pass.
+# NOT baked into the image — shipped over stdin by the poller (which runs in
+# prod's netns, so 127.0.0.1 still reaches the service). Exits 0 on pass.
 
 set -e
 

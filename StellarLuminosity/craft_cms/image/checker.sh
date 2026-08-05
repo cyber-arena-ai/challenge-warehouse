@@ -6,7 +6,9 @@
 # stub 200 swapped in to cheese the port check. A plain echo/static server
 # would not emit Craft's CSRF token field.
 #
-# Mode 555, root-owned. Exits 0 on pass; stdout/stderr feeds the health detail.
+# NOT baked into the image — shipped over stdin by the poller (which runs in
+# prod's netns, so 127.0.0.1 still reaches the service). Exits 0 on pass;
+# stdout/stderr feeds the health detail.
 
 set -e
 

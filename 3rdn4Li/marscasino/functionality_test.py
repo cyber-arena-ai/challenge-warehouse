@@ -1,20 +1,18 @@
-"""FunctionalityTest for faust-marscasino.
+"""FunctionalityTest for faust-marscasino: tcp liveness only.
 
-Register a fresh user, then run the voucher round-trip: log in, post an item,
-play game2 to get a voucher, activate it, and confirm "You won". CheckResult
-tree: tcp + checker.
+The deep register/login/voucher round-trip (the CHECKER) moved to `checker.py`,
+a network probe the Health Poller runs outside prod's trust boundary. This keeps
+the shallow tcp reachability leaf.
 """
 from __future__ import annotations
 
 import logging
-import random
-import re
 
 import requests
 
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
-from . import _client, _net
+from . import _net
 
 log = logging.getLogger(__name__)
 
@@ -36,34 +34,4 @@ class MarscasinoFunctionalityTest(FunctionalityTest):
         except Exception as e:  # noqa: BLE001
             up, tcp_detail = False, f"connect failed: {e}"
         tcp = CheckResult(name="tcp", passed=up, detail=tcp_detail)
-        if not up:
-            return CheckResult(name="faust-marscasino", passed=False, children=[tcp])
-
-        ok, detail = self._check_voucher(base)
-        checker = CheckResult(name="checker", passed=ok, detail=detail[-200:])
-        return CheckResult(name="faust-marscasino",
-                           passed=tcp.passed and checker.passed, children=[tcp, checker])
-
-    def _check_voucher(self, base: str) -> tuple[bool, str]:
-        reg = _client.full_register(base)
-        if reg is None:
-            return False, "register failed"
-        username, password = reg
-        s = requests.Session()
-        resp = _client.login(s, base, username, password)
-        if resp.status_code != 200 or "Wrong" in resp.text:
-            return False, "login failed"
-        resp = _client.home(s, base, item=_client.random_string(4),
-                            item_cost=random.randint(1, 10))
-        if resp.status_code != 200:
-            return False, "home(item) failed"
-        resp = _client.get_voucher(s, base, 3)
-        if resp.status_code != 200:
-            return False, "game2 (get voucher) failed"
-        code = re.findall(r"Voucher: <b>(.*?)<", resp.text)
-        if not code:
-            return False, "could not parse voucher"
-        resp = _client.activate_voucher(s, base, code[0])
-        if resp.status_code != 200 or "You won" not in resp.text:
-            return False, "activate voucher failed"
-        return True, "register/login/voucher round-trip OK"
+        return CheckResult(name="faust-marscasino", passed=tcp.passed, children=[tcp])

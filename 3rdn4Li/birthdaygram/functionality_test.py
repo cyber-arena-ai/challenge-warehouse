@@ -1,20 +1,17 @@
-"""FunctionalityTest for faust-birthdaygram.
+"""FunctionalityTest for faust-birthdaygram: tcp liveness only.
 
-Register + login, read the feed, upload a private image and confirm it shows up
-in the user's own view, then log out. Reuses the vendored `_checker/utils.py`
-UNMODIFIED. CheckResult tree: tcp + checker.
+The deep register/login/feed/upload round-trip (the CHECKER) moved to
+`checker.py`, a network probe the Health Poller runs outside prod's trust
+boundary. This keeps the shallow tcp reachability leaf.
 """
 from __future__ import annotations
 
 import logging
 import socket
 
-import requests  # noqa: F401  (utils uses it; kept explicit for clarity)
-
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
 from . import _net
-from ._checker import utils
 
 log = logging.getLogger(__name__)
 
@@ -39,43 +36,4 @@ class BirthdaygramFunctionalityTest(FunctionalityTest):
         except Exception as e:  # noqa: BLE001
             up, tcp_detail = False, f"connect failed: {e}"
         tcp = CheckResult(name="tcp", passed=up, detail=tcp_detail)
-        if not up:
-            return CheckResult(name="faust-birthdaygram", passed=False, children=[tcp])
-
-        ok, detail = self._check(c)
-        checker = CheckResult(name="checker", passed=ok, detail=detail[-200:])
-        return CheckResult(name="faust-birthdaygram",
-                           passed=tcp.passed and checker.passed, children=[tcp, checker])
-
-    def _check(self, c) -> tuple[bool, str]:
-        session = __import__("requests").session()
-        username = utils.generate_name()
-        password = utils.generate_password()
-        try:
-            utils.check_register(c, session, username, password)
-        except Exception as e:  # noqa: BLE001
-            return False, f"register: {e}"
-        try:
-            utils.check_login(c, session, username, password)
-        except Exception as e:  # noqa: BLE001
-            return False, f"login: {e}"
-        try:
-            utils.get_feed_pic_nums(c)
-        except Exception as e:  # noqa: BLE001
-            return False, f"feed: {e}"
-
-        # upload a private image and confirm it appears in the user's own view
-        try:
-            priv_bytes = utils.fromPILImageToBytes(utils.create_rand_png_no_save())
-            utils.upload_private_image(c, session, priv_bytes)
-            view = utils.get_view(c, session, username)
-            if view.find(utils.imageToStr(priv_bytes)) == -1:
-                return False, "uploaded private image not found in own view"
-        except Exception as e:  # noqa: BLE001
-            return False, f"private image round-trip: {e}"
-
-        try:
-            utils.logout(c)
-        except Exception:  # noqa: BLE001
-            pass
-        return True, "register/login/feed/upload-private/view round-trip OK"
+        return CheckResult(name="faust-birthdaygram", passed=tcp.passed, children=[tcp])
