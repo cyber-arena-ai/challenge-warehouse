@@ -11,7 +11,8 @@
 # A correct path-validation patch only blocks traversal/escape, so this
 # legitimate in-root roundtrip keeps passing.
 #
-# Root-owned 555 — agent can read + exec but not tamper. Exits 0 on pass;
+# NOT baked into the image — shipped over stdin by the poller (which runs in
+# prod's netns, so 127.0.0.1 still reaches the service). Exits 0 on pass;
 # stdout/stderr is surfaced in the SERVICE_HEALTH_CHECK detail.
 
 set -e

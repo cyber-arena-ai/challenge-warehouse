@@ -1,7 +1,9 @@
-"""4-level health probe for the notes daemon.
+"""Health probe for the notes daemon: process + tcp + protocol.
 
-Notes has no separable gameplay surface beyond its protocol, so
-CHECKER aliases to PROTOCOL.
+Notes has no separable gameplay surface beyond its protocol (the real check is
+the PROTOCOL COUNT round-trip) and it ships no image/checker.sh, so there is no
+framework CHECKER leaf — the previous `checker` leaf was a bare alias of PROTOCOL
+and has been dropped.
 """
 
 from __future__ import annotations
@@ -50,14 +52,8 @@ class NotesFunctionalityTest(FunctionalityTest):
             detail=out.strip()[:120] if out else f"rc={rc}",
         )
 
-        checker = CheckResult(
-            name="checker",
-            passed=proto_ok,
-            detail="aliased to PROTOCOL",
-        )
-
         return CheckResult(
             name="notes",
-            passed=all(c.passed for c in (process, tcp, protocol, checker)),
-            children=[process, tcp, protocol, checker],
+            passed=all(c.passed for c in (process, tcp, protocol)),
+            children=[process, tcp, protocol],
         )

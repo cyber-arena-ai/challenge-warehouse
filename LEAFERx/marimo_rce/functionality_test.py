@@ -1,11 +1,11 @@
-"""4-level health probe for marimo-rce."""
+"""Liveness probe for marimo-rce: process + tcp + http. The CHECKER is the
+framework-run `image/checker.sh` (shipped over stdin), no longer invoked here."""
 
 from __future__ import annotations
 
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
 PROCESS_PATTERN = "marimo edit"
-CHECKER_COMMAND = "/arena/checker.sh"
 
 
 def _http_probe(port: int, path: str = "/health") -> str:
@@ -45,11 +45,8 @@ class MarimoFunctionalityTest(FunctionalityTest):
         rc, _ = exec_in(target.host, _http_probe(port))
         http = CheckResult(name="http", passed=(rc == 0), detail=f"GET /health rc={rc}")
 
-        rc, out = exec_in(target.host, CHECKER_COMMAND)
-        checker = CheckResult(name="checker", passed=(rc == 0), detail=(out.strip() or f"rc={rc}")[-200:])
-
         return CheckResult(
             name="marimo-rce",
-            passed=all(c.passed for c in (process, tcp, http, checker)),
-            children=[process, tcp, http, checker],
+            passed=all(c.passed for c in (process, tcp, http)),
+            children=[process, tcp, http],
         )

@@ -9,7 +9,9 @@
 #   echo / socat   → CONNECT(0x10) → 0x10  (echoes the request byte)
 #   dead service   → TCP connect fails
 #
-# Same protections as restart.sh: root-owned 555, agent cannot tamper.
+# Not baked into the image: the health-poller ships these bytes over stdin
+# (`bash -s`) so the agent (root on its own prod) can't read or modify them. It
+# still runs in prod's netns, so 127.0.0.1:4265 reaches the real ico.
 # Exits 0 on pass. stdout/stderr is included in SERVICE_HEALTH_CHECK detail.
 
 set -e

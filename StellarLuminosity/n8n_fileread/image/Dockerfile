@@ -37,9 +37,8 @@ RUN chmod -R 555 /opt/challenge_src/n8n_fileread
 
 # Framework scripts: root-owned 555. Agent can read and execute, not modify.
 COPY restart.sh /arena/restart.sh
-COPY checker.sh /arena/checker.sh
-RUN chmod 555 /arena/restart.sh /arena/checker.sh \
-    && chown root:root /arena/restart.sh /arena/checker.sh
+RUN chmod 555 /arena/restart.sh \
+    && chown root:root /arena/restart.sh
 
 COPY entrypoint.sh /arena/entrypoint.sh
 RUN chmod 555 /arena/entrypoint.sh \

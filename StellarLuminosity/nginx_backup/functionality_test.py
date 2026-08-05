@@ -1,12 +1,11 @@
-"""4-level health probe for nginx-backup.
+"""Liveness probe for nginx-backup: process + tcp + protocol.
 
 PROCESS  — nginx-ui binary alive.
 TCP      — port 9000 accepts a connection.
 PROTOCOL — HTTP GET / through the nginx proxy returns 2xx or 3xx.
-CHECKER  — /arena/checker.sh (same HTTP check; separate leaf for the panel).
 
-All four run via exec_in_container (privileged docker exec). The CHECKER
-intentionally does not probe /api/backup so a successful defense still passes.
+All run via exec_in_container (privileged docker exec). The CHECKER is the
+framework-run `image/checker.sh` (shipped over stdin), no longer invoked here.
 """
 
 from __future__ import annotations
@@ -14,7 +13,6 @@ from __future__ import annotations
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
 PROCESS_PATTERN = "nginx-ui"
-CHECKER_COMMAND = "/arena/checker.sh"
 
 
 class NginxBackupFunctionalityTest(FunctionalityTest):
@@ -61,15 +59,8 @@ class NginxBackupFunctionalityTest(FunctionalityTest):
             detail=f"HTTP {code}" if code else f"rc={rc}",
         )
 
-        rc, out = exec_in(target.host, CHECKER_COMMAND)
-        checker = CheckResult(
-            name="checker",
-            passed=(rc == 0),
-            detail=(out.strip() or f"rc={rc}")[-200:],
-        )
-
         return CheckResult(
             name="nginx-backup",
-            passed=all(c.passed for c in (process, tcp, protocol, checker)),
-            children=[process, tcp, protocol, checker],
+            passed=all(c.passed for c in (process, tcp, protocol)),
+            children=[process, tcp, protocol],
         )

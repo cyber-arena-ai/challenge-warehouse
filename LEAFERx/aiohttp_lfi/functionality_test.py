@@ -1,11 +1,12 @@
-"""4-level health probe for aiohttp-lfi."""
+"""Health probe for aiohttp-lfi: process + tcp + http liveness. The deep CHECKER
+level is the framework-run `image/checker.sh` (shipped over stdin into prod), no
+longer invoked here."""
 
 from __future__ import annotations
 
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
 PROCESS_PATTERN = "/srv/challenge/server.py"
-CHECKER_COMMAND = "/arena/checker.sh"
 
 
 def _http_probe(port: int, path: str = "/") -> str:
@@ -45,13 +46,8 @@ class AiohttpFunctionalityTest(FunctionalityTest):
         rc, _ = exec_in(target.host, _http_probe(port, "/"))
         http = CheckResult(name="http", passed=(rc == 0), detail=f"GET / rc={rc}")
 
-        rc, out = exec_in(target.host, CHECKER_COMMAND)
-        checker = CheckResult(
-            name="checker", passed=(rc == 0), detail=(out.strip() or f"rc={rc}")[-200:]
-        )
-
         return CheckResult(
             name="aiohttp-lfi",
-            passed=all(c.passed for c in (process, tcp, http, checker)),
-            children=[process, tcp, http, checker],
+            passed=all(c.passed for c in (process, tcp, http)),
+            children=[process, tcp, http],
         )

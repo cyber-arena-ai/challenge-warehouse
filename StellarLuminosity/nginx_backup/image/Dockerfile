@@ -38,11 +38,9 @@ COPY proxy.conf /arena/proxy.conf.default
 # Arena scripts: root-owned 555 so the agent can execute but not modify.
 COPY entrypoint.sh /arena/entrypoint.sh
 COPY restart.sh    /arena/restart.sh
-COPY checker.sh    /arena/checker.sh
 RUN chmod 555 \
         /arena/entrypoint.sh \
         /arena/restart.sh \
-        /arena/checker.sh \
         /arena/nginx-proxy.conf \
         /arena/proxy.conf.default
 

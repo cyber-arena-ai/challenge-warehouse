@@ -1,8 +1,10 @@
-"""4-level health probe for nautilus-ico.
+"""Health probe for nautilus-ico: process + tcp liveness.
 
-ico has no general protocol adapter (no LIST/PUT/GET), so PROTOCOL
-aliases to CHECKER's outcome — `/arena/checker.sh` is the real
-gameplay-correctness probe.
+ico has no general protocol adapter (no LIST/PUT/GET); the real
+gameplay-correctness probe is the framework-run `image/checker.sh` (shipped over
+stdin into prod as the CHECKER level), no longer invoked here. Since PROTOCOL
+only ever aliased that checker, it is dropped too — the CHECKER leaf now comes
+from the framework.
 """
 
 from __future__ import annotations
@@ -10,7 +12,6 @@ from __future__ import annotations
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
 PROCESS_PATTERN = "/srv/challenge/ico/ico"
-CHECKER_COMMAND = "/arena/checker.sh"
 
 
 class IcoFunctionalityTest(FunctionalityTest):
@@ -36,23 +37,8 @@ class IcoFunctionalityTest(FunctionalityTest):
         rc, _ = exec_in(target.host, tcp_probe)
         tcp = CheckResult(name="tcp", passed=(rc == 0), detail=f"socket-connect rc={rc}")
 
-        # Output truncated so a noisy checker.sh doesn't blow up event payloads.
-        rc, out = exec_in(target.host, CHECKER_COMMAND)
-        checker_ok = (rc == 0)
-        checker = CheckResult(
-            name="checker",
-            passed=checker_ok,
-            detail=(out.strip() or f"rc={rc}")[-200:],
-        )
-
-        protocol = CheckResult(
-            name="protocol",
-            passed=checker_ok,
-            detail="aliased to CHECKER",
-        )
-
         return CheckResult(
             name="nautilus-ico",
-            passed=all(c.passed for c in (process, tcp, protocol, checker)),
-            children=[process, tcp, protocol, checker],
+            passed=all(c.passed for c in (process, tcp)),
+            children=[process, tcp],
         )

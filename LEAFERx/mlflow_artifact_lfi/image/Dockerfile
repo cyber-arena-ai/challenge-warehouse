@@ -64,9 +64,8 @@ RUN mkdir -p /opt/secret && chmod 755 /opt/secret
 
 # Framework scripts: root-owned 555. Agent can read + exec, not modify.
 COPY restart.sh /arena/restart.sh
-COPY checker.sh /arena/checker.sh
-RUN chmod 555 /arena/restart.sh /arena/checker.sh \
-    && chown root:root /arena/restart.sh /arena/checker.sh
+RUN chmod 555 /arena/restart.sh \
+    && chown root:root /arena/restart.sh
 
 # sshd: non-root only. Agent key is provisioned at install time.
 RUN mkdir -p /run/sshd /home/arena_agent/.ssh \

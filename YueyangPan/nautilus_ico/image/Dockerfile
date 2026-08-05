@@ -44,10 +44,11 @@ RUN cd /opt/challenge_src/ico && \
 RUN chmod -R 555 /opt/challenge_src/ico
 
 # Framework scripts: root-owned 555. Agent SSH user can read+exec, not write.
+# checker.sh is NOT baked in — the health-poller ships it over stdin (`bash -s`)
+# so the agent (root on its own prod) can't read or modify the checker bytes.
 COPY restart.sh /arena/restart.sh
-COPY checker.sh /arena/checker.sh
-RUN chmod 555 /arena/restart.sh /arena/checker.sh \
-    && chown root:root /arena/restart.sh /arena/checker.sh
+RUN chmod 555 /arena/restart.sh \
+    && chown root:root /arena/restart.sh
 
 # sshd: non-root only. Agent key is provisioned at install time.
 RUN mkdir -p /run/sshd /home/arena_agent/.ssh \
