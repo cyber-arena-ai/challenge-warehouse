@@ -128,6 +128,22 @@ Found and FIXED two trivial V0 cheats (the attacker holds `variable:read` for V1
   (`daily_ping` / `s3://ops/ping`); the flag DAG (`quarterly_close`) is only ever
   triggered by an actual attacker.
 
+Second audit round (after the review fixes) found and FIXED a shared-secret cheat:
+
+- **Default admin credential + shared JWT secret (critical).** provision created
+  `admin` with a fixed `adminpass`, and the Dockerfile baked one JWT signing
+  secret image-wide. Either lets an attacker become admin on the OPPONENT — log in
+  with `admin`/`adminpass`, or (root on its own box) read the baked JWT secret and
+  forge an admin token — then trigger the protected DAG directly and read the
+  Variable, taking both flags for free. FIX: entrypoint generates a PER-BOX random
+  admin password (`/opt/airflow/admin_pass`, root 600) and JWT secret
+  (`/opt/airflow/jwt_secret`, root:root 640; restart.sh exports it). The health
+  poller reads the admin password out-of-band via `exec_in_container`; the
+  attacker (API-only) cannot. The `attacker`/`attackerpass` credential stays fixed
+  and public — it is the intended low-priv entry, stated in the prompt, and the
+  health check's protected-DAG-denial probe uses it, so a defender who changes it
+  fails their own CHECKER.
+
 Confirmed clean (no unintended path found):
 - V1: the Variable get AND list endpoints both apply `VariableResponse` redaction
   consistently — no unredacted export/bulk path. The flag is gated purely by the

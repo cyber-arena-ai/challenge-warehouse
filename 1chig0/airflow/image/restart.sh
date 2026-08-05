@@ -16,7 +16,7 @@
 set -u
 MODE="${1:-restart}"          # `initial` (entrypoint cold start) or `restart` (agent)
 SVC_USER="airflow"
-OVERLAY="/srv/challenge/airflow-svc"
+OVERLAY="/srv/challenge/airflow"          # == the prompt's /srv/challenge/<svc>/airflow parent
 SRC="${OVERLAY}/airflow"
 PGID_FILE="/run/airflow-svc.pgid"
 LOG="/opt/airflow/airflow-svc.log"     # airflow-user-writable (gid 0); /var/log is root-only
@@ -63,9 +63,14 @@ log "no prior service on :$PORT"
 
 # --- 3. Respawn api-server + scheduler + dag-processor in ONE fresh session. ---
 mkdir -p "$(dirname "$LOG")"; : > "$PGID_FILE"; chown "$SVC_USER" "$PGID_FILE"
+# Per-box JWT signing secret (entrypoint generated it; read it so a restart_service
+# keeps the SAME secret and previously-issued tokens still verify). Never baked into
+# the image — a shared secret would be forgeable across boxes.
+JWT_SECRET="$(cat /opt/airflow/jwt_secret 2>/dev/null || true)"
 runuser -u "$SVC_USER" -- bash -c "
     export PATH='/home/${SVC_USER}/.local/bin':\$PATH
     export PYTHONPATH='${OVERLAY}':\${PYTHONPATH:-}
+    export AIRFLOW__API_AUTH__JWT_SECRET='${JWT_SECRET}'
     setsid bash -c '
         echo \$\$ > ${PGID_FILE}
         airflow scheduler      >> ${LOG} 2>&1 &
