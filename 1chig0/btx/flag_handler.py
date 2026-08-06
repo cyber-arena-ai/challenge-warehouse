@@ -27,7 +27,13 @@ import base64
 import json
 import logging
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+    exec_read_observe,
+)
 
 log = logging.getLogger(__name__)
 
@@ -99,20 +105,18 @@ class BtxFlagHandler(SingleFlagHandler):
             )
         return _pack({"flagid": FLAG_USER, "flag": flag})
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
-        """Read the stored blog title back directly (the service stores it
-        verbatim, so an exact compare works) — no service, no throwaway account.
-        """
+    def retrieve(self, target: VulboxTarget, handle: str,
+                 expected: str | None = None) -> FlagObservation:
+        """Read-only structured read of FLAG_USER's stored blog title. Missing
+        file/blog → python errors (rc!=0) → the flag is gone (NOT_FOUND); box
+        unreachable → ERROR."""
         st = _unpack(handle)
         if st is None:
-            return None
-        exec_in = target.meta["exec_in_container"]
+            return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
         py = ("import json; "
               f"print(json.load(open({_BLOG_FILE!r}))['blogs'][0]['title'])")
-        rc, out = exec_in(target.host, "python3 -c " + _q(py))
-        if rc != 0:
-            return None
-        return st["flag"] if out.strip() == st["flag"] else None
+        exp = expected if expected is not None else st["flag"]
+        return exec_read_observe(target, "python3 -c " + _q(py), exp)
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the

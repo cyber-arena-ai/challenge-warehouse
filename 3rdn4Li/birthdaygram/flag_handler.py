@@ -13,7 +13,12 @@ import logging
 
 import requests
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 from . import _net
 from ._checker import utils
@@ -62,27 +67,48 @@ class BirthdaygramFlagHandler(SingleFlagHandler):
             "image_b64": base64.b64encode(flag_image).decode("ascii"),
         })
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
+    def retrieve(
+        self, target: VulboxTarget, handle: str, expected: str | None = None,
+    ) -> FlagObservation:
+        """Read-only structured observation. Never raises.
+
+        Preserves the two-block boundary: a login-block failure is a
+        precondition/service failure (ERROR), while the view/parse block splits
+        a raised request error (ERROR) from a fetched-but-no-matching-image
+        result (NOT_FOUND)."""
         st = _unpack(handle)
         if st is None:
-            return None
+            return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
         try:
-            flag_image = base64.b64decode(st["image_b64"])
-        except Exception:
-            return None
-        c = _net.make_checker(target)
-        session = requests.session()
-        try:
-            utils.check_login(c, session, st["username"], st["password"])
-        except Exception:  # noqa: BLE001
-            return None
-        try:
-            view = utils.get_view(c, session, st["username"])
-            part = view.split("<img")[2].split("base64, ")[1].split(" />")[0]
-            img_bytes = base64.decodebytes(part[:-1].encode("utf-8"))
-        except Exception:  # noqa: BLE001
-            return None
-        return st["flag"] if img_bytes == flag_image else None
+            try:
+                flag_image = base64.b64decode(st["image_b64"])
+            except Exception:  # noqa: BLE001
+                return FlagObservation(
+                    ObservationStatus.ERROR, detail="bad image handle")
+            exp = expected if expected is not None else st["flag"]
+            c = _net.make_checker(target)
+            session = requests.session()
+            try:
+                utils.check_login(c, session, st["username"], st["password"])
+            except Exception:  # noqa: BLE001
+                return FlagObservation(
+                    ObservationStatus.ERROR, detail="login failed")
+            try:
+                view = utils.get_view(c, session, st["username"])
+            except Exception:  # noqa: BLE001
+                return FlagObservation(
+                    ObservationStatus.ERROR, detail="get_view failed")
+            try:
+                part = view.split("<img")[2].split("base64, ")[1].split(" />")[0]
+                img_bytes = base64.decodebytes(part[:-1].encode("utf-8"))
+            except Exception:  # noqa: BLE001
+                return FlagObservation(
+                    ObservationStatus.NOT_FOUND, detail="no image in view")
+            if img_bytes == flag_image:
+                return FlagObservation(ObservationStatus.PRESENT, value=exp)
+            return FlagObservation(ObservationStatus.NOT_FOUND)
+        except Exception:  # noqa: BLE001 — retrieve must never raise
+            return FlagObservation(ObservationStatus.ERROR, detail="retrieve raised")
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the

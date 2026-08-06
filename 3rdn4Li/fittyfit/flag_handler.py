@@ -14,7 +14,12 @@ from uuid import uuid4
 
 import requests
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 from . import _client, _net
 
@@ -67,28 +72,37 @@ class FittyfitFlagHandler(SingleFlagHandler):
             raise RuntimeError(f"{self.name}: generate failed")
         return _pack({"flag_id": name, "name": name, "key": key, "flag": flag})
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
+    def retrieve(
+        self, target: VulboxTarget, handle: str, expected: str | None = None,
+    ) -> FlagObservation:
+        """Read-only structured observation. Never raises."""
         st = _unpack(handle)
         if st is None:
-            return None
-        base = _net.base_url(target)
-        session = requests.Session()
-        if not _client.check_index(base):
-            return None
-        name, key, flag = st.get("name"), st.get("key"), st["flag"]
-        if not _client.login_user(session, base, name, key):
-            return None
-        res = session.get(f"{base}/home")
-        for f in res.text.split('<iframe src="')[1:]:
-            path = f.split('"></iframe>')[0]
-            try:
-                pdf = _client.open_pdf_bytes(
-                    session.get(f"{base}" + path, stream=True).content)
-                if flag.encode() in _client.read_pdf(pdf):
-                    return flag
-            except Exception:  # noqa: BLE001
-                continue
-        return None
+            return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
+        try:
+            base = _net.base_url(target)
+            session = requests.Session()
+            if not _client.check_index(base):
+                return FlagObservation(
+                    ObservationStatus.ERROR, detail="index down")
+            name, key = st.get("name"), st.get("key")
+            exp = expected if expected is not None else st["flag"]
+            if not _client.login_user(session, base, name, key):
+                return FlagObservation(
+                    ObservationStatus.ERROR, detail="login failed")
+            res = session.get(f"{base}/home")
+            for f in res.text.split('<iframe src="')[1:]:
+                path = f.split('"></iframe>')[0]
+                try:
+                    pdf = _client.open_pdf_bytes(
+                        session.get(f"{base}" + path, stream=True).content)
+                    if exp.encode() in _client.read_pdf(pdf):
+                        return FlagObservation(ObservationStatus.PRESENT, value=exp)
+                except Exception:  # noqa: BLE001
+                    continue
+            return FlagObservation(ObservationStatus.NOT_FOUND)
+        except Exception:  # noqa: BLE001 — retrieve must never raise
+            return FlagObservation(ObservationStatus.ERROR, detail="retrieve raised")
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the

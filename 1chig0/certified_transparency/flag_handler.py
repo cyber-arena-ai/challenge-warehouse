@@ -29,7 +29,12 @@ import os
 from base64 import b64decode, b64encode
 from hashlib import sha3_256
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 from . import _ed25519 as ed, _net
 from ._api import Api, ApiError, TreeLeafProof
@@ -110,35 +115,41 @@ class CertifiedTransparencyFlagHandler(SingleFlagHandler):
             "flag_index": flag_index,
         })
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
-        st = _unpack(handle)
-        if st is None:
-            return None
-        api = Api(_net.resolve(target))
+    def retrieve(self, target: VulboxTarget, handle: str, expected: str | None = None) -> FlagObservation:
+        """Structured, read-only read of the flag via the legitimate claim flow."""
         try:
-            sot = b64decode(st["sot"])
-            seed = b64decode(st["seed"])
-            flag = st["flag"]
-
-            flag_proof = api.get_entry_proof(st["flag_index"])
-
-            # Private claim (data_private): uses the SOT we own.
+            st = _unpack(handle)
+            if st is None:
+                return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
+            exp = expected if expected is not None else st["flag"]
+            api = Api(_net.resolve(target))
             try:
-                got_priv = api.claim_private(sot, flag_proof)
-                if got_priv == flag:
-                    return flag
-            except ApiError:
-                pass
+                sot = b64decode(st["sot"])
+                seed = b64decode(st["seed"])
 
-            # Public claim (data_public): claiming leaf + our signature.
-            claim_proof = api.get_entry_proof(st["claim_index"])
-            sig = ed.sign(seed, sha3_256(TreeLeafProof.from_binary(claim_proof).leaf).digest())
-            got_pub = api.claim_public(claim_proof, flag_proof, sig)
-            return flag if got_pub == flag else None
-        except (ApiError, OSError, ValueError, KeyError):
-            return None
-        finally:
-            api.close()
+                flag_proof = api.get_entry_proof(st["flag_index"])
+
+                # Private claim (data_private): uses the SOT we own.
+                try:
+                    got_priv = api.claim_private(sot, flag_proof)
+                    if got_priv == exp:
+                        return FlagObservation(ObservationStatus.PRESENT, value=got_priv)
+                except ApiError:
+                    pass
+
+                # Public claim (data_public): claiming leaf + our signature.
+                claim_proof = api.get_entry_proof(st["claim_index"])
+                sig = ed.sign(seed, sha3_256(TreeLeafProof.from_binary(claim_proof).leaf).digest())
+                got_pub = api.claim_public(claim_proof, flag_proof, sig)
+                if got_pub == exp:
+                    return FlagObservation(ObservationStatus.PRESENT, value=got_pub)
+                return FlagObservation(ObservationStatus.NOT_FOUND, detail="claim recovered non-matching value")
+            except (ApiError, OSError, ValueError, KeyError) as e:
+                return FlagObservation(ObservationStatus.ERROR, detail=type(e).__name__)
+            finally:
+                api.close()
+        except Exception as e:  # noqa: BLE001 — retrieve must never raise
+            return FlagObservation(ObservationStatus.ERROR, detail=f"unexpected: {type(e).__name__}")
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the

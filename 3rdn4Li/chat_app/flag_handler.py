@@ -12,7 +12,12 @@ import json
 import logging
 import secrets
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 from . import _net
 from ._checker import helpers
@@ -78,27 +83,35 @@ class ChatAppFlagHandler(SingleFlagHandler):
             "flag": flag,
         })
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
-        """Read the flag back via the victim's own login. None on miss."""
+    def retrieve(
+        self, target: VulboxTarget, handle: str, expected: str | None = None,
+    ) -> FlagObservation:
+        """Read-only structured observation. Never raises."""
         st = _unpack(handle)
         if st is None:
-            return None
-        base = _net.base_url(target)
-        username, password = st.get("username"), st.get("password")
-        chat_id, flag = st.get("chat_id"), st["flag"]
-        if not username or not password:
-            return None
-
-        ok, token = helpers.login(base, username, password)
-        if not ok:
-            return None
-        ok, messages = helpers.get_messages(base, token, chat_id)
-        if not ok:
-            return None
-        for message in messages:
-            if message.get("content") == f"here is the secret: {flag}":
-                return flag
-        return None
+            return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
+        try:
+            base = _net.base_url(target)
+            username, password = st.get("username"), st.get("password")
+            chat_id = st.get("chat_id")
+            exp = expected if expected is not None else st["flag"]
+            if not username or not password:
+                return FlagObservation(
+                    ObservationStatus.ERROR, detail="missing credentials")
+            ok, token = helpers.login(base, username, password)
+            if not ok:
+                return FlagObservation(
+                    ObservationStatus.ERROR, detail="login failed")
+            ok, messages = helpers.get_messages(base, token, chat_id)
+            if not ok:
+                return FlagObservation(
+                    ObservationStatus.ERROR, detail="get_messages failed")
+            for message in messages:
+                if message.get("content") == f"here is the secret: {exp}":
+                    return FlagObservation(ObservationStatus.PRESENT, value=exp)
+            return FlagObservation(ObservationStatus.NOT_FOUND)
+        except Exception:  # noqa: BLE001 — retrieve must never raise
+            return FlagObservation(ObservationStatus.ERROR, detail="retrieve raised")
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the

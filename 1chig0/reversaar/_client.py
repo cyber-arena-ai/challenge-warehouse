@@ -24,7 +24,21 @@ _TIMEOUT = 10.0
 
 
 class ClientError(Exception):
-    """Protocol-level failure (login rejected / unexpected response)."""
+    """Protocol-level failure (unexpected response / transport-shaped error)."""
+
+
+class AuthRejected(ClientError):
+    """Login was rejected because the stored credential didn't match — the
+    service's verified signal that vault's password was rotated (a defender, root
+    on its own box, overwrote `data/users/<vault>/password`).
+
+    Grounded in the service protocol, NOT a generic 401 assumption:
+    `register_or_login` returns 0 on a stored-hash mismatch
+    (`image/service/src/main.c:76-77`) and `api_login` then responds
+    `401 "Unauthorized"` (`main.c:183`). A missing/malformed password is `400`
+    (`main.c:170,174`) and success is `200` + `Set-Cookie: Session=` (`main.c:179`)
+    — those are NOT AuthRejected. Lets the flag audit tell "credential rotated"
+    (repairable precondition) from a genuine flag loss or a transient error."""
 
 
 def base_url(ip: str) -> str:
@@ -50,6 +64,10 @@ def login(c: httpx.Client, ip: str, username: str, password: str) -> str:
     cookie), so it keeps working after a defender rotates the key / drops the
     backdoor."""
     r = c.post(base_url(ip) + "/api/login", json={"username": username, "password": password})
+    if r.status_code == 401:
+        # Stored-hash mismatch → api_login err(401) (main.c:183). The verified
+        # "credential rotated" signal — distinct from other faults.
+        raise AuthRejected(f"login {username}: 401 Unauthorized (credential rotated?)")
     if r.status_code != 200:
         raise ClientError(f"login {username}: HTTP {r.status_code}")
     token = r.cookies.get("Session")

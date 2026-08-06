@@ -13,7 +13,12 @@ import random
 
 import requests
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 from . import _client, _net
 
@@ -57,19 +62,30 @@ class MarscasinoFlagHandler(SingleFlagHandler):
         return _pack({"flag_id": username, "username": username,
                       "password": password, "flag": flag})
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
+    def retrieve(
+        self, target: VulboxTarget, handle: str, expected: str | None = None,
+    ) -> FlagObservation:
+        """Read-only structured observation. Never raises."""
         st = _unpack(handle)
         if st is None:
-            return None
-        base = _net.base_url(target)
-        s = requests.Session()
-        resp = _client.login(s, base, st.get("username"), st.get("password"))
-        if resp.status_code != 200 or "Wrong" in resp.text:
-            return None
-        resp = _client.home(s, base)
-        if resp.status_code != 200:
-            return None
-        return st["flag"] if st["flag"] in resp.text else None
+            return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
+        try:
+            base = _net.base_url(target)
+            exp = expected if expected is not None else st["flag"]
+            s = requests.Session()
+            resp = _client.login(s, base, st.get("username"), st.get("password"))
+            if resp.status_code != 200 or "Wrong" in resp.text:
+                return FlagObservation(
+                    ObservationStatus.ERROR, detail="login failed")
+            resp = _client.home(s, base)
+            if resp.status_code != 200:
+                return FlagObservation(
+                    ObservationStatus.ERROR, detail="home failed")
+            if exp in resp.text:
+                return FlagObservation(ObservationStatus.PRESENT, value=exp)
+            return FlagObservation(ObservationStatus.NOT_FOUND)
+        except Exception:  # noqa: BLE001 — retrieve must never raise
+            return FlagObservation(ObservationStatus.ERROR, detail="retrieve raised")
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the

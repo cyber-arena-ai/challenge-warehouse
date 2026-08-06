@@ -28,7 +28,13 @@ import hmac
 import json
 import logging
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+    exec_read_observe,
+)
 
 from ._const import FLAG_USER  # public — named in the attack prompt
 
@@ -115,11 +121,14 @@ class DeutschesFlugzeugFlagHandler(SingleFlagHandler):
             raise RuntimeError(f"{self.name}: no flug_id from plant: out={out!r}") from e
         return _pack({"flag": flag, "flug_id": flug_id, "marker": marker})
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
+    def retrieve(self, target: VulboxTarget, handle: str,
+                 expected: str | None = None) -> FlagObservation:
+        """Read-only structured DB read. rc!=0 = DB/venv unhealthy → ERROR
+        (inconclusive, NOT flag-gone); empty row → NOT_FOUND; box unreachable →
+        ERROR."""
         st = _unpack(handle)
         if st is None or "flug_id" not in st:
-            return None
-        exec_in = target.meta["exec_in_container"]
+            return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
         prog = "\n".join([
             "import sqlite3",
             f"db = sqlite3.connect({_DB!r}, timeout=10)",
@@ -127,10 +136,9 @@ class DeutschesFlugzeugFlagHandler(SingleFlagHandler):
             f"({int(st['flug_id'])},)).fetchone()",
             "print(r[0] if r else '')",
         ])
-        rc, out = exec_in(target.host, _PY + " -c " + _q(prog))
-        if rc != 0:
-            return None
-        return st["flag"] if st["flag"] in out else None
+        exp = expected if expected is not None else st["flag"]
+        return exec_read_observe(target, _PY + " -c " + _q(prog), exp,
+                                 read_error_status=ObservationStatus.ERROR)
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the
