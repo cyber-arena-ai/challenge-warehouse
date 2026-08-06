@@ -24,7 +24,12 @@ import logging
 
 import nclib
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 from . import _client, _net
 
@@ -84,22 +89,29 @@ class EightBitOracleFlagHandler(SingleFlagHandler):
             raise RuntimeError(f"{self.name}: plant failed: bad insert output {str(out)[:200]!r}")
         return _pack({"id": rid.strip(), "key": key.strip(), "flag": flag})
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
-        st = _unpack(handle)
-        if st is None:
-            return None
-        conn = _client.connect(_net.resolve(target))
-        if conn is None:
-            return None
+    def retrieve(self, target: VulboxTarget, handle: str, expected: str | None = None) -> FlagObservation:
+        """Structured, read-only read of the flag via the CHALLENGE/DECRYPT/GETREVIEW replay."""
         try:
-            ct = _client.get_challenge(conn, st["id"])
-            plain = _client.decrypt(conn, st["key"], ct)
-            review = _client.get_review(conn, st["id"], plain)
-            return st["flag"] if st["flag"] in review else None
-        except (_client.ClientError, nclib.NetcatError, ValueError, UnicodeError):
-            return None
-        finally:
-            conn.close()
+            st = _unpack(handle)
+            if st is None:
+                return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
+            exp = expected if expected is not None else st["flag"]
+            conn = _client.connect(_net.resolve(target))
+            if conn is None:
+                return FlagObservation(ObservationStatus.ERROR, detail="connect failed (DOWN)")
+            try:
+                ct = _client.get_challenge(conn, st["id"])
+                plain = _client.decrypt(conn, st["key"], ct)
+                review = _client.get_review(conn, st["id"], plain)
+                if exp in review:
+                    return FlagObservation(ObservationStatus.PRESENT, value=exp)
+                return FlagObservation(ObservationStatus.NOT_FOUND, detail="flag absent from review")
+            except (_client.ClientError, nclib.NetcatError, ValueError, UnicodeError) as e:
+                return FlagObservation(ObservationStatus.ERROR, detail=type(e).__name__)
+            finally:
+                conn.close()
+        except Exception as e:  # noqa: BLE001 — observe must never raise
+            return FlagObservation(ObservationStatus.ERROR, detail=f"unexpected: {type(e).__name__}")
 
     # No flag_id() hook: the review row's id is a per-round DB auto-increment with
     # no stable/coarse public identity to surface (reviews have no owner — the

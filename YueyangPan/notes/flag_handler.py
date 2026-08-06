@@ -6,7 +6,12 @@ regardless of cross-team network state.
 
 from __future__ import annotations
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 
 class NotesFlagHandler(SingleFlagHandler):
@@ -45,9 +50,13 @@ class NotesFlagHandler(SingleFlagHandler):
             )
         return parts[1]
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
-        """`GET <handle>` — returns the stored flag, or None on `ERR`."""
-        exec_in = target.meta["exec_in_container"]
+    def retrieve(self, target: VulboxTarget, handle: str,
+                 expected: str | None = None) -> FlagObservation:
+        """Read-only structured `GET <id>`. Service down / exec fail → ERROR
+        (inconclusive); daemon `ERR` or empty → NOT_FOUND; box unreachable → ERROR."""
+        exec_in = target.meta.get("exec_in_container")
+        if exec_in is None:
+            return FlagObservation(ObservationStatus.ERROR, detail="no exec_in_container")
         port = target.ports["service"]
         probe = (
             f"import socket\n"
@@ -56,13 +65,24 @@ class NotesFlagHandler(SingleFlagHandler):
             f"s.sendall(b'GET {handle}\\n')\n"
             f"print(s.recv(4096).decode(errors='replace'), end='')\n"
         )
-        rc, out = exec_in(target.host, f"python3 -c {_q(probe)}")
+        try:
+            rc0, _ = exec_in(target.host, "true")
+        except Exception:
+            return FlagObservation(ObservationStatus.ERROR, detail="reachability exec raised")
+        if rc0 != 0:
+            return FlagObservation(ObservationStatus.ERROR, detail="prod unreachable")
+        try:
+            rc, out = exec_in(target.host, f"python3 -c {_q(probe)}")
+        except Exception:
+            return FlagObservation(ObservationStatus.ERROR, detail="read exec raised")
         if rc != 0:
-            return None
+            return FlagObservation(ObservationStatus.ERROR, detail=f"service read rc={rc}")
         line = out.strip().splitlines()[-1] if out else ""
         if line == "ERR" or not line:
-            return None
-        return line
+            return FlagObservation(ObservationStatus.NOT_FOUND, detail="daemon ERR/empty")
+        if expected is not None and expected != line and expected not in line:
+            return FlagObservation(ObservationStatus.MISMATCH, value=line)
+        return FlagObservation(ObservationStatus.PRESENT, value=line)
 
 
 def _q(s: str) -> str:

@@ -15,7 +15,12 @@ from __future__ import annotations
 
 import shlex
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    SingleFlagHandler,
+    VulboxTarget,
+    exec_read_observe,
+)
 
 FLAG_DIR = "/opt/secret"
 FLAG_PATH = f"{FLAG_DIR}/flag.txt"
@@ -53,9 +58,8 @@ class MlflowFlagHandler(SingleFlagHandler):
             )
         return FLAG_PATH
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
-        exec_in = target.meta["exec_in_container"]
-        rc, out = exec_in(target.host, f"cat {shlex.quote(handle)}")
-        if rc != 0 or not out:
-            return None
-        return out.strip() or None
+    def retrieve(self, target: VulboxTarget, handle: str,
+                expected: str | None = None) -> FlagObservation:
+        """Read-only structured read of the flag file (privileged docker-exec
+        cat): rc!=0 → the file is gone (NOT_FOUND); box unreachable → ERROR."""
+        return exec_read_observe(target, f"cat {shlex.quote(handle)}", expected)

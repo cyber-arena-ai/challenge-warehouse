@@ -11,7 +11,12 @@ import base64
 import json
 import logging
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 from . import _client, _net
 
@@ -53,17 +58,28 @@ class TreasuryFlagHandler(SingleFlagHandler):
             raise RuntimeError(f"{self.name}: add_treasure returned {ret}")
         return _pack({"flag_id": key, "key": key, "flag": flag})
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
-        st = _unpack(handle)
-        if st is None:
-            return None
+    def retrieve(self, target: VulboxTarget, handle: str, expected: str | None = None) -> FlagObservation:
+        """Structured, read-only observation via the view_treasure path."""
         try:
-            val = _client.view_treasure(_net.resolve(target), st["key"])
-        except ConnectionRefusedError:
-            return None
-        if not val:
-            return None
-        return st["flag"] if val.decode() == st["flag"] else None
+            st = _unpack(handle)
+            if st is None:
+                return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
+            exp = expected if expected is not None else st["flag"]
+            try:
+                val = _client.view_treasure(_net.resolve(target), st["key"])
+            except ConnectionRefusedError:
+                return FlagObservation(ObservationStatus.ERROR, detail="connect refused (DOWN)")
+            if not val:
+                return FlagObservation(ObservationStatus.NOT_FOUND, detail="treasure gone")
+            try:
+                decoded = val.decode()
+            except UnicodeDecodeError:
+                return FlagObservation(ObservationStatus.ERROR, detail="undecodable treasure")
+            if decoded == exp:
+                return FlagObservation(ObservationStatus.PRESENT, value=decoded)
+            return FlagObservation(ObservationStatus.MISMATCH, value=decoded)
+        except Exception as e:  # noqa: BLE001 — observe must never raise
+            return FlagObservation(ObservationStatus.ERROR, detail=f"unexpected: {type(e).__name__}")
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the

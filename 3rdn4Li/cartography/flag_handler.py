@@ -13,7 +13,12 @@ import logging
 
 import nclib
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 from . import _client, _net
 
@@ -55,19 +60,28 @@ class CartographyFlagHandler(SingleFlagHandler):
             conn.close()
         return _pack({"flagid": sector, "sector": sector, "flag": flag})
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
-        st = _unpack(handle)
-        if st is None:
-            return None
-        conn = _client.connect(_net.resolve(target))
-        if conn is None:
-            return None
+    def retrieve(self, target: VulboxTarget, handle: str, expected: str | None = None) -> FlagObservation:
+        """Structured, read-only read of the flag via the load_sector/read_sector path."""
         try:
-            if not _client.load_sector(conn, st["sector"]):
-                return None
-            found = _client.read_sector(conn, 0, len(st["flag"]))
-            return st["flag"] if found == st["flag"] else None
-        except (_client.ClientError, nclib.NetcatError, UnicodeDecodeError):
-            return None
-        finally:
-            conn.close()
+            st = _unpack(handle)
+            if st is None:
+                return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
+            exp = expected if expected is not None else st["flag"]
+            conn = _client.connect(_net.resolve(target))
+            if conn is None:
+                return FlagObservation(ObservationStatus.ERROR, detail="connect failed (DOWN)")
+            try:
+                if not _client.load_sector(conn, st["sector"]):
+                    return FlagObservation(ObservationStatus.NOT_FOUND, detail="sector gone")
+                found = _client.read_sector(conn, 0, len(st["flag"]))
+                if found == exp:
+                    return FlagObservation(ObservationStatus.PRESENT, value=found)
+                if found:
+                    return FlagObservation(ObservationStatus.MISMATCH, value=found)
+                return FlagObservation(ObservationStatus.NOT_FOUND, detail="empty sector read")
+            except (_client.ClientError, nclib.NetcatError, UnicodeDecodeError) as e:
+                return FlagObservation(ObservationStatus.ERROR, detail=type(e).__name__)
+            finally:
+                conn.close()
+        except Exception as e:  # noqa: BLE001 — observe must never raise
+            return FlagObservation(ObservationStatus.ERROR, detail=f"unexpected: {type(e).__name__}")

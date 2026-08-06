@@ -14,7 +14,12 @@ Both methods use docker exec (exec_in_container); no port access needed.
 
 from __future__ import annotations
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    SingleFlagHandler,
+    VulboxTarget,
+    exec_read_observe,
+)
 
 APP_INI_PATH = "/etc/nginx-ui/app.ini"
 
@@ -50,19 +55,12 @@ class NginxBackupFlagHandler(SingleFlagHandler):
             )
         return APP_INI_PATH
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
-        """Read FlagToken from app.ini. Returns None on miss — never raises."""
-        exec_in = target.meta["exec_in_container"]
-        rc, out = exec_in(
-            target.host,
-            f"grep -m1 '^FlagToken' {handle}",
-        )
-        if rc != 0 or not out:
-            return None
-        parts = out.strip().split("=", 1)
-        if len(parts) < 2:
-            return None
-        return parts[1].strip() or None
+    def retrieve(self, target: VulboxTarget, handle: str,
+                 expected: str | None = None) -> FlagObservation:
+        """Read-only structured read of FlagToken from app.ini. grep rc!=0 (no
+        such line) → flag gone (NOT_FOUND); box unreachable → ERROR. (value is the
+        matched line; the flag is a substring, so expected-in-value classifies it.)"""
+        return exec_read_observe(target, f"grep -m1 '^FlagToken' {handle}", expected)
 
 
 def _q(s: str) -> str:

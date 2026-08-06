@@ -11,20 +11,26 @@ backdoor: forging a `Session` cookie with the LEAKED HMAC key `bytes(range(64))`
 AND sending the magic `User-Agent: ...Firefox/133.7` — without the backdoor the
 forged cookie is rejected (401).
 
-Planting/retrieval use the NORMAL credential flow (login with a password, then
-store/get the array) so a patched box still serves its own flags — but the
-credential is kept OUT OF THE AGENT'S REACH: right before login, the planter
-force-writes `vault`'s password file directly over the privileged docker-exec
-bridge (`target.meta["exec_in_container"]`, root inside prod) to the known
-HMAC-derived value. This is deliberate: the defending agent is root on its own
-box and can overwrite `vault`'s password (`data/users/<hash>/password`); a
-planter that just logged in would silently stop planting the moment the agent
-rotated it (see issue #29). Re-asserting the password through a channel the agent
-can't intercept keeps planting independent of agent-writable credential state,
-while reusing the service's own reverse-on-store round-trip (no fragile
-byte-format replication). The per-box secret_key rotation that stops the *attack*
-does not affect this login-based flow (login/store/get all use whatever key the
-persisted `secret_key` file currently holds, consistently within one op).
+Planting/reading use the NORMAL credential flow (login with a password, then
+store/get the array) so a patched box still serves its own flags. The defending
+agent is root on its own box and can overwrite `vault`'s password
+(`data/users/<hash>/password`), which would break a login-based read — so the
+known HMAC-derived password is re-asserted OUT OF THE AGENT'S REACH over the
+privileged docker-exec bridge (`target.meta["exec_in_container"]`, root inside
+prod). See issue #29.
+
+That re-assert is now a SEPARATE `repair()` responsibility, split from
+observation:
+  - `plant_one` primes at plant time (with `clear_arrays=True`).
+  - `observe()` / `retrieve()` are PURE READ-ONLY — they log in + read, never
+    write. If the agent rotated `vault`'s password the login is 401 → `observe`
+    returns AUTH_REJECTED (evidence), and the caller (flag audit) invokes
+    `repair()` — which re-asserts the password — then re-observes. This keeps the
+    audit's observation honest (no hidden writes masking tampering) while
+    preserving the #29 self-heal as an explicit, recorded step.
+The per-box secret_key rotation that stops the *attack* does not affect this
+login-based flow (login/store/get all use whatever key the persisted `secret_key`
+file currently holds, consistently within one op).
 """
 from __future__ import annotations
 
@@ -36,7 +42,13 @@ import logging
 
 import httpx
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    RepairResult,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 from . import _client, _net
 
@@ -133,26 +145,48 @@ class ReversaarFlagHandler(SingleFlagHandler):
                 raise RuntimeError(f"{self.name}: plant failed: {e}") from e
         return _pack({"user": FLAG_USER, "idx": idx, "flag": flag})
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
+    def retrieve(self, target: VulboxTarget, handle: str,
+                 expected: str | None = None) -> FlagObservation:
+        """Read-only STRUCTURED read (no side effects; credential repair is the
+        separate `repair()`). Distinguishes AUTH_REJECTED (vault password rotated
+        → `_client.AuthRejected`, a repairable precondition) from ERROR (transport
+        / other) and NOT_FOUND (logged in, but the flag isn't in the array)."""
         st = _unpack(handle)
         if st is None:
-            return None
+            return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
         ip = _net.resolve(target)
         pw = _flag_password(target.host)
         try:
-            # Same out-of-band credential re-assert (pw only — do NOT clear the
-            # arrays here, that would wipe the flag we're about to read), so a
-            # mid-round password change by the defender can't make it disappear.
-            _prime_vault(target.meta["exec_in_container"], target.host, pw)
             with _client.new_client() as c:
-                token = _client.login(c, ip, FLAG_USER, pw)
+                try:
+                    token = _client.login(c, ip, FLAG_USER, pw)
+                except _client.AuthRejected:
+                    return FlagObservation(
+                        ObservationStatus.AUTH_REJECTED,
+                        detail="vault login rejected (credential rotated?)")
                 blob = _client.get_array(c, ip, token, int(st["idx"]))
-        except (_client.ClientError, httpx.HTTPError, UnicodeError, ValueError, RuntimeError):
-            return None
-        flag = st["flag"]
-        if flag.encode() in blob or flag.encode() in blob[::-1]:
-            return flag
-        return None
+        except (_client.ClientError, httpx.HTTPError, UnicodeError, ValueError):
+            return FlagObservation(ObservationStatus.ERROR, detail="read failed")
+        exp = expected if expected is not None else st["flag"]
+        if exp.encode() in blob or exp.encode() in blob[::-1]:
+            return FlagObservation(ObservationStatus.PRESENT, value=exp)
+        return FlagObservation(ObservationStatus.NOT_FOUND,
+                               detail="flag not in vault array")
+
+    def repair(self, target: VulboxTarget, handle: str) -> RepairResult:
+        """Separated credential repair: re-assert vault's out-of-band password
+        (pw only — NEVER `clear_arrays`, that would wipe the flag) so a subsequent
+        `observe()` can log in even after the defender rotated it (#29). Idempotent
+        (convergent write of a fixed value); does NOT touch the flag array. The
+        audit calls this ONLY after an AUTH_REJECTED observation, then re-observes.
+        Best-effort — docker-exec may fail; returns FAILED rather than raising."""
+        try:
+            _prime_vault(target.meta["exec_in_container"], target.host,
+                         _flag_password(target.host))
+            return RepairResult.REPAIRED
+        except Exception as e:  # noqa: BLE001 — best-effort; never raise to the audit
+            log.warning("%s: repair (vault re-prime) failed: %s", self.name, e)
+            return RepairResult.FAILED
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the

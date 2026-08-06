@@ -4,6 +4,15 @@ Inlines the upstream checker's `place_flag` / `check_flag`. The flag is
 planted as a hidden draft joke via an RSA-signed `submit_draft(flag_id, flag)`
 admin command, then made visible to `query_jokes(True)`. Reuses the vendored
 RSA `private.key` (`_checker/private.key`) unmodified.
+
+Read path is PURE READ-ONLY: `plant_one` registers ONE throwaway account and
+STORES its creds in the handle; `observe()`/`retrieve()` re-log-in that same
+planted account and run the (RSA-signed, account-agnostic) `query_jokes(True)`.
+They never register a new account — the flag-persistence audit calls them every
+~20s, so a fresh `/register` per call would be unbounded account creation. (The
+`query_jokes(True)` admin command is authorized by the RSA signature, not the
+session identity, so any logged-in session works — reusing the planted one is
+sufficient and idempotent.)
 """
 from __future__ import annotations
 
@@ -19,7 +28,12 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+)
 
 from . import _net
 
@@ -41,18 +55,33 @@ def _signed_payload(action: str) -> dict:
     return {"message": msg, "hash": _sign(msg).hex()}
 
 
-def _authed_session(base: str) -> requests.Session | None:
-    """Register a fresh account + login -> an authenticated Session, or None."""
-    creds = {"name": str(uuid.uuid4()), "password": secrets.token_hex(16)}
-    r = requests.post(base + "/register", data=creds, timeout=_TIMEOUT)
-    if r.status_code != 200:
-        return None
+def _login(base: str, creds: dict) -> requests.Session | None:
+    """Log in `creds` -> an authenticated Session, or None. Read-only (no
+    account creation) — safe to call repeatedly for an existing user."""
     s = requests.Session()
-    r = s.post(base + "/login", data=creds, timeout=_TIMEOUT)
+    try:
+        r = s.post(base + "/login", data=creds, timeout=_TIMEOUT)
+    except requests.RequestException:
+        s.close()
+        return None
     if r.status_code != 200:
         s.close()
         return None
     return s
+
+
+def _register_and_login(base: str) -> tuple[requests.Session, dict] | None:
+    """PLANT-only: create ONE throwaway account and return (session, creds) so
+    the creds can be stored in the handle and reused read-only by observe()."""
+    creds = {"name": str(uuid.uuid4()), "password": secrets.token_hex(16)}
+    try:
+        r = requests.post(base + "/register", data=creds, timeout=_TIMEOUT)
+    except requests.RequestException:
+        return None
+    if r.status_code != 200:
+        return None
+    s = _login(base, creds)
+    return (s, creds) if s is not None else None
 
 
 class JokesFlagHandler(SingleFlagHandler):
@@ -66,9 +95,10 @@ class JokesFlagHandler(SingleFlagHandler):
 
     def plant_one(self, target: VulboxTarget, flag: str) -> str:
         base = _net.base_url(target)
-        s = _authed_session(base)
-        if s is None:
+        sess = _register_and_login(base)
+        if sess is None:
             raise RuntimeError(f"{self.name}: register/login failed")
+        s, reader = sess
         try:
             flag_id = secrets.token_hex(8)
             r = s.post(base + "/profile",
@@ -83,29 +113,40 @@ class JokesFlagHandler(SingleFlagHandler):
                 raise RuntimeError(f"{self.name}: process_reviewed_jokes failed {r.status_code}")
         finally:
             s.close()
+        # Store the reader creds so observe()/retrieve() can re-log-in this same
+        # account (read-only) instead of registering a new one per call.
         return base64.b64encode(json.dumps(
-            {"flag_id": flag_id, "flag": flag}).encode()).decode("ascii")
+            {"flag_id": flag_id, "flag": flag, "reader": reader}).encode()).decode("ascii")
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
+    def retrieve(self, target: VulboxTarget, handle: str,
+                 expected: str | None = None) -> FlagObservation:
+        """Read-only STRUCTURED read: re-log-in the PLANTED account (no new
+        registration) and query. No defender-breakable read credential here, so
+        no AUTH_REJECTED — a failed login is an inconclusive ERROR (service
+        unhealthy / account gone), never mistaken for a removed flag."""
         try:
             st = json.loads(base64.b64decode(handle))
             flag = st["flag"]
+            reader = st["reader"]
         except Exception:
-            return None
+            return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
+        exp = expected if expected is not None else flag
         base = _net.base_url(target)
-        s = _authed_session(base)
+        s = _login(base, reader)          # read-only: existing account, no /register
         if s is None:
-            return None
+            return FlagObservation(ObservationStatus.ERROR, detail="reader login failed")
         try:
             r = s.post(base + "/profile",
                        data=_signed_payload("rv = query_jokes(True)"), timeout=_TIMEOUT)
-        except Exception:
-            return None
+        except requests.RequestException:
+            return FlagObservation(ObservationStatus.ERROR, detail="query failed")
         finally:
             s.close()
         if r.status_code != 200:
-            return None
-        return flag if flag in r.text else None
+            return FlagObservation(ObservationStatus.ERROR, detail=f"query HTTP {r.status_code}")
+        if exp in r.text:
+            return FlagObservation(ObservationStatus.PRESENT, value=exp)
+        return FlagObservation(ObservationStatus.NOT_FOUND, detail="flag not in jokes")
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the
