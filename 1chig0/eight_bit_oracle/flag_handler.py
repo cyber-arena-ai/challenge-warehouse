@@ -110,7 +110,7 @@ class EightBitOracleFlagHandler(SingleFlagHandler):
                 return FlagObservation(ObservationStatus.ERROR, detail=type(e).__name__)
             finally:
                 conn.close()
-        except Exception as e:  # noqa: BLE001 — observe must never raise
+        except Exception as e:  # noqa: BLE001 — retrieve must never raise
             return FlagObservation(ObservationStatus.ERROR, detail=f"unexpected: {type(e).__name__}")
 
     # No flag_id() hook: the review row's id is a per-round DB auto-increment with

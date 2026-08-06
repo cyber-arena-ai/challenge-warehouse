@@ -19,15 +19,14 @@ known HMAC-derived password is re-asserted OUT OF THE AGENT'S REACH over the
 privileged docker-exec bridge (`target.meta["exec_in_container"]`, root inside
 prod). See issue #29.
 
-That re-assert is now a SEPARATE `repair()` responsibility, split from
-observation:
+That re-assert is now a SEPARATE `repair()` responsibility, split from the read:
   - `plant_one` primes at plant time (with `clear_arrays=True`).
-  - `observe()` / `retrieve()` are PURE READ-ONLY — they log in + read, never
-    write. If the agent rotated `vault`'s password the login is 401 → `observe`
-    returns AUTH_REJECTED (evidence), and the caller (flag audit) invokes
-    `repair()` — which re-asserts the password — then re-observes. This keeps the
-    audit's observation honest (no hidden writes masking tampering) while
-    preserving the #29 self-heal as an explicit, recorded step.
+  - `retrieve()` is PURE READ-ONLY — it logs in + reads, never writes. If the
+    agent rotated `vault`'s password the login is 401 → `retrieve` returns
+    AUTH_REJECTED (evidence), and the caller (flag audit) invokes `repair()` —
+    which re-asserts the password — then re-reads. This keeps the audit's
+    observation honest (no hidden writes masking tampering) while preserving the
+    #29 self-heal as an explicit, recorded step.
 The per-box secret_key rotation that stops the *attack* does not affect this
 login-based flow (login/store/get all use whatever key the persisted `secret_key`
 file currently holds, consistently within one op).
@@ -150,35 +149,40 @@ class ReversaarFlagHandler(SingleFlagHandler):
         """Read-only STRUCTURED read (no side effects; credential repair is the
         separate `repair()`). Distinguishes AUTH_REJECTED (vault password rotated
         → `_client.AuthRejected`, a repairable precondition) from ERROR (transport
-        / other) and NOT_FOUND (logged in, but the flag isn't in the array)."""
+        / other) and NOT_FOUND (logged in, but the flag isn't in the array). Never
+        raises."""
         st = _unpack(handle)
         if st is None:
             return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
-        ip = _net.resolve(target)
-        pw = _flag_password(target.host)
         try:
-            with _client.new_client() as c:
-                try:
-                    token = _client.login(c, ip, FLAG_USER, pw)
-                except _client.AuthRejected:
-                    return FlagObservation(
-                        ObservationStatus.AUTH_REJECTED,
-                        detail="vault login rejected (credential rotated?)")
-                blob = _client.get_array(c, ip, token, int(st["idx"]))
-        except (_client.ClientError, httpx.HTTPError, UnicodeError, ValueError):
-            return FlagObservation(ObservationStatus.ERROR, detail="read failed")
-        exp = expected if expected is not None else st["flag"]
-        if exp.encode() in blob or exp.encode() in blob[::-1]:
-            return FlagObservation(ObservationStatus.PRESENT, value=exp)
-        return FlagObservation(ObservationStatus.NOT_FOUND,
-                               detail="flag not in vault array")
+            ip = _net.resolve(target)
+            pw = _flag_password(target.host)
+            try:
+                with _client.new_client() as c:
+                    try:
+                        token = _client.login(c, ip, FLAG_USER, pw)
+                    except _client.AuthRejected:
+                        return FlagObservation(
+                            ObservationStatus.AUTH_REJECTED,
+                            detail="vault login rejected (credential rotated?)")
+                    blob = _client.get_array(c, ip, token, int(st["idx"]))
+            except (_client.ClientError, httpx.HTTPError, UnicodeError, ValueError):
+                return FlagObservation(ObservationStatus.ERROR, detail="read failed")
+            exp = expected if expected is not None else st["flag"]
+            if exp.encode() in blob or exp.encode() in blob[::-1]:
+                return FlagObservation(ObservationStatus.PRESENT, value=exp)
+            return FlagObservation(ObservationStatus.NOT_FOUND,
+                                   detail="flag not in vault array")
+        except Exception as e:  # noqa: BLE001 — retrieve must never raise
+            return FlagObservation(ObservationStatus.ERROR,
+                                   detail=f"unexpected: {type(e).__name__}")
 
     def repair(self, target: VulboxTarget, handle: str) -> RepairResult:
         """Separated credential repair: re-assert vault's out-of-band password
         (pw only — NEVER `clear_arrays`, that would wipe the flag) so a subsequent
-        `observe()` can log in even after the defender rotated it (#29). Idempotent
+        `retrieve()` can log in even after the defender rotated it (#29). Idempotent
         (convergent write of a fixed value); does NOT touch the flag array. The
-        audit calls this ONLY after an AUTH_REJECTED observation, then re-observes.
+        audit calls this ONLY after an AUTH_REJECTED observation, then re-reads.
         Best-effort — docker-exec may fail; returns FAILED rather than raising."""
         try:
             _prime_vault(target.meta["exec_in_container"], target.host,

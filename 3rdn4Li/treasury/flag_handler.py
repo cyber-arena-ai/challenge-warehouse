@@ -78,7 +78,7 @@ class TreasuryFlagHandler(SingleFlagHandler):
             if decoded == exp:
                 return FlagObservation(ObservationStatus.PRESENT, value=decoded)
             return FlagObservation(ObservationStatus.MISMATCH, value=decoded)
-        except Exception as e:  # noqa: BLE001 — observe must never raise
+        except Exception as e:  # noqa: BLE001 — retrieve must never raise
             return FlagObservation(ObservationStatus.ERROR, detail=f"unexpected: {type(e).__name__}")
 
     def flag_id(self, handle: str) -> str | None:

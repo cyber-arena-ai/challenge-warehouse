@@ -57,10 +57,12 @@ class NginxBackupFlagHandler(SingleFlagHandler):
 
     def retrieve(self, target: VulboxTarget, handle: str,
                  expected: str | None = None) -> FlagObservation:
-        """Read-only structured read of FlagToken from app.ini. grep rc!=0 (no
-        such line) → flag gone (NOT_FOUND); box unreachable → ERROR. (value is the
-        matched line; the flag is a substring, so expected-in-value classifies it.)"""
-        return exec_read_observe(target, f"grep -m1 '^FlagToken' {handle}", expected)
+        """Read-only structured read of FlagToken from app.ini. `sed` prints only
+        the token VALUE (so `.value` is the bare flag, not the `FlagToken = …`
+        line), enabling an exact PRESENT/MISMATCH compare; no match / missing file
+        → NOT_FOUND; box unreachable → ERROR."""
+        read = f"sed -n 's/^FlagToken[[:space:]]*=[[:space:]]*//p' {handle}"
+        return exec_read_observe(target, read, expected)
 
 
 def _q(s: str) -> str:

@@ -101,8 +101,8 @@ class FittyfitFlagHandler(SingleFlagHandler):
                 except Exception:  # noqa: BLE001
                     continue
             return FlagObservation(ObservationStatus.NOT_FOUND)
-        except Exception:  # noqa: BLE001 — observe must never raise
-            return FlagObservation(ObservationStatus.ERROR, detail="observe raised")
+        except Exception:  # noqa: BLE001 — retrieve must never raise
+            return FlagObservation(ObservationStatus.ERROR, detail="retrieve raised")
 
     def flag_id(self, handle: str) -> str | None:
         """Attack-info hook: the PUBLIC identifier the attacker targets — the

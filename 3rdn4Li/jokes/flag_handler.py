@@ -6,10 +6,10 @@ admin command, then made visible to `query_jokes(True)`. Reuses the vendored
 RSA `private.key` (`_checker/private.key`) unmodified.
 
 Read path is PURE READ-ONLY: `plant_one` registers ONE throwaway account and
-STORES its creds in the handle; `observe()`/`retrieve()` re-log-in that same
-planted account and run the (RSA-signed, account-agnostic) `query_jokes(True)`.
-They never register a new account — the flag-persistence audit calls them every
-~20s, so a fresh `/register` per call would be unbounded account creation. (The
+STORES its creds in the handle; `retrieve()` re-logs-in that same planted account
+and runs the (RSA-signed, account-agnostic) `query_jokes(True)`. It never
+registers a new account — the flag-persistence audit calls it every ~20s, so a
+fresh `/register` per call would be unbounded account creation. (The
 `query_jokes(True)` admin command is authorized by the RSA signature, not the
 session identity, so any logged-in session works — reusing the planted one is
 sufficient and idempotent.)
@@ -72,7 +72,7 @@ def _login(base: str, creds: dict) -> requests.Session | None:
 
 def _register_and_login(base: str) -> tuple[requests.Session, dict] | None:
     """PLANT-only: create ONE throwaway account and return (session, creds) so
-    the creds can be stored in the handle and reused read-only by observe()."""
+    the creds can be stored in the handle and reused read-only by retrieve()."""
     creds = {"name": str(uuid.uuid4()), "password": secrets.token_hex(16)}
     try:
         r = requests.post(base + "/register", data=creds, timeout=_TIMEOUT)
@@ -113,7 +113,7 @@ class JokesFlagHandler(SingleFlagHandler):
                 raise RuntimeError(f"{self.name}: process_reviewed_jokes failed {r.status_code}")
         finally:
             s.close()
-        # Store the reader creds so observe()/retrieve() can re-log-in this same
+        # Store the reader creds so retrieve() can re-log-in this same
         # account (read-only) instead of registering a new one per call.
         return base64.b64encode(json.dumps(
             {"flag_id": flag_id, "flag": flag, "reader": reader}).encode()).decode("ascii")
