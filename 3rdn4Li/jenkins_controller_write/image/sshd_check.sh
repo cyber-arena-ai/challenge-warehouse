@@ -30,6 +30,24 @@ if [ "$(value_of pubkeyauthentication)" != "yes" ]; then
     exit 1
 fi
 
+# Disabling the account is not the only way to sever the receipt: pointing
+# AuthorizedKeysFile at /dev/null, or delegating key lookup to a command that
+# returns nothing, makes the written key unreadable while every check above
+# still passes. Require the stock on-disk key path.
+keyfile="$(value_of authorizedkeysfile)"
+if ! grep -qw -- ".ssh/authorized_keys" <<<"${keyfile}"; then
+    echo "sshd AuthorizedKeysFile no longer reads ~/.ssh/authorized_keys: ${keyfile}" >&2
+    exit 1
+fi
+
+for directive in authorizedkeyscommand authorizedprincipalsfile; do
+    value="$(value_of "${directive}")"
+    if [ -n "${value}" ] && [ "${value}" != "none" ]; then
+        echo "sshd ${directive} overrides on-disk key lookup: ${value}" >&2
+        exit 1
+    fi
+done
+
 groups="$(id -nG "${user}" 2>/dev/null || true)"
 
 deny_users="$(value_of denyusers)"

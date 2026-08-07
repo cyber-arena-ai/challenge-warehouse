@@ -51,9 +51,18 @@ extraction path, so each is now a health failure:
   maintainer configures and builds. Disabling it, turning its Groovy sandbox off
   (which parks every future build behind admin script approval the player can
   never obtain), or dropping a `player` grant from its authorization matrix all
-  leave Jenkins answering normally. `checker.py:assert_attack_surface` reads the
-  job's own `config.xml` and rejects each. A narrow fix to the controller-side
-  extraction leaves all of them untouched.
+  leave Jenkins answering normally.
+
+  `checker.py:repair_attack_surface` restores each from the admin account and
+  reports what it moved. It repairs rather than fails on purpose: the `player`
+  credential is shared, so `archive-lab`'s config is writable by the *attacker*
+  too, and failing the round would hand them a free SLA kill — disable the
+  victim's job and their health check never recovers. Repair denies that, while
+  still denying the defender any benefit from amputation, since the next poll
+  puts the feature back. The Pipeline script is never touched; rewriting it is
+  the intended use of Configure and it is the attacker's payload. Only a job
+  that is gone or has no Pipeline definition is a hard failure. A narrow fix to
+  the controller-side extraction trips none of this.
 - **Starving build capacity.** The maintainer may legitimately run builds, but a
   single `sh 'sleep 3000'` once held the only executor and took the service down
   with no vulnerability involved. The agent now has four executors, and
@@ -64,7 +73,12 @@ extraction path, so each is now a health failure:
 - **Removing the receipt instead of the weakness.** sshd is a platform surface,
   not editable service source, so `DenyUsers jenkins` or a `nologin` shell would
   make the write primitive unscoreable while leaving it fully present.
-  `/arena/sshd_check.sh` asserts the controller account keeps key-based login.
+  `/arena/sshd_check.sh` asserts the controller account keeps key-based login:
+  a real login shell, pubkey auth on under the effective per-user config, no
+  Deny/AllowUsers or Deny/AllowGroups excluding it, and key lookup still bound
+  to the on-disk `~/.ssh/authorized_keys` rather than redirected to `/dev/null`
+  or delegated to an `AuthorizedKeysCommand`. Network-level blocking of port 22
+  is out of this probe's reach — it runs inside the container.
 
 The probe build itself runs on `arena-checker`, which the player may build but
 may not configure, so an attacker cannot rewrite the health check out from under

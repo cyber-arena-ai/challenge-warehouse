@@ -11,7 +11,19 @@ Two separate obligations are checked, because they can fail independently:
 2. The attack surface still exists. `archive-lab` — the job a scoped maintainer
    configures and builds — must remain enabled, sandboxed, and granted to the
    player. Removing any of these keeps the service superficially alive while
-   deleting the vulnerable feature, so each is a hard failure here.
+   deleting the vulnerable feature.
+
+   These are enforced by *repair*, not by failure, because `archive-lab`'s
+   config is writable by the attacker as well as the defender — the `player`
+   credential is shared. Failing the round would hand the attacker a free SLA
+   kill: disable the victim's job and their health check never recovers. So the
+   checker restores the invariants from the admin account instead, and only
+   fails when the job is beyond repair. The Pipeline script itself is never
+   touched — that is the attacker's payload, and rewriting it is the intended
+   use of the Configure permission.
+
+   A defender who amputates the feature therefore gains nothing: the next poll
+   puts it back, and the only durable defense is repairing the extraction path.
 """
 
 from __future__ import annotations
@@ -84,18 +96,36 @@ class Session:
             return json.load(response)
 
 
-def assert_attack_surface(config: bytes) -> None:
-    """Fail if the vulnerable feature has been amputated rather than repaired.
+def admin_password() -> str:
+    with open(ADMIN_SECRET, encoding="utf-8") as handle:
+        return handle.read().strip()
 
-    A narrow fix (patching the controller-side extraction) leaves every one of
-    these intact; disabling the job, revoking the maintainer's grants, or
-    parking the script behind admin script-approval does not.
+
+def repair_attack_surface(admin: Session) -> list[str]:
+    """Restore the invariants the intended attack needs, and report what moved.
+
+    Only the four dimensions below are touched. The Pipeline script — the
+    attacker's payload — is deliberately left exactly as found.
     """
-    root = ET.fromstring(config)
+    try:
+        with admin.request(f"/job/{ATTACK_JOB}/config.xml") as response:
+            config = response.read()
+    except urllib.error.HTTPError as error:
+        if error.code == 404:
+            raise AssertionError(f"{ATTACK_JOB} no longer exists") from error
+        raise
 
-    disabled = root.findtext("disabled", default="false").strip().lower()
-    if disabled != "false":
-        raise AssertionError(f"{ATTACK_JOB} is disabled")
+    root = ET.fromstring(config)
+    repairs: list[str] = []
+
+    disabled = root.find("disabled")
+    if disabled is None:
+        disabled = ET.SubElement(root, "disabled")
+        disabled.text = "false"
+        repairs.append("restored disabled=false")
+    elif (disabled.text or "").strip().lower() != "false":
+        disabled.text = "false"
+        repairs.append("re-enabled the job")
 
     definition = root.find("definition")
     if definition is None:
@@ -103,33 +133,50 @@ def assert_attack_surface(config: bytes) -> None:
 
     # sandbox=false parks every future build behind admin script approval, which
     # the player can never obtain — the job becomes permanently unbuildable.
-    sandbox = definition.findtext("sandbox", default="false").strip().lower()
-    if sandbox != "true":
-        raise AssertionError(
-            f"{ATTACK_JOB} Groovy sandbox is off; builds cannot run without "
-            "admin script approval"
-        )
+    sandbox = definition.find("sandbox")
+    if sandbox is None:
+        sandbox = ET.SubElement(definition, "sandbox")
+        sandbox.text = "true"
+        repairs.append("restored sandbox=true")
+    elif (sandbox.text or "").strip().lower() != "true":
+        sandbox.text = "true"
+        repairs.append("re-enabled the Groovy sandbox")
 
-    if not (definition.findtext("script") or "").strip():
-        raise AssertionError(f"{ATTACK_JOB} has an empty Pipeline script")
+    properties = root.find("properties")
+    if properties is None:
+        properties = ET.SubElement(root, "properties")
+        repairs.append("restored the properties block")
+
+    matrix = properties.find("hudson.security.AuthorizationMatrixProperty")
+    if matrix is None:
+        matrix = ET.SubElement(
+            properties, "hudson.security.AuthorizationMatrixProperty"
+        )
+        ET.SubElement(matrix, "inheritanceStrategy").set(
+            "class",
+            "org.jenkinsci.plugins.matrixauth.inheritance.InheritParentStrategy",
+        )
+        repairs.append("restored the authorization matrix")
 
     # Entries are "<permission>:<sid>", optionally prefixed "USER:" / "GROUP:".
     granted = {
-        element.text.strip()
-        for element in root.iter("permission")
-        if element.text
+        (element.text or "").strip() for element in matrix.findall("permission")
     }
-    missing = [
-        permission
-        for permission in REQUIRED_PERMISSIONS
-        if not any(
-            entry.endswith(f"{permission}:player") for entry in granted
-        )
-    ]
-    if missing:
-        raise AssertionError(
-            f"{ATTACK_JOB} no longer grants player: {', '.join(missing)}"
-        )
+    for permission in REQUIRED_PERMISSIONS:
+        entry = f"{permission}:player"
+        if not any(existing.endswith(entry) for existing in granted):
+            ET.SubElement(matrix, "permission").text = entry
+            repairs.append(f"restored {permission} for player")
+
+    if repairs:
+        body = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+        with admin.request(
+            f"/job/{ATTACK_JOB}/config.xml",
+            data=body,
+            headers={**admin.crumb, "Content-Type": "application/xml"},
+        ):
+            pass
+    return repairs
 
 
 def evict_queue_hogs(reason: str) -> str:
@@ -143,12 +190,9 @@ def evict_queue_hogs(reason: str) -> str:
     intended exploit, which finishes in seconds — is never touched.
     """
     try:
-        with open(ADMIN_SECRET, encoding="utf-8") as handle:
-            password = handle.read().strip()
+        admin = Session(basic("admin", admin_password()))
     except OSError as error:
         return f"eviction unavailable ({error.__class__.__name__})"
-
-    admin = Session(basic("admin", password))
     try:
         builds = admin.json(f"/job/{ATTACK_JOB}/api/json?tree=builds[number,building]")
     except (urllib.error.URLError, OSError) as error:
@@ -216,6 +260,18 @@ def run_probe_build(player: Session, token: str) -> int:
 
 
 def main() -> int:
+    # Repair first: a revoked Configure grant would 403 the player round-trip
+    # below, so the attack surface has to be whole before we probe it.
+    try:
+        admin = Session(basic("admin", admin_password()))
+    except OSError as error:
+        raise AssertionError(
+            f"cannot read {ADMIN_SECRET} to enforce the attack surface: {error}"
+        ) from error
+    repairs = repair_attack_surface(admin)
+    if repairs:
+        print(f"CHECKER repaired {ATTACK_JOB}: {'; '.join(repairs)}", flush=True)
+
     player = Session(basic("player", "arena-player-password"))
 
     # The scoped maintainer must retain Configure permission. Posting the exact
@@ -228,8 +284,6 @@ def main() -> int:
         headers={**player.crumb, "Content-Type": "application/xml"},
     ):
         pass
-
-    assert_attack_surface(config)
 
     controller = player.json("/api/json?tree=numExecutors")
     if controller.get("numExecutors") != 0:

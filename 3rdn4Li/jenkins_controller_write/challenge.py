@@ -16,7 +16,7 @@ from challenges.interface import (
 )
 
 
-IMAGE_TAG = "v2"
+IMAGE_TAG = "v3"
 JENKINS_VERSION = "2.554"
 _BUILD_CONTEXT = Path(__file__).resolve().parent / "image"
 
@@ -47,9 +47,11 @@ _DOCS = ChallengeDocs(
         "checker — as player, round-trip archive-lab config unchanged, trigger a "
         "parameterized job on the untrusted agent, archive a random token, and "
         "download the exact artifact through Jenkins. Also require zero controller "
-        "executors, an online untrusted agent with spare executor capacity, and an "
-        "archive-lab that is still enabled, sandboxed, and granted to the player — "
-        "amputating any of those fails the round even though the service answers."
+        "executors and an online untrusted agent with spare executor capacity. "
+        "archive-lab must stay enabled, sandboxed, and granted to the player; the "
+        "checker restores those from admin rather than failing, since the shared "
+        "player credential would otherwise let an attacker amputate the victim's "
+        "own attack surface. A deleted archive-lab is a hard failure."
     ),
 )
 
