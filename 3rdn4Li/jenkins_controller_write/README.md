@@ -44,8 +44,8 @@ artifact download continue to pass `/arena/checker.sh`.
 
 ## Why the health check asserts more than "the service answers"
 
-Three cheap moves would otherwise neutralise the round without repairing the
-extraction path, so each is now a health failure:
+Four cheap moves would otherwise neutralise the round without repairing the
+extraction path, so each is now either normalised away or a health failure:
 
 - **Amputating the attack surface.** `archive-lab` is the job a scoped
   maintainer configures and builds. Disabling it, turning its Groovy sandbox off
@@ -53,16 +53,29 @@ extraction path, so each is now a health failure:
   never obtain), or dropping a `player` grant from its authorization matrix all
   leave Jenkins answering normally.
 
-  `checker.py:repair_attack_surface` restores each from the admin account and
-  reports what it moved. It repairs rather than fails on purpose: the `player`
-  credential is shared, so `archive-lab`'s config is writable by the *attacker*
-  too, and failing the round would hand them a free SLA kill — disable the
-  victim's job and their health check never recovers. Repair denies that, while
-  still denying the defender any benefit from amputation, since the next poll
-  puts the feature back. The Pipeline script is never touched; rewriting it is
-  the intended use of Configure and it is the attacker's payload. Only a job
-  that is gone or has no Pipeline definition is a hard failure. A narrow fix to
-  the controller-side extraction trips none of this.
+  Rather than enumerate those, `checker.py:normalize_attack_surface` resets the
+  whole configuration to the baseline `init.groovy` captured before anyone could
+  touch it, splicing the current Pipeline script back in. The attack needs
+  exactly one thing from Configure — rewriting that script — so the attacker
+  keeps everything they need and nobody keeps anything else. That also covers
+  what a targeted repair missed: added parameters, a dropped concurrent-build
+  limit, and an installed timer trigger, each of which is only useful for
+  denying service.
+
+  It repairs rather than fails on purpose: the `player` credential is shared, so
+  `archive-lab`'s config is writable by the *attacker* too, and failing the round
+  would hand them a free SLA kill — disable the victim's job and their health
+  check never recovers. Only a job that is gone, or a missing baseline, is a hard
+  failure. A narrow fix to the controller-side extraction trips none of this.
+- **Killing the agent.** Build steps execute as `jenkins_worker`, the same OS
+  user that owns the agent process, so one `sh 'pkill -f agent.jar'` once took
+  the service down outright. `/arena/agent_supervisor.sh` runs as root, reaps
+  that user and respawns the agent. The reap is the load-bearing half:
+  durable-task keeps a build's shell alive across an agent disconnect, so a
+  backgrounded killer loop would otherwise outlive the agent it killed. It does
+  not respawn while the controller is down, so a genuinely dead controller stays
+  visibly dead for the health probe.
+
 - **Starving build capacity.** The maintainer may legitimately run builds, but a
   single `sh 'sleep 3000'` once held the only executor and took the service down
   with no vulnerability involved. The agent now has four executors, and

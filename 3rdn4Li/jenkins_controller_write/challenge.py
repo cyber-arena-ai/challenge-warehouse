@@ -16,7 +16,7 @@ from challenges.interface import (
 )
 
 
-IMAGE_TAG = "v4"
+IMAGE_TAG = "v5"
 JENKINS_VERSION = "2.554"
 _BUILD_CONTEXT = Path(__file__).resolve().parent / "image"
 
@@ -48,10 +48,11 @@ _DOCS = ChallengeDocs(
         "parameterized job on the untrusted agent, archive a random token, and "
         "download the exact artifact through Jenkins. Also require zero controller "
         "executors and an online untrusted agent with spare executor capacity. "
-        "archive-lab must stay enabled, sandboxed, and granted to the player; the "
-        "checker restores those from admin rather than failing, since the shared "
-        "player credential would otherwise let an attacker amputate the victim's "
-        "own attack surface. A deleted archive-lab is a hard failure."
+        "archive-lab's whole configuration is normalised back to its baseline "
+        "with only the Pipeline script preserved, rather than failing the round, "
+        "since the shared player credential would otherwise let an attacker "
+        "amputate the victim's own attack surface. A deleted archive-lab is a "
+        "hard failure."
     ),
 )
 

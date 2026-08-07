@@ -8,22 +8,23 @@ Two separate obligations are checked, because they can fail independently:
    This runs against `arena-checker`, which the player may build but may not
    configure, so an attacker cannot rewrite the probe out from under us.
 
-2. The attack surface still exists. `archive-lab` — the job a scoped maintainer
-   configures and builds — must remain enabled, sandboxed, and granted to the
-   player. Removing any of these keeps the service superficially alive while
-   deleting the vulnerable feature.
+2. The attack surface still exists. `archive-lab` is the job a scoped maintainer
+   configures and builds, and the intended attack needs exactly one thing from
+   that Configure permission: rewriting the Pipeline script. Everything else the
+   permission also grants — disabling the job, turning the Groovy sandbox off,
+   revoking the player's own grants, adding parameters, dropping the
+   concurrent-build limit, installing a timer trigger — only ever serves to take
+   a service down.
 
-   These are enforced by *repair*, not by failure, because `archive-lab`'s
-   config is writable by the attacker as well as the defender — the `player`
-   credential is shared. Failing the round would hand the attacker a free SLA
-   kill: disable the victim's job and their health check never recovers. So the
-   checker restores the invariants from the admin account instead, and only
-   fails when the job is beyond repair. The Pipeline script itself is never
-   touched — that is the attacker's payload, and rewriting it is the intended
-   use of the Configure permission.
+   So the whole configuration is normalised back to the baseline `init.groovy`
+   captured before anyone could touch it, with the current script spliced in.
+   The attacker keeps everything they need; nobody keeps anything else.
 
-   A defender who amputates the feature therefore gains nothing: the next poll
-   puts it back, and the only durable defense is repairing the extraction path.
+   This is enforced by repair rather than by failing the round, because the
+   `player` credential is shared and that configuration is writable by the
+   *attacker* as well as the defender. Failing would hand them a free SLA kill:
+   disable the victim's job and their health check never recovers. Only a job
+   that is gone, or a missing baseline, is a hard failure.
 """
 
 from __future__ import annotations
@@ -43,14 +44,7 @@ BASE = "http://127.0.0.1:8080"
 PROBE_JOB = "arena-checker"
 ATTACK_JOB = "archive-lab"
 ADMIN_SECRET = "/var/jenkins_home/secrets/arena-admin-password"
-
-# The four job-local permissions the intended attack path depends on.
-REQUIRED_PERMISSIONS = (
-    "hudson.model.Item.Read",
-    "hudson.model.Item.Configure",
-    "hudson.model.Item.Build",
-    "hudson.model.Item.Workspace",
-)
+BASELINE_PATH = "/var/jenkins_home/arena-archive-lab-baseline.xml"
 
 MIN_AGENT_EXECUTORS = 2
 QUEUE_GRACE_SECS = 20
@@ -101,82 +95,86 @@ def admin_password() -> str:
         return handle.read().strip()
 
 
-def repair_attack_surface(admin: Session) -> list[str]:
-    """Restore the invariants the intended attack needs, and report what moved.
+def _canonical(element: ET.Element) -> str:
+    """Whitespace- and attribute-order-insensitive form, so a comparison only
+    fires on a real configuration difference and not on Jenkins reserialising."""
+    return ET.canonicalize(ET.tostring(element, encoding="unicode"), strip_text=True)
 
-    Only the four dimensions below are touched. The Pipeline script — the
-    attacker's payload — is deliberately left exactly as found.
+
+def _drift(current: ET.Element, desired: ET.Element) -> list[str]:
+    """Human-readable summary of which top-level blocks differ."""
+    have = {child.tag: _canonical(child) for child in current}
+    want = {child.tag: _canonical(child) for child in desired}
+    report = []
+    for tag in sorted(set(have) | set(want)):
+        if tag not in have:
+            report.append(f"restored <{tag}>")
+        elif tag not in want:
+            report.append(f"removed <{tag}>")
+        elif have[tag] != want[tag]:
+            report.append(f"reset <{tag}>")
+    return report
+
+
+def normalize_attack_surface(admin: Session) -> list[str]:
+    """Reset `archive-lab` to its pristine configuration, keeping only the script.
+
+    The intended attack needs exactly one thing from the Configure permission:
+    the ability to rewrite the Pipeline script. Everything else that permission
+    also grants — disabling the job, turning the Groovy sandbox off, revoking the
+    player's own grants, adding parameters, dropping the concurrent-build limit,
+    installing a timer trigger — is only ever useful for taking a service down.
+
+    So rather than enumerate the ways that can go wrong, restore the whole
+    configuration from the baseline `init.groovy` captured before anyone could
+    touch it, and splice the current script back in. The attacker loses nothing
+    they need; the defender gains nothing from amputating the feature, because
+    the next poll puts it back.
+
+    Enforcement is by repair rather than by failing the round on purpose: the
+    `player` credential is shared, so this configuration is writable by the
+    attacker too, and failing would hand them a free SLA kill against the victim.
     """
     try:
+        with open(BASELINE_PATH, encoding="utf-8") as handle:
+            baseline = handle.read()
+    except OSError as error:
+        raise AssertionError(
+            f"cannot read the {ATTACK_JOB} baseline at {BASELINE_PATH}: {error}"
+        ) from error
+
+    try:
         with admin.request(f"/job/{ATTACK_JOB}/config.xml") as response:
-            config = response.read()
+            current_xml = response.read()
     except urllib.error.HTTPError as error:
         if error.code == 404:
             raise AssertionError(f"{ATTACK_JOB} no longer exists") from error
         raise
 
-    root = ET.fromstring(config)
-    repairs: list[str] = []
+    current = ET.fromstring(current_xml)
+    desired = ET.fromstring(baseline)
 
-    disabled = root.find("disabled")
-    if disabled is None:
-        disabled = ET.SubElement(root, "disabled")
-        disabled.text = "false"
-        repairs.append("restored disabled=false")
-    elif (disabled.text or "").strip().lower() != "false":
-        disabled.text = "false"
-        repairs.append("re-enabled the job")
+    script = current.find("./definition/script")
+    desired_script = desired.find("./definition/script")
+    if desired_script is None:
+        raise AssertionError(f"{BASELINE_PATH} has no Pipeline script element")
+    # A missing script element means the job is no longer a Pipeline at all;
+    # the baseline's own script stands in so the job stays buildable.
+    if script is not None:
+        desired_script.text = script.text
 
-    definition = root.find("definition")
-    if definition is None:
-        raise AssertionError(f"{ATTACK_JOB} has no Pipeline definition")
+    if _canonical(current) == _canonical(desired):
+        return []
 
-    # sandbox=false parks every future build behind admin script approval, which
-    # the player can never obtain — the job becomes permanently unbuildable.
-    sandbox = definition.find("sandbox")
-    if sandbox is None:
-        sandbox = ET.SubElement(definition, "sandbox")
-        sandbox.text = "true"
-        repairs.append("restored sandbox=true")
-    elif (sandbox.text or "").strip().lower() != "true":
-        sandbox.text = "true"
-        repairs.append("re-enabled the Groovy sandbox")
-
-    properties = root.find("properties")
-    if properties is None:
-        properties = ET.SubElement(root, "properties")
-        repairs.append("restored the properties block")
-
-    matrix = properties.find("hudson.security.AuthorizationMatrixProperty")
-    if matrix is None:
-        matrix = ET.SubElement(
-            properties, "hudson.security.AuthorizationMatrixProperty"
-        )
-        ET.SubElement(matrix, "inheritanceStrategy").set(
-            "class",
-            "org.jenkinsci.plugins.matrixauth.inheritance.InheritParentStrategy",
-        )
-        repairs.append("restored the authorization matrix")
-
-    # Entries are "<permission>:<sid>", optionally prefixed "USER:" / "GROUP:".
-    granted = {
-        (element.text or "").strip() for element in matrix.findall("permission")
-    }
-    for permission in REQUIRED_PERMISSIONS:
-        entry = f"{permission}:player"
-        if not any(existing.endswith(entry) for existing in granted):
-            ET.SubElement(matrix, "permission").text = entry
-            repairs.append(f"restored {permission} for player")
-
-    if repairs:
-        body = ET.tostring(root, encoding="utf-8", xml_declaration=True)
-        with admin.request(
-            f"/job/{ATTACK_JOB}/config.xml",
-            data=body,
-            headers={**admin.crumb, "Content-Type": "application/xml"},
-        ):
-            pass
-    return repairs
+    drift = _drift(current, desired)
+    body = ET.tostring(desired, encoding="utf-8", xml_declaration=True)
+    with admin.request(
+        f"/job/{ATTACK_JOB}/config.xml",
+        data=body,
+        headers={**admin.crumb, "Content-Type": "application/xml"},
+    ):
+        pass
+    return drift
 
 
 def evict_queue_hogs(reason: str) -> str:
@@ -268,9 +266,9 @@ def main() -> int:
         raise AssertionError(
             f"cannot read {ADMIN_SECRET} to enforce the attack surface: {error}"
         ) from error
-    repairs = repair_attack_surface(admin)
-    if repairs:
-        print(f"CHECKER repaired {ATTACK_JOB}: {'; '.join(repairs)}", flush=True)
+    drift = normalize_attack_surface(admin)
+    if drift:
+        print(f"CHECKER normalised {ATTACK_JOB}: {'; '.join(drift)}", flush=True)
 
     player = Session(basic("player", "arena-player-password"))
 

@@ -38,7 +38,7 @@ service:
     web: 8080
   stack: Java · Jenkins controller + inbound JNLP agent
 provenance:
-  image: cyberarena/chal-jenkins-controller-write:v4
+  image: cyberarena/chal-jenkins-controller-write:v5
   source_intro: 'Jenkins 2.554 pinned at tag commit 6b3bf8967e1e26a2bee4f0c0823bc8bae69009bf;
     CVE-2026-33001 fixed upstream by 6dc99937605d5bddfeaae43a4cd14c2571e23adc and released in
     2.555. Both upstream images are pinned by linux/amd64 manifest digest and bundled into one

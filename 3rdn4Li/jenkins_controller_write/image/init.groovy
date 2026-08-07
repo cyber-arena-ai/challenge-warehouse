@@ -72,6 +72,15 @@ node('untrusted') {
     playerJob.addProperty(new AuthorizationMatrixProperty(playerPermissions))
     playerJob.save()
 
+    // Snapshot the pristine job so /arena/checker.py can normalise it back every
+    // poll. Written with Jenkins' own serialiser so a later comparison sees no
+    // cosmetic drift. Captured here, inside the one-time init block, so a job the
+    // attacker has already edited can never become the baseline.
+    def jobBaseline = new File(jenkins.rootDir, "arena-archive-lab-baseline.xml")
+    jobBaseline.text = playerJob.getConfigFile().asString()
+    jobBaseline.setReadable(false, false)
+    jobBaseline.setReadable(true, true)
+
     def checkerJob = jenkins.createProject(WorkflowJob, "arena-checker")
     checkerJob.setConcurrentBuild(false)
     checkerJob.addProperty(new ParametersDefinitionProperty(
