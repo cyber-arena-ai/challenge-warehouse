@@ -16,6 +16,11 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 def jenkins = Jenkins.get()
 def marker = new File(jenkins.rootDir, ".arena-initialized")
 
+// The scoped maintainer can occupy build capacity with ordinary long-running
+// builds. Keep enough executors that a legitimate health probe is never queued
+// behind attacker work; /arena/checker.py evicts abusive builds on top of this.
+def AGENT_EXECUTORS = 4
+
 if (!marker.exists()) {
     def realm = new HudsonPrivateSecurityRealm(false)
     def adminPassword = UUID.randomUUID().toString() + UUID.randomUUID().toString()
@@ -46,6 +51,7 @@ if (!marker.exists()) {
     node.setLabelString("untrusted")
     node.setMode(Node.Mode.EXCLUSIVE)
     node.setRetentionStrategy(RetentionStrategy.INSTANCE)
+    node.setNumExecutors(AGENT_EXECUTORS)
     jenkins.addNode(node)
 
     def playerJob = jenkins.createProject(WorkflowJob, "archive-lab")
@@ -92,6 +98,12 @@ node('untrusted') {
 def node = jenkins.getNode("untrusted-agent")
 if (node == null) {
     throw new IllegalStateException("untrusted-agent configuration is missing")
+}
+// Re-assert capacity on every boot so a home created before this setting, or a
+// hand-edited node config, still cannot starve the health probe.
+if (node.numExecutors != AGENT_EXECUTORS) {
+    node.setNumExecutors(AGENT_EXECUTORS)
+    jenkins.updateNode(node)
 }
 def agentSecret = new File(jenkins.rootDir, "agent-secret")
 agentSecret.text = JnlpAgentReceiver.SLAVE_SECRET.mac(node.nodeName) + "\n"

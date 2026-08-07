@@ -50,6 +50,13 @@ class JenkinsFunctionalityTest(FunctionalityTest):
             name="http", passed=(rc == 0), detail=f"authenticated API rc={rc}"
         )
 
+        rc, output = exec_in(target.host, "/arena/sshd_check.sh")
+        sshd = CheckResult(
+            name="sshd",
+            passed=(rc == 0),
+            detail=(output.strip() or f"rc={rc}")[-300:],
+        )
+
         rc, output = exec_in(target.host, "/arena/checker.sh")
         checker = CheckResult(
             name="checker",
@@ -57,7 +64,7 @@ class JenkinsFunctionalityTest(FunctionalityTest):
             detail=(output.strip() or f"rc={rc}")[-300:],
         )
 
-        children = [process, tcp, http, checker]
+        children = [process, tcp, http, sshd, checker]
         return CheckResult(
             name="jenkins-controller-write",
             passed=all(child.passed for child in children),
