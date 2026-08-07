@@ -26,10 +26,11 @@ COPY --from=fixed /usr/share/jenkins/jenkins.war /opt/jenkins/jenkins-2.555.war
 
 COPY init.groovy /usr/share/jenkins/ref/init.groovy.d/10-arena.groovy
 COPY service/ /opt/challenge_src/jenkins/
-COPY entrypoint.sh restart.sh checker.sh checker.py sshd_check.sh /arena/
+COPY entrypoint.sh restart.sh checker.sh checker.py sshd_check.sh \
+     agent_supervisor.sh /arena/
 
 RUN chmod 0555 /arena/entrypoint.sh /arena/restart.sh /arena/checker.sh \
-        /arena/sshd_check.sh \
+        /arena/sshd_check.sh /arena/agent_supervisor.sh \
     && chmod 0444 /arena/checker.py \
     && chown -R root:root /arena /opt/challenge_src \
     && chmod -R a-w /opt/challenge_src

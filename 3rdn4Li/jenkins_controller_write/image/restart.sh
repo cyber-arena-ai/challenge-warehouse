@@ -19,6 +19,11 @@ stop_pidfile() {
     fi
 }
 
+# Stop the supervisor first, or it would fight this deliberate shutdown by
+# respawning the agent against a controller that is on its way down.
+stop_pidfile /run/jenkins-supervisor.pid
+pkill -TERM -f '/arena/agent_supervisor.sh' 2>/dev/null || true
+
 stop_pidfile /run/jenkins-agent.pid
 stop_pidfile /run/jenkins-controller.pid
 pkill -TERM -u jenkins_worker -f 'agent.jar' 2>/dev/null || true
@@ -73,6 +78,8 @@ for _ in $(seq 1 60); do
     status="$(curl -fsS -u player:arena-player-password \
         http://127.0.0.1:8080/computer/untrusted-agent/api/json 2>/dev/null || true)"
     if printf '%s' "${status}" | grep -q '"offline"[[:space:]]*:[[:space:]]*false'; then
+        nohup /arena/agent_supervisor.sh >/dev/null 2>&1 &
+        echo "$!" >/run/jenkins-supervisor.pid
         echo "jenkins-controller-write: Jenkins ${release} and agent are ready"
         exit 0
     fi
