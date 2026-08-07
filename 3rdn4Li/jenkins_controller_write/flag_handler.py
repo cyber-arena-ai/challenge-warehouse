@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import shlex
 
-from challenges.interface import SingleFlagHandler, VulboxTarget
+from challenges.interface import (
+    FlagObservation,
+    ObservationStatus,
+    SingleFlagHandler,
+    VulboxTarget,
+    exec_read_observe,
+)
 
 
 FLAG_DIR = "/var/jenkins_home/flags"
@@ -36,11 +42,13 @@ class JenkinsFlagHandler(SingleFlagHandler):
             )
         return FLAG_PATH
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
+    def retrieve(self, target: VulboxTarget, handle: str,
+                 expected: str | None = None) -> FlagObservation:
+        """Read-only structured read of the controller-owned flag file
+        (privileged docker-exec cat): rc!=0 → the file is gone (NOT_FOUND);
+        box unreachable → ERROR."""
         if handle != FLAG_PATH:
-            return None
-        exec_in = target.meta["exec_in_container"]
-        rc, output = exec_in(target.host, f"cat {shlex.quote(handle)}")
-        if rc != 0:
-            return None
-        return output.rstrip("\r\n") or None
+            return FlagObservation(
+                ObservationStatus.ERROR, detail="unknown handle"
+            )
+        return exec_read_observe(target, f"cat {shlex.quote(handle)}", expected)

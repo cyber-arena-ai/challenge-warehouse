@@ -1,4 +1,8 @@
-"""Layered Jenkins health and legitimate archive workflow checks."""
+"""Process, transport and platform-surface health for jenkins-controller-write.
+
+The gameplay-correctness probe is the framework-run `image/checker.sh`, shipped
+over stdin into prod as the CHECKER leaf and no longer invoked from here.
+"""
 
 from __future__ import annotations
 
@@ -57,14 +61,7 @@ class JenkinsFunctionalityTest(FunctionalityTest):
             detail=(output.strip() or f"rc={rc}")[-300:],
         )
 
-        rc, output = exec_in(target.host, "/arena/checker.sh")
-        checker = CheckResult(
-            name="checker",
-            passed=(rc == 0),
-            detail=(output.strip() or f"rc={rc}")[-300:],
-        )
-
-        children = [process, tcp, http, sshd, checker]
+        children = [process, tcp, http, sshd]
         return CheckResult(
             name="jenkins-controller-write",
             passed=all(child.passed for child in children),

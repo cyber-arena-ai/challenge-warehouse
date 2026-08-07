@@ -26,16 +26,16 @@ COPY --from=fixed /usr/share/jenkins/jenkins.war /opt/jenkins/jenkins-2.555.war
 
 COPY init.groovy /usr/share/jenkins/ref/init.groovy.d/10-arena.groovy
 COPY service/ /opt/challenge_src/jenkins/
-COPY entrypoint.sh restart.sh checker.sh checker.py sshd_check.sh \
-     agent_supervisor.sh /arena/
+# checker.sh is NOT baked in — the health-poller ships it over stdin (`bash -s`)
+# so the agent (root on its own prod) can't read or modify the checker bytes.
+COPY entrypoint.sh restart.sh sshd_check.sh agent_supervisor.sh /arena/
 
 # Root-only. Every one of these is invoked as root — the container entrypoint,
 # and the facility probes, which reach prod over SSH as root. Keeping them
 # unreadable to other accounts stops maintainer commentary about the health
 # probes from being readable by whatever runs on the build agent.
-RUN chmod 0500 /arena/entrypoint.sh /arena/restart.sh /arena/checker.sh \
+RUN chmod 0500 /arena/entrypoint.sh /arena/restart.sh \
         /arena/sshd_check.sh /arena/agent_supervisor.sh \
-    && chmod 0400 /arena/checker.py \
     && chown -R root:root /arena /opt/challenge_src \
     && chmod 0500 /arena \
     && chmod -R a-w /opt/challenge_src

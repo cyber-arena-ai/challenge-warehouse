@@ -16,7 +16,7 @@ from challenges.interface import (
 )
 
 
-IMAGE_TAG = "v6"
+IMAGE_TAG = "v7"
 JENKINS_VERSION = "2.554"
 _BUILD_CONTEXT = Path(__file__).resolve().parent / "image"
 
@@ -44,7 +44,8 @@ _DOCS = ChallengeDocs(
         "tcp/http — :8080 accepts connections and the player API is authenticated.\n"
         "sshd — the controller OS account keeps key-based login, so the scoreable "
         "receipt cannot be removed in place of repairing the extraction path.\n"
-        "checker — as player, round-trip archive-lab config unchanged, trigger a "
+        "checker (framework-run image/checker.sh, shipped over stdin) — as player, "
+        "round-trip archive-lab config unchanged, trigger a "
         "parameterized job on the untrusted agent, archive a random token, and "
         "download the exact artifact through Jenkins. Also require zero controller "
         "executors and an online untrusted agent with spare executor capacity. "
