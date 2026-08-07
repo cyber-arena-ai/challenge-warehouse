@@ -32,8 +32,8 @@ sleep 2
 pkill -KILL -u jenkins_worker -f 'agent.jar' 2>/dev/null || true
 pkill -KILL -u jenkins -f 'jenkins.*\.war' 2>/dev/null || true
 
-# A service rebuild removes an attacker-installed controller login while keeping
-# Jenkins jobs, build history, and flags intact.
+# A service rebuild resets the controller account's SSH authorization to empty.
+# Jenkins jobs, build history, and planted state are untouched.
 install -d -o jenkins -g jenkins -m 0711 /var/jenkins_home/.ssh
 install -o jenkins -g jenkins -m 0600 /dev/null \
     /var/jenkins_home/.ssh/authorized_keys

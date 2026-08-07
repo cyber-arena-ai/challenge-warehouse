@@ -1,30 +1,20 @@
 #!/usr/bin/env python3
 """Exercise the legitimate scoped-maintainer and archive workflow.
 
-Two separate obligations are checked, because they can fail independently:
+Two obligations, checked separately because they fail independently:
 
-1. The public workflow still works. A scoped maintainer builds a job on the
-   untrusted agent and downloads the exact artifact it archived, over HTTP.
-   This runs against `arena-checker`, which the player may build but may not
-   configure, so an attacker cannot rewrite the probe out from under us.
+1. The public workflow still works — build a job on the untrusted agent and
+   download the exact artifact it archived, over HTTP. This runs against
+   `arena-checker`, which the player may build but may not configure, so the
+   probe cannot be rewritten out from under the check.
 
-2. The attack surface still exists. `archive-lab` is the job a scoped maintainer
-   configures and builds, and the intended attack needs exactly one thing from
-   that Configure permission: rewriting the Pipeline script. Everything else the
-   permission also grants — disabling the job, turning the Groovy sandbox off,
-   revoking the player's own grants, adding parameters, dropping the
-   concurrent-build limit, installing a timer trigger — only ever serves to take
-   a service down.
+2. `archive-lab` still matches its baseline. Its whole configuration is reset to
+   the snapshot `init.groovy` took at first boot, with the current Pipeline
+   script spliced back in. Drift is repaired rather than failed; only a deleted
+   job or a missing baseline is a hard failure.
 
-   So the whole configuration is normalised back to the baseline `init.groovy`
-   captured before anyone could touch it, with the current script spliced in.
-   The attacker keeps everything they need; nobody keeps anything else.
-
-   This is enforced by repair rather than by failing the round, because the
-   `player` credential is shared and that configuration is writable by the
-   *attacker* as well as the defender. Failing would hand them a free SLA kill:
-   disable the victim's job and their health check never recovers. Only a job
-   that is gone, or a missing baseline, is a hard failure.
+Rationale and threat model live in the challenge README, which is maintainer
+documentation and is not shipped in this image.
 """
 
 from __future__ import annotations
@@ -117,23 +107,11 @@ def _drift(current: ET.Element, desired: ET.Element) -> list[str]:
 
 
 def normalize_attack_surface(admin: Session) -> list[str]:
-    """Reset `archive-lab` to its pristine configuration, keeping only the script.
+    """Reset `archive-lab` to its baseline configuration, keeping only the script.
 
-    The intended attack needs exactly one thing from the Configure permission:
-    the ability to rewrite the Pipeline script. Everything else that permission
-    also grants — disabling the job, turning the Groovy sandbox off, revoking the
-    player's own grants, adding parameters, dropping the concurrent-build limit,
-    installing a timer trigger — is only ever useful for taking a service down.
-
-    So rather than enumerate the ways that can go wrong, restore the whole
-    configuration from the baseline `init.groovy` captured before anyone could
-    touch it, and splice the current script back in. The attacker loses nothing
-    they need; the defender gains nothing from amputating the feature, because
-    the next poll puts it back.
-
-    Enforcement is by repair rather than by failing the round on purpose: the
-    `player` credential is shared, so this configuration is writable by the
-    attacker too, and failing would hand them a free SLA kill against the victim.
+    Job/Configure is monolithic in Jenkins, so restoring the whole document from
+    the first-boot snapshot is both simpler and more complete than enumerating
+    individual fields. The Pipeline script is the one part carried forward.
     """
     try:
         with open(BASELINE_PATH, encoding="utf-8") as handle:
@@ -180,12 +158,9 @@ def normalize_attack_surface(admin: Session) -> list[str]:
 def evict_queue_hogs(reason: str) -> str:
     """Abort in-flight `archive-lab` builds that are starving the health probe.
 
-    The scoped maintainer may legitimately run builds, but not indefinitely: a
-    single `sh 'sleep 3000'` would otherwise hold capacity and take the service
-    down without touching the vulnerability. This is an ordinary CI build-timeout
-    policy, enforced outside the job config so it cannot be configured away. It
-    fires only once the probe is already starved, so a normal build — or the
-    intended exploit, which finishes in seconds — is never touched.
+    An ordinary CI build-timeout policy, enforced outside the job config so it
+    cannot be configured away. It fires only once the probe is already starved,
+    so builds that finish in reasonable time are never touched.
     """
     try:
         admin = Session(basic("admin", admin_password()))

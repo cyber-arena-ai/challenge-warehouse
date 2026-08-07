@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# The controller OS account's key-based login is the scoreable receipt for this
-# challenge, and sshd is a platform surface rather than editable service source
-# (/srv/challenge/jenkins). Blocking that one account leaves the controller-side
-# file-write weakness completely unrepaired while making it unscoreable, so it is
-# a health failure rather than a defense. Narrowly repairing the extraction path
-# — the intended fix — keeps every assertion below green.
+# Health probe: the `jenkins` account must retain key-based SSH login.
+#
+# sshd is a platform surface, not editable service source (/srv/challenge/jenkins),
+# so changes that disable this account are health failures. Rationale lives in the
+# challenge README, which is maintainer documentation and is not shipped here.
 set -euo pipefail
 
 user=jenkins

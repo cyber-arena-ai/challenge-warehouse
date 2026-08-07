@@ -16,7 +16,7 @@ from challenges.interface import (
 )
 
 
-IMAGE_TAG = "v5"
+IMAGE_TAG = "v6"
 JENKINS_VERSION = "2.554"
 _BUILD_CONTEXT = Path(__file__).resolve().parent / "image"
 

@@ -29,10 +29,15 @@ COPY service/ /opt/challenge_src/jenkins/
 COPY entrypoint.sh restart.sh checker.sh checker.py sshd_check.sh \
      agent_supervisor.sh /arena/
 
-RUN chmod 0555 /arena/entrypoint.sh /arena/restart.sh /arena/checker.sh \
+# Root-only. Every one of these is invoked as root — the container entrypoint,
+# and the facility probes, which reach prod over SSH as root. Keeping them
+# unreadable to other accounts stops maintainer commentary about the health
+# probes from being readable by whatever runs on the build agent.
+RUN chmod 0500 /arena/entrypoint.sh /arena/restart.sh /arena/checker.sh \
         /arena/sshd_check.sh /arena/agent_supervisor.sh \
-    && chmod 0444 /arena/checker.py \
+    && chmod 0400 /arena/checker.py \
     && chown -R root:root /arena /opt/challenge_src \
+    && chmod 0500 /arena \
     && chmod -R a-w /opt/challenge_src
 
 EXPOSE 8080 22

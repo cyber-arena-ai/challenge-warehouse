@@ -1,21 +1,16 @@
 #!/usr/bin/env bash
-# Keep the inbound agent alive.
+# Keep the inbound agent running, and restart it if it exits.
 #
-# Build steps execute as the same OS user that owns the agent process
-# (jenkins_worker), because that is simply how Jenkins runs them — the agent JVM
-# spawns them as itself. The scoped maintainer must be able to run commands on
-# the agent for the intended attack to exist at all, so they can also signal that
-# agent dead. One `sh 'pkill -f agent.jar'` takes the whole service down with no
-# vulnerability involved, on the patched release too.
+# Jenkins executes build steps as the same OS user that owns the agent process
+# (jenkins_worker), so anything running on the agent shares its process
+# ownership. Reap that user before respawning: durable-task keeps a build's shell
+# alive across an agent disconnect, so leftovers would otherwise outlive the
+# agent and interfere with its replacement. With the agent confirmed down,
+# nothing still running as that user is legitimate.
 #
-# Respawning alone would not settle it: durable-task deliberately keeps a build's
-# shell alive across an agent disconnect, so a killer loop outlives the agent it
-# killed and would just re-kill the replacement. Hence the reap — with the agent
-# confirmed down, nothing still running as jenkins_worker is legitimate, so the
-# whole user is cleared before a fresh agent is started.
-#
-# Runs as root so the attacker cannot signal it. Started and stopped by
-# /arena/restart.sh, which owns the deliberate stop during a release switch.
+# Runs as root. Started and stopped by /arena/restart.sh, which owns the
+# deliberate stop during a release switch. Rationale lives in the challenge
+# README, which is maintainer documentation and is not shipped here.
 set -uo pipefail
 
 POLL_SECS="${AGENT_SUPERVISOR_POLL:-3}"
