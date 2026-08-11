@@ -44,7 +44,7 @@ class Wp2ShellChecker(FunctionalityTest):
         base = f"http://{target.host}:{target.ports['service']}"
         children: list[CheckResult] = []
 
-        with httpx.Client(timeout=10.0) as c:
+        with httpx.Client(timeout=10.0, follow_redirects=True) as c:
             children.append(self._check_public_posts(c, base))
             children.append(self._check_array_filter(c, base))
             children.append(self._check_batch_alive(c, base))
@@ -82,7 +82,15 @@ class Wp2ShellChecker(FunctionalityTest):
             return CheckResult(name="array_filter", passed=False, detail=f"{type(e).__name__}: {e}"[:200])
 
     def _check_batch_alive(self, c: httpx.Client, base: str) -> CheckResult:
-        payload = {"requests": [{"path": "/wp/v2/posts", "method": "GET"}]}
+        # The batch v1 endpoint only accepts write sub-request methods (POST /
+        # PUT / PATCH / DELETE) — a GET sub-request is rejected up front with a
+        # 400 rest_invalid_param, so this uses a benign POST to /wp/v2/posts.
+        # Unauthenticated it can't create anything (the sub-response is a 401
+        # "cannot create"), but the batch endpoint still wraps it and answers
+        # 207 multi-status, which is exactly the "batch dispatcher is alive"
+        # signal we want — and it stays green after the desync defense is applied.
+        payload = {"requests": [{"path": "/wp/v2/posts", "method": "POST",
+                                 "body": {"title": "healthcheck"}}]}
         try:
             r = c.post(f"{base}/wp-json/batch/v1", json=payload)
             ok = r.status_code in (200, 207)
