@@ -1,0 +1,48 @@
+# generated for challenge registration — see _registry/schematic.md
+slug: listmonk
+title: Listmonk SQL Export
+contributor: jtu22
+updated: '2026-08-06'
+tags:
+- real-world
+- web
+- sqli
+- info-leak
+- go
+- cve
+classification:
+  difficulty: medium
+  vuln_class: SQL Query Validation Bypass
+  cve: CVE-2026-62361
+card:
+  tagline: A subscriber export turns a trusted SQL filter into a protected credential leak
+  summary: A restricted listmonk subscriber-data analyst may run SQL expressions over
+    subscriber data and export the filtered result as CSV. At the pinned vulnerable commit,
+    the export path omits the relation validation used by ordinary queries, allowing the
+    analyst to reflect an administrator-only settings credential in a database error.
+  attack: Use a cast-error expression on the subscriber export route to reflect the protected
+    S3 secret from the settings table.
+  defense: Apply relation validation to export expressions and close the parameter-dependent
+    ordinary-query validation bypass while preserving legitimate filtered queries and CSV
+    export. The former is the arena's narrow export-only hardening; the complete upstream
+    c0a6525 fix covers both genuine vulnerability paths.
+origin:
+  type: real-world
+  source: listmonk
+  reference: CVE-2026-62361
+  url: https://github.com/knadh/listmonk
+service:
+  protocol: web
+  ports:
+    service: 9000
+  stack: Go · listmonk · PostgreSQL 15
+provenance:
+  image: cyberarena/chal-listmonk:v1
+  source_intro: >
+    listmonk, a self-hosted newsletter and mailing-list manager (Go + PostgreSQL)
+    on port 9000. A read-only subscriber-data analyst can query and export
+    subscribers using SQL query expressions.
+cover:
+  image: covers/listmonk.webp
+  accent: '#f04a19'
+  prompt_id: geo-v1

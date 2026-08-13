@@ -1,0 +1,17 @@
+[app]
+# Listen on all interfaces so the arena can reach the service.
+address = "0.0.0.0:9000"
+
+# Database. The co-resident Postgres is reached over the loopback interface.
+[db]
+host = "localhost"
+port = 5432
+user = "listmonk"
+password = "listmonk"
+database = "listmonk"
+
+ssl_mode = "disable"
+max_open = 25
+max_idle = 25
+max_lifetime = "300s"
+params = ""
