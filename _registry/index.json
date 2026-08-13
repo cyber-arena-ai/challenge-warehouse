@@ -1,6 +1,6 @@
 {
-  "generated": "2026-07-20",
-  "count": 23,
+  "generated": "2026-08-07",
+  "count": 24,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -657,6 +657,52 @@
       "cover": {
         "image": "covers/gradio-lfi.webp",
         "accent": "#d62d73",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "jenkins-controller-write",
+      "title": "Jenkins Controller Write",
+      "contributor": "3rdn4Li",
+      "updated": "2026-08-07",
+      "tags": [
+        "real-world",
+        "web",
+        "file-write",
+        "cve",
+        "config-fix"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Arbitrary File Write (artifact symlink extraction)",
+        "cve": "CVE-2026-33001"
+      },
+      "card": {
+        "tagline": "Archive a symlink twice and Jenkins writes through it onto the controller",
+        "summary": "A Jenkins 2.554 controller on TCP 8080 hands the attacker a folder-scoped maintainer account that may configure and build one Pipeline job on an isolated inbound agent. Artifact extraction follows a controller-side symlink created by an earlier archive, so archiving a resolvable symlink and then a regular file of the same name writes an attacker-chosen file anywhere the controller user can reach. The controller has zero executors and the account holds no Jenkins administration or node permission.",
+        "attack": "Archive an agent-side symlink to the controller user's authorized_keys, replace it with a regular file and archive again, then log into the controller over the platform sshd and read /var/jenkins_home/flags/current.",
+        "defense": "Edit /srv/challenge/jenkins/release from 2.554 to the bundled 2.555 security release and call restart_service; jobs, build history and planted flags survive the respawn."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "Jenkins",
+        "reference": "CVE-2026-33001 (SECURITY-3657), fixed in 2.555",
+        "url": "https://github.com/advisories/GHSA-r6qv-frpc-q66c"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "web": 8080
+        },
+        "stack": "Java · Jenkins controller + inbound JNLP agent"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-jenkins-controller-write:v7",
+        "source_intro": "Jenkins 2.554 pinned at tag commit 6b3bf8967e1e26a2bee4f0c0823bc8bae69009bf; CVE-2026-33001 fixed upstream by 6dc99937605d5bddfeaae43a4cd14c2571e23adc and released in 2.555. Both upstream images are pinned by linux/amd64 manifest digest and bundled into one image, selected at restart by /srv/challenge/jenkins/release."
+      },
+      "cover": {
+        "image": "covers/jenkins-controller-write.webp",
+        "accent": "#d24939",
         "prompt_id": "geo-v1"
       }
     },
