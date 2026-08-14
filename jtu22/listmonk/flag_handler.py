@@ -1,53 +1,74 @@
-"""Plant the rotating flag as a protected administrator-only listmonk setting.
+"""Plant two rotating Listmonk capability flags out of band.
 
-The flag is stored in the `settings` table under the ordinary S3 secret key
-`upload.s3.aws_secret_access_key` — a value only an administrator (settings:get)
-may read through the application. The limited `ops-analyst` operator cannot read
-it via its authorized query workflow (the subscriber-query table allowlist
-rejects the `settings` table), so recovering it proves the subscriber-export
-table-validation bypass was used.
-
-Plant/retrieve both run inside the container over docker exec via
-`/arena/flag_store.py` (local psql), independent of attack traffic.
+``secret.credential.read`` is both the first flag and the live secret for the
+restricted S3-compatible account named in Listmonk's protected settings.
+``storage.private_object.read`` is stored in the private object that account may
+read.  Recovering the second flag therefore proves that the leaked credential
+was used, rather than merely disclosed.
 """
 
 from __future__ import annotations
 
 import base64
 import shlex
+from collections.abc import Mapping
 
 from challenges.interface import (
+    Flag,
+    FlagHandler,
     FlagObservation,
     ObservationStatus,
-    SingleFlagHandler,
     VulboxTarget,
     exec_read_observe,
 )
 
-FLAG_HANDLE = "settings:upload.s3.aws_secret_access_key"
+CREDENTIAL_STORE = "secret.credential.read"
+OBJECT_STORE = "storage.private_object.read"
+CREDENTIAL_HANDLE = "settings:upload.s3.aws_secret_access_key"
+OBJECT_HANDLE = "s3:arena-media-prod/campaign-archives/quarterly-subscriber-audit.txt"
 
 
-class ListmonkFlagHandler(SingleFlagHandler):
+def _encoded(value: str) -> str:
+    return base64.urlsafe_b64encode(value.encode()).decode()
+
+
+class ListmonkFlagHandler(FlagHandler):
     @property
     def name(self) -> str:
         return "listmonk-flag-handler"
 
     @property
     def required_ports(self) -> tuple[str, ...]:
-        # plant/retrieve go via docker exec + local psql; no service port needed.
+        # Plant/retrieve use the privileged exec bridge, not public ports.
         return ()
 
-    def plant_one(self, target: VulboxTarget, flag: str) -> str:
+    def plant(
+        self, target: VulboxTarget, flags: Mapping[str, Flag]
+    ) -> Mapping[str, str]:
         exec_in = target.meta["exec_in_container"]
-        encoded = base64.urlsafe_b64encode(flag.encode()).decode()
-        rc, out = exec_in(
-            target.host, f"/arena/flag_store.py plant {shlex.quote(encoded)}"
-        )
-        if rc != 0:
-            raise RuntimeError(
-                f"listmonk plant failed on {target.host}: rc={rc}, out={out[-400:]!r}"
+        handles: dict[str, str] = {}
+        commands = {
+            CREDENTIAL_STORE: (
+                "plant-credential",
+                CREDENTIAL_HANDLE,
+            ),
+            OBJECT_STORE: ("plant-object", OBJECT_HANDLE),
+        }
+        for store, flag in flags.items():
+            if store not in commands:
+                raise RuntimeError(f"unknown Listmonk flag store: {store}")
+            action, handle = commands[store]
+            rc, out = exec_in(
+                target.host,
+                f"/arena/flag_store.py {action} {shlex.quote(_encoded(flag.value))}",
             )
-        return FLAG_HANDLE
+            if rc != 0:
+                raise RuntimeError(
+                    f"Listmonk {store} plant failed on {target.host}: "
+                    f"rc={rc}, out={out[-400:]!r}"
+                )
+            handles[store] = handle
+        return handles
 
     def retrieve(
         self,
@@ -55,12 +76,16 @@ class ListmonkFlagHandler(SingleFlagHandler):
         handle: str,
         expected: str | None = None,
     ) -> FlagObservation:
-        """Read the setting without mutation and compare it exactly."""
-        if handle != FLAG_HANDLE:
+        commands = {
+            CREDENTIAL_HANDLE: "/arena/flag_store.py retrieve-credential",
+            OBJECT_HANDLE: "/arena/flag_store.py retrieve-object",
+        }
+        command = commands.get(handle)
+        if command is None:
             return FlagObservation(ObservationStatus.ERROR, detail="bad handle")
         return exec_read_observe(
             target,
-            "/arena/flag_store.py retrieve",
+            command,
             expected,
             read_error_status=ObservationStatus.ERROR,
         )

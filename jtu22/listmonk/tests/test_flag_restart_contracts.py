@@ -3,15 +3,54 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
-from challenges.interface import ObservationStatus, VulboxTarget
+from challenges.interface import Flag, ObservationStatus, VulboxTarget
 
 from jtu22.listmonk import build
-from jtu22.listmonk.flag_handler import FLAG_HANDLE, ListmonkFlagHandler
+from jtu22.listmonk.challenge import ListmonkChallenge
+from jtu22.listmonk.flag_handler import (
+    CREDENTIAL_HANDLE,
+    CREDENTIAL_STORE,
+    OBJECT_HANDLE,
+    OBJECT_STORE,
+    ListmonkFlagHandler,
+)
 from jtu22.listmonk.restart_handler import ListmonkRestartHandler
 
 
 def _target(exec_in):
-    return VulboxTarget(host="prod", ports={"service": 9000}, meta={"exec_in_container": exec_in})
+    return VulboxTarget(
+        host="prod",
+        ports={"service": 9000, "object_store": 9001},
+        meta={"exec_in_container": exec_in},
+    )
+
+
+def test_challenge_declares_two_independently_scored_capabilities():
+    challenge = ListmonkChallenge()
+    assert challenge.flag_stores() == [CREDENTIAL_STORE, OBJECT_STORE]
+    assert challenge.vulbox.exposed_ports["object_store"] == 9001
+
+
+def test_multiflag_plant_returns_one_handle_per_capability():
+    calls = []
+
+    def exec_in(host, command):
+        calls.append((host, command))
+        return 0, ""
+
+    handles = ListmonkFlagHandler().plant(
+        _target(exec_in),
+        {
+            CREDENTIAL_STORE: Flag("FLAG{CREDENTIAL}"),
+            OBJECT_STORE: Flag("FLAG{PRIVATEOBJECT}"),
+        },
+    )
+    assert handles == {
+        CREDENTIAL_STORE: CREDENTIAL_HANDLE,
+        OBJECT_STORE: OBJECT_HANDLE,
+    }
+    assert "plant-credential" in calls[0][1]
+    assert "plant-object" in calls[1][1]
 
 
 def test_retrieve_is_read_only_structured_and_exact():
@@ -22,22 +61,22 @@ def test_retrieve_is_read_only_structured_and_exact():
         return 0, "FLAG{current}\n"
 
     handler = ListmonkFlagHandler()
-    present = handler.retrieve(_target(exec_in), FLAG_HANDLE, "FLAG{current}")
-    mismatch = handler.retrieve(_target(exec_in), FLAG_HANDLE, "FLAG{other}")
+    present = handler.retrieve(_target(exec_in), CREDENTIAL_HANDLE, "FLAG{current}")
+    mismatch = handler.retrieve(_target(exec_in), OBJECT_HANDLE, "FLAG{other}")
 
     assert present.status is ObservationStatus.PRESENT
     assert present.value == "FLAG{current}"
     assert mismatch.status is ObservationStatus.MISMATCH
     assert mismatch.value == "FLAG{current}"
     assert calls == [
-        ("prod", "/arena/flag_store.py retrieve"),
-        ("prod", "/arena/flag_store.py retrieve"),
+        ("prod", "/arena/flag_store.py retrieve-credential"),
+        ("prod", "/arena/flag_store.py retrieve-object"),
     ]
 
 
 def test_retrieve_distinguishes_missing_from_database_error():
     missing = ListmonkFlagHandler().retrieve(
-        _target(lambda host, command: (0, "")), FLAG_HANDLE, "FLAG{x}"
+        _target(lambda host, command: (0, "")), CREDENTIAL_HANDLE, "FLAG{x}"
     )
     assert missing.status is ObservationStatus.NOT_FOUND
 
@@ -48,10 +87,10 @@ def test_retrieve_distinguishes_missing_from_database_error():
         return (0, "") if command == "true" else (2, "psql failed")
 
     error = ListmonkFlagHandler().retrieve(
-        _target(failed_read), FLAG_HANDLE, "FLAG{x}"
+        _target(failed_read), CREDENTIAL_HANDLE, "FLAG{x}"
     )
     assert error.status is ObservationStatus.ERROR
-    assert calls == ["/arena/flag_store.py retrieve", "true"]
+    assert calls == ["/arena/flag_store.py retrieve-credential", "true"]
 
 
 def test_retrieve_rejects_unknown_handle_without_exec():
@@ -69,7 +108,7 @@ def test_retrieve_rejects_unknown_handle_without_exec():
     assert not called
 
 
-def test_flag_store_retrieve_is_a_single_select(monkeypatch):
+def test_flag_store_retrieval_is_read_only(monkeypatch):
     path = Path(__file__).parents[1] / "image" / "flag_store.py"
     spec = importlib.util.spec_from_file_location("listmonk_flag_store", path)
     assert spec and spec.loader
@@ -83,7 +122,9 @@ def test_flag_store_retrieve_is_a_single_select(monkeypatch):
         return "FLAG{db}"
 
     monkeypatch.setattr(module, "_psql", fake_psql)
-    assert module.retrieve() == "FLAG{db}"
+    monkeypatch.setattr(module, "_mc", lambda *args, **kwargs: "FLAG{object}")
+    assert module.retrieve_credential() == "FLAG{db}"
+    assert module.retrieve_object() == "FLAG{object}"
     assert len(seen) == 1
     sql, capture = seen[0]
     assert sql.lstrip().upper().startswith("SELECT ")

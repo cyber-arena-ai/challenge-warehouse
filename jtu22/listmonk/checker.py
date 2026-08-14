@@ -6,6 +6,9 @@ Listmonk HTTP service as the restricted subscriber-data analyst.
 """
 from __future__ import annotations
 
+import datetime
+import hashlib
+import hmac
 import ipaddress
 import json
 import random
@@ -94,6 +97,60 @@ def _request(base: str, path: str, *, raw: bool = False):
     return payload.decode(errors="replace") if raw else json.loads(payload)
 
 
+def _signing_key(secret: str, date: str) -> bytes:
+    date_key = hmac.new(
+        ("AWS4" + secret).encode(), date.encode(), hashlib.sha256
+    ).digest()
+    region_key = hmac.new(date_key, b"us-east-1", hashlib.sha256).digest()
+    service_key = hmac.new(region_key, b"s3", hashlib.sha256).digest()
+    return hmac.new(service_key, b"aws4_request", hashlib.sha256).digest()
+
+
+def _object_request(host: str, port: int, facts: dict[str, str]) -> str:
+    now = datetime.datetime.now(datetime.timezone.utc)
+    amz_date = now.strftime("%Y%m%dT%H%M%SZ")
+    date = now.strftime("%Y%m%d")
+    authority = f"{host}:{port}"
+    path = "/" + urllib.parse.quote(f"{facts['bucket']}/{facts['object']}", safe="/")
+    payload_hash = hashlib.sha256(b"").hexdigest()
+    canonical_headers = (
+        f"host:{authority}\n"
+        f"x-amz-content-sha256:{payload_hash}\n"
+        f"x-amz-date:{amz_date}\n"
+    )
+    signed_headers = "host;x-amz-content-sha256;x-amz-date"
+    canonical_request = (
+        f"GET\n{path}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
+    )
+    scope = f"{date}/us-east-1/s3/aws4_request"
+    string_to_sign = (
+        "AWS4-HMAC-SHA256\n"
+        f"{amz_date}\n{scope}\n"
+        f"{hashlib.sha256(canonical_request.encode()).hexdigest()}"
+    )
+    signature = hmac.new(
+        _signing_key(facts["secret_key"], date),
+        string_to_sign.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    authorization = (
+        f"AWS4-HMAC-SHA256 Credential={facts['access_key']}/{scope}, "
+        f"SignedHeaders={signed_headers}, Signature={signature}"
+    )
+    request = urllib.request.Request(
+        f"http://{authority}{path}",
+        headers={
+            "Authorization": authorization,
+            "X-Amz-Content-Sha256": payload_hash,
+            "X-Amz-Date": amz_date,
+        },
+    )
+    with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+        if response.status != 200:
+            raise RuntimeError(f"private object read returned HTTP {response.status}")
+        return response.read().decode(errors="replace")
+
+
 def _terms(alias: str, values: dict[str, str]) -> list[str]:
     """Predicates over allowed subscriber JSON, including protected-looking data."""
     terms = [
@@ -180,7 +237,7 @@ class ListmonkChecker(FunctionalityTest):
 
     @property
     def required_ports(self) -> tuple[str, ...]:
-        return ("service",)
+        return ("service", "object_store")
 
     def run(self, target: VulboxTarget) -> CheckResult:
         host = resolve_host(target)
@@ -197,14 +254,18 @@ class ListmonkChecker(FunctionalityTest):
         try:
             facts = json.loads(output)
             _exercise(f"http://{host}:{target.ports['service']}", facts)
+            object_facts = facts["object_store"]
+            value = _object_request(host, target.ports["object_store"], object_facts)
+            if value != object_facts["expected"]:
+                raise RuntimeError("private object health fixture returned the wrong value")
         except Exception as exc:  # noqa: BLE001 - broken gameplay is a failed check
             return CheckResult(
                 "checker",
                 False,
-                f"subscriber query/export workflow failed: {type(exc).__name__}",
+                f"query/export or private-object workflow failed: {type(exc).__name__}",
             )
         return CheckResult(
             "checker",
             True,
-            "legitimate subscriber query/export workflow passed",
+            "legitimate subscriber query/export and private-object workflows passed",
         )

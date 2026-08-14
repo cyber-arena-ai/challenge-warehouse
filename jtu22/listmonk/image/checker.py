@@ -9,6 +9,7 @@ Listmonk's public HTTP interface.
 from __future__ import annotations
 
 import json
+import os
 import secrets
 import subprocess
 import sys
@@ -18,6 +19,8 @@ TOKEN = "ops-analyst-token-a7f3e9c15b4d"
 LIST_NAME = "Health Query Samples"
 EMAIL_PREFIX = "healthcheck-"
 EMAIL_SUFFIX = "@fieldmail.example"
+MINIO_ROOT_ENV = "/var/lib/cyberarena-listmonk/minio-root.env"
+MINIO_BUCKET = "arena-media-prod"
 
 PROVISION_SQL = """
 BEGIN;
@@ -90,6 +93,55 @@ def _psql(
     return result.stdout.strip()
 
 
+def _read_env(path: str) -> dict[str, str]:
+    values: dict[str, str] = {}
+    with open(path) as stream:
+        for line in stream:
+            key, separator, value = line.strip().partition("=")
+            if separator:
+                values[key] = value
+    return values
+
+
+def _provision_object_store(marker: str) -> dict[str, str]:
+    root = _read_env(MINIO_ROOT_ENV)
+    expected = f"object-store-health-{marker}-{secrets.token_hex(8)}"
+    object_name = f"campaign-archives/checker-{marker}.txt"
+    secret_key = _psql(
+        "SELECT value #>> '{}' FROM settings "
+        "WHERE key = 'upload.s3.aws_secret_access_key';",
+        capture=True,
+    )
+    if not secret_key:
+        raise RuntimeError("current Listmonk S3 credential is missing")
+    env = dict(os.environ)
+    env["MC_HOST_arena"] = (
+        f"http://{root['MINIO_ROOT_USER']}:{root['MINIO_ROOT_PASSWORD']}@127.0.0.1:9001"
+    )
+    result = subprocess.run(
+        [
+            "/usr/local/bin/mc",
+            "--config-dir",
+            "/var/lib/cyberarena-listmonk/mc-root",
+            "pipe",
+            f"arena/{MINIO_BUCKET}/{object_name}",
+        ],
+        input=expected,
+        text=True,
+        capture_output=True,
+        env=env,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"object-store fixture failed: {result.stderr.strip()[-300:]}")
+    return {
+        "access_key": "LISTMONKARCHIVE2026",
+        "secret_key": secret_key,
+        "bucket": MINIO_BUCKET,
+        "object": object_name,
+        "expected": expected,
+    }
+
+
 def provision() -> dict[str, object]:
     marker = secrets.token_hex(5)
     names = [f"health-a-{marker}", f"health-b-{marker}"]
@@ -141,6 +193,7 @@ def provision() -> dict[str, object]:
 
     return {
         "list_id": list_id,
+        "object_store": _provision_object_store(marker),
         "fixtures": [
             {"present": names[0], "absent": names[1], "values": values[0]},
             {"present": names[1], "absent": names[0], "values": values[1]},
