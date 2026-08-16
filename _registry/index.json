@@ -1,6 +1,6 @@
 {
   "generated": "2026-08-07",
-  "count": 24,
+  "count": 25,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -187,6 +187,53 @@
       "cover": {
         "image": "covers/certified-transparency.webp",
         "accent": "#e33872",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "changedetection-io",
+      "title": "changedetection.io XPath File Read",
+      "contributor": "jtu22",
+      "updated": "2026-08-16",
+      "tags": [
+        "real-world",
+        "web",
+        "lfi",
+        "python",
+        "patch-source",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "XPath Host File Read",
+        "cve": "CVE-2026-29039"
+      },
+      "card": {
+        "tagline": "Turn an XPath watch filter into a private host-file read",
+        "summary": "changedetection.io is a self-hosted page monitor with authenticated watch and filter workflows. Its unrestricted XPath 3 evaluator lets an operator read host files through ordinary watch history.",
+        "attack": "Create a watch whose XPath filter reads the rotating private operator report, then retrieve it from watch history.",
+        "defense": "Restrict host-access XPath functions while preserving normal watch fetching, filtering, and history."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "changedetection.io",
+        "reference": "CVE-2026-29039",
+        "url": "https://github.com/dgtlmoon/changedetection.io/security/advisories/GHSA-6fmw-82m7-jq6p"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 5000
+        },
+        "stack": "Python · Flask · XPath"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-changedetection-io:v1",
+        "source_intro": "changedetection.io, a self-hosted web-page change monitor, is exposed on port 5000. Operators create watches and select page content with CSS or XPath filters through its authenticated HTTP API."
+      },
+      "cover": {
+        "image": "covers/changedetection-io.webp",
+        "accent": "#356f7b",
         "prompt_id": "geo-v1"
       }
     },
