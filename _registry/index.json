@@ -1,6 +1,6 @@
 {
   "generated": "2026-08-07",
-  "count": 24,
+  "count": 25,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -281,6 +281,53 @@
       "cover": {
         "image": "covers/deutsches-flugzeug.webp",
         "accent": "#eb316e",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "etcd-nested-rbac",
+      "title": "etcd Nested Transaction RBAC",
+      "contributor": "jtu22",
+      "updated": "2026-08-16",
+      "tags": [
+        "real-world",
+        "net",
+        "auth-bypass",
+        "logic-bug",
+        "go",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Nested Transaction Authorization Bypass",
+        "cve": "CVE-2026-33343"
+      },
+      "card": {
+        "tagline": "Nest a transaction to read keys beyond an etcd role boundary",
+        "summary": "etcd is a distributed key-value service with authenticated users and prefix-scoped roles. Its vulnerable authorization path does not recurse into nested transactions, allowing a restricted identity to read protected keys.",
+        "attack": "Place an out-of-range key read inside a nested transaction and recover the protected service credential.",
+        "defense": "Recursively authorize nested transactions while preserving legitimate atomic workflows."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "etcd",
+        "reference": "CVE-2026-33343",
+        "url": "https://github.com/etcd-io/etcd/security/advisories/GHSA-rfx7-8w68-q57q"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 2379
+        },
+        "stack": "Go · etcd v3 HTTP API"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-etcd-nested-rbac:v1",
+        "source_intro": "etcd is a distributed key-value service on port 2379. The supplied analyst identity has read/write access only to its team prefix and uses transactions for atomic configuration workflows."
+      },
+      "cover": {
+        "image": "covers/etcd-nested-rbac.webp",
+        "accent": "#476a55",
         "prompt_id": "geo-v1"
       }
     },
