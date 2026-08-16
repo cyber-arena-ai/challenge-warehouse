@@ -1,0 +1,33 @@
+diff --git a/internal/database/pull.go b/internal/database/pull.go
+index d127ca5..2c5952e 100644
+--- a/internal/database/pull.go
++++ b/internal/database/pull.go
+@@ -231,4 +231,5 @@ func (pr *PullRequest) Merge(doer *User, baseGitRepo *git.Repository, mergeStyle
+-	if _, stderr, err = process.ExecTimeout(5*time.Minute,
+-		fmt.Sprintf("PullRequest.Merge (git clone): %s", tmpBasePath),
+-		"git", "clone", "-b", pr.BaseBranch, baseGitRepo.Path(), tmpBasePath); err != nil {
+-		return errors.Newf("git clone: %s", stderr)
++	if err = git.Clone(baseGitRepo.Path(), tmpBasePath, git.CloneOptions{
++		Branch:  pr.BaseBranch,
++		Timeout: 5 * time.Minute,
++	}); err != nil {
++		return errors.Newf("git clone: %v", err)
+@@ -264 +265 @@ func (pr *PullRequest) Merge(doer *User, baseGitRepo *git.Repository, mergeStyle
+-			"git", "merge", "--no-ff", "--no-commit", remoteHeadBranch); err != nil {
++			"git", "merge", "--no-ff", "--no-commit", "--end-of-options", remoteHeadBranch); err != nil {
+@@ -282 +283 @@ func (pr *PullRequest) Merge(doer *User, baseGitRepo *git.Repository, mergeStyle
+-			"git", "rebase", "--quiet", pr.BaseBranch, remoteHeadBranch); err != nil {
++			"git", "rebase", "--quiet", "--end-of-options", pr.BaseBranch, remoteHeadBranch); err != nil {
+@@ -297 +298 @@ func (pr *PullRequest) Merge(doer *User, baseGitRepo *git.Repository, mergeStyle
+-			"git", "checkout", pr.BaseBranch); err != nil {
++			"git", "checkout", "--end-of-options", pr.BaseBranch); err != nil {
+@@ -304 +305 @@ func (pr *PullRequest) Merge(doer *User, baseGitRepo *git.Repository, mergeStyle
+-			"git", "merge", tmpBranch); err != nil {
++			"git", "merge", "--end-of-options", tmpBranch); err != nil {
+@@ -313,4 +314,2 @@ func (pr *PullRequest) Merge(doer *User, baseGitRepo *git.Repository, mergeStyle
+-	if _, stderr, err = process.ExecDir(-1, tmpBasePath,
+-		fmt.Sprintf("PullRequest.Merge (git push): %s", tmpBasePath),
+-		"git", "push", baseGitRepo.Path(), pr.BaseBranch); err != nil {
+-		return errors.Newf("git push: %s", stderr)
++	if err = git.Push(tmpBasePath, baseGitRepo.Path(), pr.BaseBranch); err != nil {
++		return errors.Newf("git push: %v", err)
