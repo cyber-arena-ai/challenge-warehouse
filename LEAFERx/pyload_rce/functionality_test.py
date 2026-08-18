@@ -1,5 +1,5 @@
 """Liveness probe for pyload-rce: process + tcp + http. The CHECKER is the
-framework-run `image/checker.sh` (shipped over stdin), no longer invoked here."""
+framework-run `checker.py` (network probe in the poller), no longer invoked here."""
 
 from __future__ import annotations
 
