@@ -43,10 +43,12 @@ RUN python3 /tmp/fix_config.py && chown -R pyload:pyload /srv/pyload
 RUN mkdir -p /opt/secret && chmod 755 /opt/secret
 
 COPY restart.sh /arena/restart.sh
-COPY checker_impl.py /arena/checker_impl.py
+# The CHECKER logic is NOT baked in — it lives in checker.py, run as a network
+# probe inside the health-poller (never on prod), so the defender (root on its
+# own prod) can't read or overwrite it. See orche #103 "CHECKER out of prod's
+# trust boundary". Do not re-add a baked checker_impl.py / checker.sh here.
 RUN chmod 555 /arena/restart.sh \
-    && chmod 444 /arena/checker_impl.py \
-    && chown root:root /arena/restart.sh /arena/checker_impl.py
+    && chown root:root /arena/restart.sh
 
 RUN mkdir -p /run/sshd /home/arena_agent/.ssh \
     && chown arena_agent:arena_agent /home/arena_agent/.ssh \
