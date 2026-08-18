@@ -1,12 +1,48 @@
 from __future__ import annotations
 
 import json
+import socket
 import urllib.parse
 from pathlib import Path
 
 import pytest
 
 from jtu22.listmonk import checker
+
+
+def test_resolve_host_prefers_numeric_address_for_docker_alias(monkeypatch):
+    target = type(
+        "Target",
+        (),
+        {"host": "team1_prod", "ports": {"service": 9000}},
+    )()
+    attempted = []
+
+    monkeypatch.setattr(checker.socket, "gethostbyname", lambda host: "172.30.0.4")
+    monkeypatch.setattr(
+        checker,
+        "_connectable",
+        lambda host, port: attempted.append((host, port)) or host == "172.30.0.4",
+    )
+
+    assert checker.resolve_host(target) == "172.30.0.4"
+    assert attempted == [("172.30.0.4", 9000)]
+
+
+def test_resolve_host_falls_back_when_dns_resolution_fails(monkeypatch):
+    target = type(
+        "Target",
+        (),
+        {"host": "service.local", "ports": {"service": 9000}},
+    )()
+
+    def fail_resolution(host):
+        raise socket.gaierror(host)
+
+    monkeypatch.setattr(checker.socket, "gethostbyname", fail_resolution)
+    monkeypatch.setattr(checker, "_connectable", lambda host, port: True)
+
+    assert checker.resolve_host(target) == "service.local"
 
 
 def _facts():

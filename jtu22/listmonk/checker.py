@@ -47,6 +47,18 @@ def resolve_host(target: VulboxTarget) -> str | None:
     else:
         return host if _connectable(host, target.ports["service"]) else None
 
+    # Docker Compose service aliases used by games contain underscores (for
+    # example ``team1_prod``).  They are resolvable on the game network, but
+    # MinIO rejects them as HTTP Host values when verifying an S3 signature.
+    # Prefer the alias's numeric IPv4 address so the same host works for both
+    # listmonk and the signed private-object health check.
+    try:
+        address = socket.gethostbyname(host)
+    except OSError:
+        address = None
+    if address is not None and _connectable(address, target.ports["service"]):
+        return address
+
     if _connectable(host, target.ports["service"]):
         return host
     try:

@@ -84,7 +84,7 @@ fix closes both that path and the export-side omission.
 
 ## Exploit and evidence
 
-`_exploit.py` first makes one export request per target:
+`_exploit.py` first tries a compact equivalence suite against the export route:
 
 ```sql
 CAST((
@@ -95,7 +95,18 @@ CAST((
 ```
 
 It then signs an S3 `GetObject` request with the recovered value and retrieves
-the second flag from the private campaign archive.
+the second flag from the private campaign archive. If every export spelling is
+blocked, the verifier also exercises the pre-fix ordinary-query parameter
+mismatch: validation plans with subscriber status `enabled`, while an unscoped
+request executes with an empty status and evaluates the protected branch. This
+requires no predictable list-id and prevents an export-only or exact-payload
+patch from being mistaken for the complete upstream fix.
+
+The suite varies schema qualification, identifier casing/quoting, comments,
+aliases, and CTE shape. The exploit emits the solo-DEFENSE structured result and
+correlates submissions with `X-CyberArena-Verification-Attempt`, so a reachable
+patched target reports `BLOCKED`, an accepted leak reports `CAPTURED`, and an
+unreachable target remains a verifier error.
 
 The cast is deliberately invalid. On 2026-08-06 it was exercised from a separate
 client container against the exact authored image and exact S3 setting shape.
