@@ -92,9 +92,12 @@ def _auth_web_login(opener: urllib.request.OpenerDirector, base: str) -> tuple[b
     req = urllib.request.Request(base + "/login", data=data, method="POST")
     try:
         resp = opener.open(req, timeout=_TIMEOUT)
-        return ("/dashboard" in resp.url or resp.status == 200), "web-form login"
     except urllib.error.HTTPError as e:
         return False, f"POST /login error: {e.code} {e.read()[:200]!r}"
+    # Success: pyLoad redirects to /dashboard (old checker's criterion, verbatim).
+    if "/dashboard" in resp.url or resp.status == 200:
+        return True, "web-form login"
+    return False, f"POST /login: not authenticated (status={resp.status})"
 
 
 def _status_server(opener: urllib.request.OpenerDirector, base: str) -> tuple[dict | None, str]:
@@ -142,7 +145,10 @@ class PyloadChecker(FunctionalityTest):
             opener = _make_opener()  # fresh cookie jar for the web-form path
             authenticated, detail = _auth_web_login(opener, base)
             if not authenticated:
-                return CheckResult(name="checker", passed=False, detail=detail)
+                # Mirrors the old checker's "failed with both api/login and
+                # web-form login" verdict, but keeps the specific web-login reason.
+                return CheckResult(name="checker", passed=False,
+                                   detail=f"authentication failed (api/login 404 → {detail})")
 
         # Step 2: /api/statusServer must answer with the expected keys.
         status, detail = _status_server(opener, base)
