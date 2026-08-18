@@ -26,7 +26,14 @@ import json
 import logging
 import shlex
 
-from challenges.interface import Flag, FlagHandler, VulboxTarget  # noqa: F401
+from challenges.interface import (  # noqa: F401
+    Flag,
+    FlagHandler,
+    FlagObservation,
+    ObservationStatus,
+    VulboxTarget,
+    exec_read_observe,
+)
 
 log = logging.getLogger(__name__)
 
@@ -106,26 +113,56 @@ class AirflowFlagHandler(FlagHandler):
 
         return handles
 
-    def retrieve(self, target: VulboxTarget, handle: str) -> str | None:
-        exec_in = target.meta["exec_in_container"]
+    def retrieve(self, target: VulboxTarget, handle: str,
+                 expected: str | None = None) -> FlagObservation:
+        """Structured, read-only observation of a planted flag (privileged
+        docker-exec; MUST NEVER raise). NOT_FOUND = flag gone (tampering);
+        MISMATCH = a different value; ERROR = prod/DB unreachable or inconclusive."""
         if handle == VAR_KEY:
-            # CLI `variables get` prints the raw (unredacted) value; stderr dropped
-            # so deprecation warnings don't pollute the JSON.
-            rc, out = _airflow(exec_in, target.host,
-                               f"airflow variables get {shlex.quote(VAR_KEY)} 2>/dev/null")
-            if rc != 0:
-                return None
-            try:
-                return json.loads(out.strip())["db"]["password"] or None
-            except Exception:
-                return None
+            return self._observe_variable(target, expected)
         if handle == ASSET_URI:
-            # Expected value = the seed the DAG emits; read the planted file directly.
-            rc, out = exec_in(target.host, f"cat {shlex.quote(RECEIPT_FILE)}")
-            if rc != 0:
-                return None
-            return out.strip() or None
-        return None
+            # Root-written receipt file; the read returns the flag verbatim, so
+            # the shared exec-read body classifies it directly.
+            return exec_read_observe(
+                target, f"cat {shlex.quote(RECEIPT_FILE)}", expected)
+        return FlagObservation(ObservationStatus.ERROR, detail=f"unknown handle {handle!r}")
+
+    def _observe_variable(self, target: VulboxTarget,
+                          expected: str | None) -> FlagObservation:
+        """Read the nested Variable secret. The flag is embedded in a JSON blob
+        (`db.password`), so this can't use `exec_read_observe`'s whole-output
+        compare — it extracts the value, then classifies against `expected`."""
+        exec_in = target.meta.get("exec_in_container")
+        if exec_in is None:
+            return FlagObservation(ObservationStatus.ERROR, detail="no exec_in_container")
+        # CLI `variables get` prints the raw (unredacted) value; stderr dropped so
+        # deprecation warnings don't pollute the JSON.
+        try:
+            rc, out = _airflow(
+                exec_in, target.host,
+                f"airflow variables get {shlex.quote(VAR_KEY)} 2>/dev/null")
+        except Exception:  # noqa: BLE001 — retrieve must never raise
+            return FlagObservation(ObservationStatus.ERROR, detail="variables-get exec raised")
+        if rc != 0:
+            # A nonzero rc can't tell "Variable deleted" from "prod/DB unreachable";
+            # probe `true` to split them (NOT_FOUND vs ERROR), like exec_read_observe.
+            try:
+                rc0, _ = exec_in(target.host, "true")
+            except Exception:  # noqa: BLE001
+                return FlagObservation(ObservationStatus.ERROR, detail="reachability exec raised")
+            if rc0 != 0:
+                return FlagObservation(ObservationStatus.ERROR, detail="prod unreachable")
+            return FlagObservation(ObservationStatus.NOT_FOUND, detail=f"variables get rc={rc}")
+        try:
+            value = (json.loads(out.strip())["db"]["password"] or "").strip()
+        except Exception:  # noqa: BLE001 — nested secret removed/corrupted
+            value = ""
+        if not value:
+            return FlagObservation(ObservationStatus.NOT_FOUND,
+                                   detail="variable present but nested secret gone")
+        if expected is not None and expected != value:
+            return FlagObservation(ObservationStatus.MISMATCH, value=value)
+        return FlagObservation(ObservationStatus.PRESENT, value=value)
 
     def flag_id(self, handle: str) -> str | None:
         """Public attack-info: the Variable key / asset URI the attacker targets.
