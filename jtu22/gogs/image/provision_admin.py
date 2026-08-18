@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create and discard the first Gogs identity so public users are non-admin."""
+"""Create the first Gogs identity while HTTP is bound to loopback only."""
 
 from __future__ import annotations
 
@@ -35,6 +35,11 @@ def main() -> None:
         urllib.request.Request(base + "/user/sign_up", data=body), timeout=30
     ) as response:
         response.read()
+    with opener.open(base + "/admin", timeout=15) as response:
+        if response.status != 200:
+            raise RuntimeError(
+                f"bootstrap identity is not an administrator (HTTP {response.status})"
+            )
 
 
 if __name__ == "__main__":

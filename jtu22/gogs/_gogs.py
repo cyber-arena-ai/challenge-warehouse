@@ -3,19 +3,52 @@
 from __future__ import annotations
 
 import http.cookiejar
-from pathlib import Path
 import re
+import secrets
 import shutil
+import string
 import subprocess
 import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
+from dataclasses import dataclass
+from pathlib import Path
 
 _CSRF_PATTERNS = (
     re.compile(r'name="_csrf" value="([^"]+)"'),
     re.compile(r'<meta name="_csrf" content="([^"]+)"'),
 )
+
+_SLUG_ALPHABET = string.ascii_lowercase + string.digits
+
+
+@dataclass(frozen=True)
+class FixtureHistory:
+    """Public commit identities needed to validate the rebase result."""
+
+    initial_tip: str
+    feature_tip: str
+    base_tip: str
+
+
+def random_slug(length: int = 16) -> str:
+    """Return a normal-looking Gogs-safe identity with no checker-only prefix."""
+    if length < 2:
+        raise ValueError("slug length must be at least 2")
+    return secrets.choice(string.ascii_lowercase) + "".join(
+        secrets.choice(_SLUG_ALPHABET) for _ in range(length - 1)
+    )
+
+
+def random_password() -> str:
+    """Return the shared checker/exploit password distribution."""
+    return "Pw-" + secrets.token_urlsafe(18)
+
+
+def random_marker() -> str:
+    """Return an opaque content canary shared by checker and exploit flows."""
+    return secrets.token_hex(16)
 
 
 def _csrf(html: str) -> str:
@@ -80,7 +113,9 @@ class GogsClient:
     def assert_ordinary(self) -> None:
         status, _ = self._request("/admin")
         if status != 403:
-            raise RuntimeError(f"ordinary user unexpectedly reached /admin (HTTP {status})")
+            raise RuntimeError(
+                f"ordinary user unexpectedly reached /admin (HTTP {status})"
+            )
 
     def create_repo(self, username: str, repo: str) -> None:
         status, page = self._request("/repo/create")
@@ -176,12 +211,17 @@ def push_fixture(
     marker: str,
     *,
     base_alias: str | None = None,
-) -> None:
-    """Push a divergent master/feature pair and an optional alias of master."""
+    base_branch: str = "master",
+    head_branch: str = "feature",
+    base_marker: str = "base update",
+    base_file: str = "README.md",
+    feature_file: str = "result.txt",
+) -> FixtureHistory:
+    """Push a divergent branch pair and an optional alias of the base."""
     directory = Path(tempfile.mkdtemp(prefix="gogs-public-flow-"))
     try:
         subprocess.run(
-            ["git", "init", "-b", "master", str(directory)],
+            ["git", "init", "-b", base_branch, str(directory)],
             check=True,
             capture_output=True,
             text=True,
@@ -193,42 +233,45 @@ def push_fixture(
             subprocess.run(
                 ["git", "-C", str(directory), "config", key, value], check=True
             )
-        (directory / "README.md").write_text("baseline\n", encoding="utf-8")
-        subprocess.run(["git", "-C", str(directory), "add", "README.md"], check=True)
+        (directory / base_file).write_text("baseline\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(directory), "add", base_file], check=True)
         subprocess.run(
             ["git", "-C", str(directory), "commit", "-m", "initial"],
             check=True,
             capture_output=True,
             text=True,
         )
+        initial_tip = _rev_parse(directory)
         subprocess.run(
-            ["git", "-C", str(directory), "checkout", "-b", "feature"],
+            ["git", "-C", str(directory), "checkout", "-b", head_branch],
             check=True,
             capture_output=True,
             text=True,
         )
-        (directory / "result.txt").write_text(marker + "\n", encoding="utf-8")
-        subprocess.run(["git", "-C", str(directory), "add", "result.txt"], check=True)
+        (directory / feature_file).write_text(marker + "\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(directory), "add", feature_file], check=True)
         subprocess.run(
             ["git", "-C", str(directory), "commit", "-m", "feature result"],
             check=True,
             capture_output=True,
             text=True,
         )
+        feature_tip = _rev_parse(directory)
         subprocess.run(
-            ["git", "-C", str(directory), "checkout", "master"],
+            ["git", "-C", str(directory), "checkout", base_branch],
             check=True,
             capture_output=True,
             text=True,
         )
-        with (directory / "README.md").open("a", encoding="utf-8") as handle:
-            handle.write("base update\n")
+        with (directory / base_file).open("a", encoding="utf-8") as handle:
+            handle.write(base_marker + "\n")
         subprocess.run(
             ["git", "-C", str(directory), "commit", "-am", "base update"],
             check=True,
             capture_output=True,
             text=True,
         )
+        base_tip = _rev_parse(directory)
         if base_alias:
             subprocess.run(
                 [
@@ -255,7 +298,7 @@ def push_fixture(
             ["git", "-C", str(directory), "remote", "add", "origin", remote],
             check=True,
         )
-        refs = ["master", "feature"]
+        refs = [base_branch, head_branch]
         if base_alias:
             refs.append(f"refs/heads/{base_alias}:refs/heads/{base_alias}")
         subprocess.run(
@@ -265,8 +308,18 @@ def push_fixture(
             text=True,
             timeout=90,
         )
+        return FixtureHistory(initial_tip, feature_tip, base_tip)
     finally:
         shutil.rmtree(directory, ignore_errors=True)
+
+
+def _rev_parse(directory: Path) -> str:
+    return subprocess.run(
+        ["git", "-C", str(directory), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
 
 
 def assert_rebased_tip(
@@ -274,6 +327,8 @@ def assert_rebased_tip(
     username: str,
     password: str,
     repo: str,
+    branch: str = "master",
+    expected_parent: str | None = None,
 ) -> None:
     """Fetch the public result and require a linear rebase-merge tip."""
     directory = Path(tempfile.mkdtemp(prefix="gogs-public-result-"))
@@ -293,7 +348,7 @@ def assert_rebased_tip(
                 "clone",
                 "--quiet",
                 "--branch",
-                "master",
+                branch,
                 "--single-branch",
                 remote,
                 str(directory),
@@ -320,6 +375,8 @@ def assert_rebased_tip(
             timeout=30,
         ).stdout.split()
         if len(tip) != 2:
-            raise RuntimeError("merged master tip is not a linear rebase result")
+            raise RuntimeError("merged base tip is not a linear rebase result")
+        if expected_parent is not None and tip[1] != expected_parent:
+            raise RuntimeError("rebased tip is not based on the original base tip")
     finally:
         shutil.rmtree(directory, ignore_errors=True)

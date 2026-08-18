@@ -54,7 +54,7 @@ RUN apk add --no-cache \
       linux-pam-dev=1.7.1-r2 \
       openssh-server=10.2_p1-r0 \
       procps-ng=4.0.5-r0 \
-      python3=3.12.13-r0 \
+      python3=3.12.14-r0 \
       shadow=4.18.0-r0 \
       su-exec=0.3-r0 \
       tzdata=2026c-r0 \
@@ -73,8 +73,8 @@ RUN chmod -R a+rX /opt/challenge_src/gogs \
     && chmod 0755 /opt/gogs-bin
 
 COPY app.ini.template entrypoint.sh provision_admin.py restart.sh start.sh stop.sh /arena/
-RUN chmod 0555 /arena/entrypoint.sh /arena/provision_admin.py \
-      /arena/restart.sh /arena/start.sh /arena/stop.sh \
+RUN chmod 0555 /arena/entrypoint.sh \
+      /arena/provision_admin.py /arena/restart.sh /arena/start.sh /arena/stop.sh \
     && chmod 0444 /arena/app.ini.template \
     && chown -R root:root /arena
 
