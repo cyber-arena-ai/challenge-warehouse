@@ -1,0 +1,37 @@
+BRAND_NAME = Gogs
+RUN_USER = arena_agent
+RUN_MODE = prod
+
+[database]
+TYPE = sqlite3
+PATH = /srv/gogs-data/gogs.db
+
+[repository]
+ROOT = /srv/gogs-data/repositories
+DEFAULT_BRANCH = master
+
+[server]
+DOMAIN = localhost
+HTTP_ADDR = 0.0.0.0
+HTTP_PORT = 3000
+EXTERNAL_URL = http://localhost:3000/
+DISABLE_SSH = true
+OFFLINE_MODE = true
+APP_DATA_PATH = /srv/gogs-data/app-data
+
+[auth]
+DISABLE_REGISTRATION = false
+ENABLE_REGISTRATION_CAPTCHA = false
+REQUIRE_EMAIL_CONFIRMATION = false
+
+[security]
+INSTALL_LOCK = true
+SECRET_KEY = __SECRET_KEY__
+
+[session]
+PROVIDER = file
+
+[log]
+MODE = console
+LEVEL = Info
+ROOT_PATH = /srv/gogs-data/log

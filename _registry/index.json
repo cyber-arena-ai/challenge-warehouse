@@ -1,6 +1,6 @@
 {
   "generated": "2026-08-07",
-  "count": 24,
+  "count": 25,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -610,6 +610,53 @@
       "cover": {
         "image": "covers/faust-treasury.webp",
         "accent": "#eb6053",
+        "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "gogs",
+      "title": "Gogs Rebase Command Execution",
+      "contributor": "jtu22",
+      "updated": "2026-08-14",
+      "tags": [
+        "real-world",
+        "web",
+        "rce",
+        "command-injection",
+        "go",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Argument Injection",
+        "cve": "CVE-2026-52806"
+      },
+      "card": {
+        "tagline": "Turn a pull-request base ref into a server-side Git rebase command",
+        "summary": "Gogs is a self-hosted Git service with ordinary repository, branch, and pull-request workflows. An option-like base ref reaches Git rebase without an end-of-options marker during rebase merge, allowing an ordinary repository owner to run a command as the service process.",
+        "attack": "Create a fresh repository and malicious base ref, open the first pull request, and invoke rebase merge to execute a command.",
+        "defense": "Preserve normal Git HTTP and pull-request rebase workflows while separating attacker-controlled ref names from Git options."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "Gogs",
+        "reference": "CVE-2026-52806",
+        "url": "https://github.com/gogs/gogs/commit/a9dbafbfd8e1020bacc626420238c01d75d03364"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 3000
+        },
+        "stack": "Go · SQLite · Git"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-gogs:v1",
+        "source_intro": "Gogs at commit e3bb4165dceb96b66053a067f9f3584302413a0e, before the CVE-2026-52806 pull-request merge argument-separation repair. Ordinary users can create repositories, push Git refs, open pull requests, and choose rebase merge."
+      },
+      "cover": {
+        "image": "covers/gogs.webp",
+        "accent": "#4f7f4a",
         "prompt_id": "geo-v1"
       }
     },
