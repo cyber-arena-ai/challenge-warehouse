@@ -45,5 +45,15 @@ provenance:
     and restart_service.'
 cover:
   image: covers/pyload-rce.webp
-  accent: '#f55693'
-  prompt_id: geo-v1
+  accent: '#ed6685'
+  prompt_id: geo-v2
+  motif: A slender dashed path approaches a hard-edged rectangular gate whose seam is held
+    by a small concentric-arc guard; the path slips through the seam untouched, its passage
+    marked by a single foreign chevron threading between two matched frames — the outer boundary
+    and its identical mirror-labelled inner boundary sitting flush, showing the barrier was
+    satisfied by a duplicate of itself. Past the gate a compact nested-frame block — a rounded
+    interpreter cell held inside a square sandbox frame — is ruptured as a sharp triangular
+    wedge drives outward through its wall, detonating an orderly dot-grid into a scattering
+    halftone field of segmented blocks. From that breach a thick stroke curves back out across
+    the boundary carrying one small solid rectangle lifted from the deepest covering layer
+    of a stacked set of opaque planes.

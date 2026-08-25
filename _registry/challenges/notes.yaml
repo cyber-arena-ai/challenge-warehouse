@@ -38,5 +38,13 @@ provenance:
     ''COUNT <n>''. No defense flow.'
 cover:
   image: covers/notes.webp
-  accent: '#eb6d2e'
-  prompt_id: geo-v1
+  accent: '#e88f63'
+  prompt_id: geo-v2
+  motif: 'A single hard-edged rectangular socket-node sits at the left, from which a stepped
+    ladder of newline-terminated exchanges descends rightward: each rung a short segmented
+    band paired with a returning band offset one step below, request and response climbing
+    down in lockstep. In the daemon''s interior, a small square grid of stored cells holds
+    a scatter of dots, one cell ringed by concentric arcs to mark the retrieved note, a thick
+    stroke threading out from it back along the ladder to the socket. Above, three stacked
+    translucent planes suggest the tiny protocol''s flat verbs, overlapping just enough that
+    the deepest holds a lone filled cell.'

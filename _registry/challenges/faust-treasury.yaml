@@ -40,5 +40,14 @@ provenance:
     the memory corruption to read another vault''s keys/flag.'
 cover:
   image: covers/faust-treasury.webp
-  accent: '#eb6053'
-  prompt_id: geo-v1
+  accent: '#2354bc'
+  prompt_id: geo-v2
+  motif: A tall column of stacked identical rectangular cells — a regular vault lattice —
+    stands connected to a left-edge socket by a segmented request band that climbs it like
+    a stepped ladder, one rung per menu exchange. Midway up, a single cell swells and ruptures
+    its clean borders, its overspill shoving into the adjacent stack so that a lower opaque
+    covering plane slides aside and the deepest sealed cell shows through where it never should.
+    Thin dashed paths thread from that breached interior back down the ladder and out through
+    the socket, carrying flat blocks lifted from a neighbouring column of the lattice. Concentric
+    arcs radiate from the ruptured cell to mark the corruption's blast, while an unbroken
+    parallel column at the right stands as the intact structure the break was meant to respect.

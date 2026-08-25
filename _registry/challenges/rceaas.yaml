@@ -45,5 +45,13 @@ provenance:
     then restart_service.'
 cover:
   image: covers/rceaas.webp
-  accent: '#0538a0'
-  prompt_id: geo-v1
+  accent: '#1e54b0'
+  prompt_id: geo-v2
+  motif: A tight nested frame sits at center — a hard-edged rectangular jail cell holding
+    a small dot grid representing its permitted contents — repeated as a row of near-identical
+    sibling cells along a horizontal band, each self-contained. From one cell a thick stroke
+    path pushes through the seam of its own inner frame and doubles back as a dashed link-line
+    diagonally into a neighbouring cell, where it terminates on a single highlighted dot pulled
+    from deep inside that adjacent lattice. A stepped ladder of short segmented bands rises
+    up the left edge, marking the line-based shell exchange over the socket, its rungs stacking
+    toward the point where the escaping stroke first breaches the wall.

@@ -46,5 +46,14 @@ provenance:
     user''s content (without breaking legitimate viewing), then restart_service.'
 cover:
   image: covers/btx.webp
-  accent: '#d22869'
-  prompt_id: geo-v1
+  accent: '#de4678'
+  prompt_id: geo-v2
+  motif: A grid of identical rounded page-cells is arranged in tidy numbered rows like a videotex
+    directory, each cell sealed by an opaque covering plane; a single thick dashed path enters
+    from a boundary node at the edge and threads laterally between cells, slipping through
+    a hairline seam in one cell's covering layer where the ownership boundary should have
+    held. Behind that one breached plane the deepest layer shows through as a distinct inner
+    rectangle — a private panel exposed while every neighbouring cell stays sealed. The backend
+    reads as a flat stack of small segmented JSON blocks feeding the grid from below, and
+    the whole composition centres on the asymmetry of one lit interior amid a field of closed
+    frames.

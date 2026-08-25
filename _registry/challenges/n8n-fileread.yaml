@@ -42,5 +42,14 @@ provenance:
     the binary file-return step, then call restart_service.'
 cover:
   image: covers/n8n-fileread.webp
-  accent: '#e54631'
-  prompt_id: geo-v1
+  accent: '#ed5d62'
+  prompt_id: geo-v2
+  motif: A tight compact block at the poster's edge—the arriving JSON payload rendered as
+    a small dense square grid—extends one thick stroke inward through a segmented band, the
+    webhook intake pipeline. That stroke does not stop at the pipeline's inner wall but slips
+    through a hairline seam and escapes outward past three concentric nested frames that should
+    have bounded it, its dashed path curving down to touch a single filled rectangle resting
+    far below the outermost frame. From that deep rectangle a thin return stroke travels all
+    the way back up through every frame it bypassed, carrying the retrieved block outward
+    to where the payload began, closing the traversal loop between the innermost server layer
+    and the unauthenticated exterior.

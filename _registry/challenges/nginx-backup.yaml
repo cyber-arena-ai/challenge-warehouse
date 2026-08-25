@@ -42,5 +42,12 @@ provenance:
     Defense: block /api/backup in the editable nginx proxy config and reload via restart_service.'
 cover:
   image: covers/nginx-backup.webp
-  accent: '#ef2e26'
-  prompt_id: geo-v1
+  accent: '#2152b0'
+  prompt_id: geo-v2
+  motif: 'A hard-edged sealed rectangular block, its interior filled with a dense scrambled
+    halftone field, slides outward past an open seam in a nested frame that should have contained
+    it — no barrier stands at the gap. Riding alongside the escaping block, as a thin segmented
+    band peeled from its top edge, travels a short lattice of modular wheels: the very rings
+    that would unscramble the block''s interior, carried in the open beside it. Where that
+    band meets the block, the halftone field resolves into a clean square grid, one cell settling
+    into legible order to show the concealed contents laid bare.'

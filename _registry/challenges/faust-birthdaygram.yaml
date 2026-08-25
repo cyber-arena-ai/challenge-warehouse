@@ -41,5 +41,13 @@ provenance:
     Attack: read a victim''s private image and extract the stego''d flag.'
 cover:
   image: covers/faust-birthdaygram.webp
-  accent: '#e73476'
-  prompt_id: geo-v1
+  accent: '#df6188'
+  prompt_id: geo-v2
+  motif: A vertical stack of opaque overlapping planes representing private feed entries,
+    each a hard-edged rectangle guarded by a segmented barrier band running down one side;
+    a single dashed path slips through a thin seam in that band and reaches the deepest plane,
+    bypassing the ownership checks stacked above it. That innermost rectangle, once covered,
+    now shows through as an exposed tile — its surface a fine dot grid where one regular row
+    of dots is subtly displaced from the lattice, the low-order layer prised loose and read
+    out. A thin chevron trail traces from the seam inward to the disturbed grid, linking the
+    slipped barrier to the leaked interior.

@@ -51,5 +51,14 @@ provenance:
     pkg/) and harden it so all fields are authenticated without breaking legit use, then restart_service.'
 cover:
   image: covers/certified-transparency.webp
-  accent: '#e33872'
-  prompt_id: geo-v1
+  accent: '#d62c67'
+  prompt_id: geo-v2
+  motif: A tall Merkle triangle built from stacked rows of small circles resolving upward
+    to a single crowning semicircle — the signed tree head — with a dashed proof-path threading
+    diagonally from one leaf node up to that apex. Where the apex meets its verifying seam,
+    the concentric verification arcs are drawn incomplete, one arc left open so a slim forged
+    chevron slips through the gap and re-attaches to the crown, letting an unauthorized path
+    claim the summit. To the side, two hard-edged rectangular daemon blocks connected by a
+    thin segmented band feed a stack of overlapping translucent planes, the deepest of which
+    — a private inner rectangle — shows through the layers above it once the forged head unlocks
+    the seam.
