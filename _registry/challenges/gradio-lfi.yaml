@@ -43,5 +43,15 @@ provenance:
     and restart_service.'
 cover:
   image: covers/gradio-lfi.webp
-  accent: '#d62d73'
-  prompt_id: geo-v1
+  accent: '#df508a'
+  prompt_id: geo-v2
+  motif: A single rounded component-block sits inside a tight nested frame representing the
+    served application boundary; from a small side aperture in that frame — a seam that should
+    have stayed sealed — a thick dashed path reaches far outward past the outermost frame
+    to pluck a distant isolated rectangle from a deep, separate lattice. That extracted rectangle
+    is dragged back inward and dropped into a shallow tiled cache-band adjacent to the block,
+    and from that band a second clean stroke exits through the front boundary to a small waiting
+    semicircle, completing the fetch. The composition reads as two coupled hops — a foreign
+    method-call arcing out to seize a form it should never reach, then that form re-emerging
+    through the public opening — with the traversal path drawn as the longest, most disruptive
+    line crossing every frame.

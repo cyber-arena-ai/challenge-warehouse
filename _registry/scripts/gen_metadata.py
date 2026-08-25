@@ -29,6 +29,13 @@ OUT_DIR = WAREHOUSE / "_registry" / "challenges"
 CREDS = WAREHOUSE.parent / "api.json"                   # text LLM (base, key, model) — outside the repo, never committed
 SYSTEM_PROMPT = (Path(__file__).resolve().parent / "prompts" / "metadata_system.md").read_text()
 
+
+def load_creds(path, section: str) -> dict:
+    """Read {base, key, model} — accepts either a flat file or one keyed by section."""
+    cfg = json.loads(path.read_text())
+    return cfg[section] if section in cfg else cfg
+
+
 # Tag Pool (must match schematic.md) — used to flag out-of-pool tags for review.
 TAG_POOL = {
     "ctf", "real-world",
@@ -130,7 +137,7 @@ def assemble(d: dict, contributor: str, today: str) -> tuple[dict, list[str]]:
             "image": d.get("image"),
             "source_intro": (d.get("source_intro") or "").strip(),
         },
-        "cover": {"image": f"covers/{slug}.png", "accent": None, "prompt_id": None},
+        "cover": {"image": f"covers/{slug}.webp", "accent": None, "prompt_id": None},
     }
     return doc, warn
 
@@ -152,8 +159,15 @@ async def one(sem, client, cfg, chal, today, force):
         doc, warn = assemble(d, chal["contributor"], today)
         if not doc["slug"]:
             return {"dir": chal["dir"], "error": "no slug"}
-        if not force and (OUT_DIR / f"{doc['slug']}.yaml").exists():
-            return {"slug": doc["slug"], "skipped": True}
+        existing = OUT_DIR / f"{doc['slug']}.yaml"
+        if existing.exists():
+            if not force:
+                return {"slug": doc["slug"], "skipped": True}
+            # a cover already drawn survives a metadata rebuild — accent and motif
+            # are cover-pass outputs and would be expensive to regenerate
+            prev = (yaml.safe_load(existing.read_text()) or {}).get("cover") or {}
+            if prev.get("accent"):
+                doc["cover"] = prev
         path = write_yaml(doc)
         return {"slug": doc["slug"], "path": str(path.relative_to(WAREHOUSE)), "warn": warn,
                 "new_tags": d.get("new_tags") or []}
@@ -167,7 +181,7 @@ async def main():
     ap.add_argument("--concurrency", type=int, default=6)
     args = ap.parse_args()
 
-    cfg = json.loads(CREDS.read_text())
+    cfg = load_creds(CREDS, "analysis")
     today = datetime.date.today().isoformat()
     chals = discover()
     if args.only:

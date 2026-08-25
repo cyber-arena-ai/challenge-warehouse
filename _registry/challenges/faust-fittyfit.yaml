@@ -43,5 +43,13 @@ provenance:
     Attack: read other users'' NFT PDFs (path/authz on the NFT file-serving + PDF handling).'
 cover:
   image: covers/faust-fittyfit.webp
-  accent: '#eb4d35'
-  prompt_id: geo-v1
+  accent: '#e98e76'
+  prompt_id: geo-v2
+  motif: A grid of identical rounded rectangular documents sits in neat owned rows behind
+    a single guarding barrier drawn as a thick vertical stroke with one open seam. A dashed
+    path slips sideways through that seam and continues past its own row into a neighbouring
+    cell, where one document is lifted clear and tilted forward out of the lattice while the
+    barrier remains intact everywhere else. The traversing path threads through the nested
+    frames of the file-serving structure — concentric rectangular borders — sliding outward
+    one enclosure too far, and the extracted document glows through as the deepest translucent
+    plane beneath the covering layers around it.

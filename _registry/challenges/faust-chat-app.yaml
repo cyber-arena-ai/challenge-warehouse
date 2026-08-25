@@ -43,5 +43,13 @@ provenance:
     chat.'
 cover:
   image: covers/faust-chat-app.webp
-  accent: '#ec3766'
-  prompt_id: geo-v1
+  accent: '#f16397'
+  prompt_id: geo-v2
+  motif: 'A grid of identical rounded-rectangle message cells arranged in paired rows, each
+    pair bound together by a thick stroke marking a private thread between two small circular
+    endpoints. One thread''s binding stroke has slipped its clasp: a dashed path enters from
+    outside the grid, threads along the seam where two endpoints meet, and reaches into the
+    interior cell it should not touch — the barrier here is only a thin nominal line keyed
+    to a single endpoint, not a closed loop around the pair. The intruded cell sits slightly
+    brighter and offset, its covering plane lifted just enough to reveal the deeper layer
+    beneath, while the surrounding paired cells remain sealed by continuous double strokes.'

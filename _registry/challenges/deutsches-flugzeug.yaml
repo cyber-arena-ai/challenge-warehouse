@@ -49,5 +49,14 @@ provenance:
     restart_service.'
 cover:
   image: covers/deutsches-flugzeug.webp
-  accent: '#eb316e'
-  prompt_id: geo-v1
+  accent: '#e43873'
+  prompt_id: geo-v2
+  motif: A segmented horizontal band of stacked ticket-tokens moves left to right toward a
+    tall guarded boarding frame; each token is a compact three-part rectangle with a dashed
+    seam, and one forged token — visibly reassembled from mismatched segments — slips through
+    a broken join in the barrier where two frames fail to meet. Inside the innermost nested
+    frame sits a small dense grid of dots representing the withheld VIP boarding data, its
+    deepest tile glowing through the covering planes now that the barrier is bypassed. A thin
+    dashed path curves from the forged token around the checkpoint's edge and re-enters at
+    the scoped flight's frame, its arrowhead landing precisely on that revealed inner tile
+    while the legitimate tokens queue uselessly at the sealed entrance.

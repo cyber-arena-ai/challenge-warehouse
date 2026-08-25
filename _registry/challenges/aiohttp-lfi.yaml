@@ -41,5 +41,13 @@ provenance:
     edit /srv/challenge/server.py to drop follow_symlinks=True and restart_service.'
 cover:
   image: covers/aiohttp-lfi.webp
-  accent: '#e56120'
-  prompt_id: geo-v1
+  accent: '#ea9b61'
+  prompt_id: geo-v2
+  motif: A tight nested stack of rectangular frames on the left marks a static-file root,
+    its innermost cell holding a small filled square; from that square a thick dashed path
+    drives straight outward, piercing each frame boundary through a broken seam where a containment
+    stroke should close but is left open. Each frame it crosses steps the path further right
+    and down like a descending ladder, until the path arrives at an isolated, separate rectangle
+    standing well outside the entire nested structure. That outer rectangle sits alone against
+    a sparse dot grid, its single interior square now echoed by the one first held deep inside
+    — the buried cell reappearing where it was never meant to be reached.

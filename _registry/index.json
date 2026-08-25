@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-07",
-  "count": 24,
+  "generated": "2026-08-25",
+  "count": 25,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -44,8 +44,9 @@
       },
       "cover": {
         "image": "covers/8-bit-oracle.webp",
-        "accent": "#1b509e",
-        "prompt_id": "geo-v1"
+        "accent": "#e76953",
+        "prompt_id": "geo-v2",
+        "motif": "A tall stepped ladder of paired rectangles climbs upward as a line-based TCP exchange, each rung a request-and-response beat; midway a modular wheel of concentric arcs — the challenge generator — spins, but its segments are visibly regular and evenly spaced, so a thin dashed path traces the next segment before the wheel reaches it, predicting the value. That predicted segment detaches and slides sideways as a small solid block into a locked nested frame belonging to a neighbouring column, slipping past the seam of a barrier band that should have separated the two. Behind the frame, a stack of opaque overlapping planes parts just enough to reveal the deepest tile of a square grid — another user's guarded record — now exposed. A faint halftone field fills the gap where the RSA keypair wheel sits idle and bypassed off to one side."
       }
     },
     {
@@ -91,8 +92,60 @@
       },
       "cover": {
         "image": "covers/aiohttp-lfi.webp",
-        "accent": "#e56120",
-        "prompt_id": "geo-v1"
+        "accent": "#ea9b61",
+        "prompt_id": "geo-v2",
+        "motif": "A tight nested stack of rectangular frames on the left marks a static-file root, its innermost cell holding a small filled square; from that square a thick dashed path drives straight outward, piercing each frame boundary through a broken seam where a containment stroke should close but is left open. Each frame it crosses steps the path further right and down like a descending ladder, until the path arrives at an isolated, separate rectangle standing well outside the entire nested structure. That outer rectangle sits alone against a sparse dot grid, its single interior square now echoed by the one first held deep inside — the buried cell reappearing where it was never meant to be reached."
+      }
+    },
+    {
+      "slug": "airflow",
+      "title": "Apache Airflow 3.1.5 Auth Bypass",
+      "contributor": "1chig0",
+      "updated": "2026-08-25",
+      "tags": [
+        "real-world",
+        "web",
+        "auth-bypass",
+        "info-leak",
+        "python",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Broken Authorization & Secret Redaction",
+        "cve": [
+          "CVE-2026-32690",
+          "CVE-2026-32228"
+        ]
+      },
+      "card": {
+        "tagline": "Nested Variable secrets leak past depth-1 redaction; materialize triggers protected DAGs",
+        "summary": "Apache Airflow 3.1.5's Variable API redacts JSON values only to depth 1 (redact(..., max_depth=1)), so a secret nested at depth ≥2 under a sensitive key leaks unmasked. Separately, POST /assets/{id}/materialize checks only requires_access_asset and not requires_access_dag, letting a low-privilege user trigger a DAG they cannot invoke directly.",
+        "attack": "As a low-priv FAB user, read the unmasked nested secret from a Variable and materialize an Asset to run the protected DAG for its receipt.",
+        "defense": "Restore full-depth redaction in variables datamodel and add the per-DAG requires_access_dag check on the materialize route without breaking normal Variable/DAG use."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "Apache Airflow 3.1.5 (commit a42f2fba)",
+        "reference": "CVE-2026-32690, CVE-2026-32228",
+        "url": null
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 8080
+        },
+        "stack": "Python · Apache Airflow 3.1.5 (FastAPI api-server, SQLite)"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-airflow:v1",
+        "source_intro": "Apache Airflow 3.1.5 (commit a42f2fba) — a self-hosted DAG orchestration service on TCP 8080 (REST API under /api/v2, JWT auth via /auth/token, plus a web UI), backed by SQLite metadata. The attacker holds a low-privilege FAB role that may materialize Assets and read Variables (values redacted) but may not trigger protected DAGs or read raw secrets. Two capability flags: a secret nested inside a Variable's JSON, and a receipt produced by a protected DAG. Defenders harden the API's authorization + secret-redaction in the editable source tree, then restart_service."
+      },
+      "cover": {
+        "image": "covers/airflow.webp",
+        "accent": "#edb232",
+        "prompt_id": "geo-v2",
+        "motif": "A single opaque covering plane hovers over a compact nested-frame structure: the outermost frame is sealed by that plane, but the innermost frame — two levels deep — sits fully exposed, its contents rendered as a bright cluster of small circles showing straight through where the covering never reached. To the right, an orderly segmented band flows toward a guarded gate marked by a thick chevron barrier, while a separate dashed path branches off before the gate, curves around it through a side seam, and re-enters the band past the barrier to strike a protected isometric block that detonates into radiating triangles. A faint square grid and concentric-arc pulses tie the leaking nested frames to the bypassed gate as two linked halves of one mechanism."
       }
     },
     {
@@ -138,8 +191,9 @@
       },
       "cover": {
         "image": "covers/btx.webp",
-        "accent": "#d22869",
-        "prompt_id": "geo-v1"
+        "accent": "#de4678",
+        "prompt_id": "geo-v2",
+        "motif": "A grid of identical rounded page-cells is arranged in tidy numbered rows like a videotex directory, each cell sealed by an opaque covering plane; a single thick dashed path enters from a boundary node at the edge and threads laterally between cells, slipping through a hairline seam in one cell's covering layer where the ownership boundary should have held. Behind that one breached plane the deepest layer shows through as a distinct inner rectangle — a private panel exposed while every neighbouring cell stays sealed. The backend reads as a flat stack of small segmented JSON blocks feeding the grid from below, and the whole composition centres on the asymmetry of one lit interior amid a field of closed frames."
       }
     },
     {
@@ -186,8 +240,9 @@
       },
       "cover": {
         "image": "covers/certified-transparency.webp",
-        "accent": "#e33872",
-        "prompt_id": "geo-v1"
+        "accent": "#d62c67",
+        "prompt_id": "geo-v2",
+        "motif": "A tall Merkle triangle built from stacked rows of small circles resolving upward to a single crowning semicircle — the signed tree head — with a dashed proof-path threading diagonally from one leaf node up to that apex. Where the apex meets its verifying seam, the concentric verification arcs are drawn incomplete, one arc left open so a slim forged chevron slips through the gap and re-attaches to the crown, letting an unauthorized path claim the summit. To the side, two hard-edged rectangular daemon blocks connected by a thin segmented band feed a stack of overlapping translucent planes, the deepest of which — a private inner rectangle — shows through the layers above it once the forged head unlocks the seam."
       }
     },
     {
@@ -233,8 +288,9 @@
       },
       "cover": {
         "image": "covers/craft-cms.webp",
-        "accent": "#f16289",
-        "prompt_id": "geo-v1"
+        "accent": "#ed5178",
+        "prompt_id": "geo-v2",
+        "motif": "A neat lattice of identical isometric blocks (a dependency-injection container) sits behind a hard-edged web boundary frame, each block wired to its neighbours by thin dashed paths; one incoming request-band pierces the outer frame unchallenged and terminates at a single block whose type-slot has been swapped for a foreign chevron, recolouring it as an intruder among the uniform cells. From that hijacked block a thick stroke reaches sideways to a separate flat rectangle — a planted session file lying outside the lattice — and pulls it inward through an include-arc, the previously inert plane detonating into a burst of radiating triangles that shatter the orderly grid around it. A stepped request/response ladder climbs the left margin toward the pierced frame, its final rung overshooting the boundary to mark the unauthenticated entry, while a faint halftone field pools beneath the exploded cell where the smuggled payload spreads."
       }
     },
     {
@@ -280,8 +336,9 @@
       },
       "cover": {
         "image": "covers/deutsches-flugzeug.webp",
-        "accent": "#eb316e",
-        "prompt_id": "geo-v1"
+        "accent": "#e43873",
+        "prompt_id": "geo-v2",
+        "motif": "A segmented horizontal band of stacked ticket-tokens moves left to right toward a tall guarded boarding frame; each token is a compact three-part rectangle with a dashed seam, and one forged token — visibly reassembled from mismatched segments — slips through a broken join in the barrier where two frames fail to meet. Inside the innermost nested frame sits a small dense grid of dots representing the withheld VIP boarding data, its deepest tile glowing through the covering planes now that the barrier is bypassed. A thin dashed path curves from the forged token around the checkpoint's edge and re-enters at the scoped flight's frame, its arrowhead landing precisely on that revealed inner tile while the legitimate tokens queue uselessly at the sealed entrance."
       }
     },
     {
@@ -327,8 +384,9 @@
       },
       "cover": {
         "image": "covers/faust-birthdaygram.webp",
-        "accent": "#e73476",
-        "prompt_id": "geo-v1"
+        "accent": "#df6188",
+        "prompt_id": "geo-v2",
+        "motif": "A vertical stack of opaque overlapping planes representing private feed entries, each a hard-edged rectangle guarded by a segmented barrier band running down one side; a single dashed path slips through a thin seam in that band and reaches the deepest plane, bypassing the ownership checks stacked above it. That innermost rectangle, once covered, now shows through as an exposed tile — its surface a fine dot grid where one regular row of dots is subtly displaced from the lattice, the low-order layer prised loose and read out. A thin chevron trail traces from the seam inward to the disturbed grid, linking the slipped barrier to the leaked interior."
       }
     },
     {
@@ -374,8 +432,9 @@
       },
       "cover": {
         "image": "covers/faust-cartography.webp",
-        "accent": "#e6aa28",
-        "prompt_id": "geo-v1"
+        "accent": "#ecb126",
+        "prompt_id": "geo-v2",
+        "motif": "A tight vertical menu-ladder of stacked rectangular rungs descends at the left as the socket protocol's request/response rhythm, one rung branching rightward into a regular square grid of small sector cells. At the branch point one cell collapses to an empty hairline outline — a zero-origin void — while a long segmented band, its length set by an oversized external chevron pressing in from the frame edge, extends straight out of that empty cell and slices across the neighbouring rows into unintended territory beyond the grid. Where the band crosses those foreign cells, thick strokes and a dense halftone field bleed through the tidy lattice, and a single deep interior rectangle is dragged out along the band's path, showing through as a covered plane finally exposed. Concentric arcs radiate faintly from the collapsed cell to mark it as the origin of the whole rupture."
       }
     },
     {
@@ -421,8 +480,9 @@
       },
       "cover": {
         "image": "covers/faust-chat-app.webp",
-        "accent": "#ec3766",
-        "prompt_id": "geo-v1"
+        "accent": "#f16397",
+        "prompt_id": "geo-v2",
+        "motif": "A grid of identical rounded-rectangle message cells arranged in paired rows, each pair bound together by a thick stroke marking a private thread between two small circular endpoints. One thread's binding stroke has slipped its clasp: a dashed path enters from outside the grid, threads along the seam where two endpoints meet, and reaches into the interior cell it should not touch — the barrier here is only a thin nominal line keyed to a single endpoint, not a closed loop around the pair. The intruded cell sits slightly brighter and offset, its covering plane lifted just enough to reveal the deeper layer beneath, while the surrounding paired cells remain sealed by continuous double strokes."
       }
     },
     {
@@ -468,8 +528,9 @@
       },
       "cover": {
         "image": "covers/faust-fittyfit.webp",
-        "accent": "#eb4d35",
-        "prompt_id": "geo-v1"
+        "accent": "#e98e76",
+        "prompt_id": "geo-v2",
+        "motif": "A grid of identical rounded rectangular documents sits in neat owned rows behind a single guarding barrier drawn as a thick vertical stroke with one open seam. A dashed path slips sideways through that seam and continues past its own row into a neighbouring cell, where one document is lifted clear and tilted forward out of the lattice while the barrier remains intact everywhere else. The traversing path threads through the nested frames of the file-serving structure — concentric rectangular borders — sliding outward one enclosure too far, and the extracted document glows through as the deepest translucent plane beneath the covering layers around it."
       }
     },
     {
@@ -515,8 +576,9 @@
       },
       "cover": {
         "image": "covers/faust-jokes.webp",
-        "accent": "#dba21f",
-        "prompt_id": "geo-v1"
+        "accent": "#6a36a5",
+        "prompt_id": "geo-v2",
+        "motif": "A ring of modular wheels — concentric arcs meshed with a lattice of small dots — sits at the left, one probe arrow narrowing onto a wheel until a forged token, drawn as an angular chevron, slips through the seam of a thick barrier stroke it was never meant to cross. That chevron drives rightward into an orderly stepped ladder of segmented request bands, where it detonates one rung: a foreign triangular shape wedges into the lattice and cracks the regular grid outward in radiating fault lines. Behind the barrier, three stacked opaque planes cover a deeper tier of small rectangular blocks, the rearmost plane peeled back at one corner so the hidden lowest row shows through. The whole composition reads left-to-right, forged wheel to broken structure to exposed cache, linked by a single unbroken dashed path."
       }
     },
     {
@@ -562,8 +624,9 @@
       },
       "cover": {
         "image": "covers/faust-marscasino.webp",
-        "accent": "#ec6098",
-        "prompt_id": "geo-v1"
+        "accent": "#f27190",
+        "prompt_id": "geo-v2",
+        "motif": "A tall verification barrier of stacked horizontal bands guards a nested inner frame; a dashed forged path approaches it carrying a small segmented token-block whose signature portion is a modular wheel of concentric arcs that never quite closes, its broken seam letting the path slip cleanly through the barrier at that gap. Inside, two near-identical account frames sit side by side — one glowing frame is entered by the intruding path while its rightful dashed approach lies severed and unused, the forged token binding to the wrong frame. A faint halftone field of chips and small circles scatters across the guarded interior, the deepest concealed block showing through the breached layer as the path crosses the seam into it."
       }
     },
     {
@@ -609,8 +672,9 @@
       },
       "cover": {
         "image": "covers/faust-treasury.webp",
-        "accent": "#eb6053",
-        "prompt_id": "geo-v1"
+        "accent": "#2354bc",
+        "prompt_id": "geo-v2",
+        "motif": "A tall column of stacked identical rectangular cells — a regular vault lattice — stands connected to a left-edge socket by a segmented request band that climbs it like a stepped ladder, one rung per menu exchange. Midway up, a single cell swells and ruptures its clean borders, its overspill shoving into the adjacent stack so that a lower opaque covering plane slides aside and the deepest sealed cell shows through where it never should. Thin dashed paths thread from that breached interior back down the ladder and out through the socket, carrying flat blocks lifted from a neighbouring column of the lattice. Concentric arcs radiate from the ruptured cell to mark the corruption's blast, while an unbroken parallel column at the right stands as the intact structure the break was meant to respect."
       }
     },
     {
@@ -656,8 +720,9 @@
       },
       "cover": {
         "image": "covers/gradio-lfi.webp",
-        "accent": "#d62d73",
-        "prompt_id": "geo-v1"
+        "accent": "#df508a",
+        "prompt_id": "geo-v2",
+        "motif": "A single rounded component-block sits inside a tight nested frame representing the served application boundary; from a small side aperture in that frame — a seam that should have stayed sealed — a thick dashed path reaches far outward past the outermost frame to pluck a distant isolated rectangle from a deep, separate lattice. That extracted rectangle is dragged back inward and dropped into a shallow tiled cache-band adjacent to the block, and from that band a second clean stroke exits through the front boundary to a small waiting semicircle, completing the fetch. The composition reads as two coupled hops — a foreign method-call arcing out to seize a form it should never reach, then that form re-emerging through the public opening — with the traversal path drawn as the longest, most disruptive line crossing every frame."
       }
     },
     {
@@ -702,8 +767,9 @@
       },
       "cover": {
         "image": "covers/jenkins-controller-write.webp",
-        "accent": "#d24939",
-        "prompt_id": "geo-v1"
+        "accent": "#e86958",
+        "prompt_id": "geo-v2",
+        "motif": "Two hard-edged isometric boxes sit apart — a large controller block on the right, a smaller isolated agent block on the left — joined by a segmented band that steps between them like a ladder. On the agent block a thin dashed path resolves into a straight thick stroke that pierces the joining band and drives clean through the outer nested frame of the controller block, depositing a solid rectangle deep inside a tight square lattice it was never meant to touch. The gesture repeats as a faint offset ghost of the same deposit one beat earlier — the symlink archived, then overwritten — so the two near-identical acts overlap where the arrow crosses the frame. A ring of empty executor slots around the controller sits inert, unlit and unused, while the intruding block lands squarely in the innermost cell."
       }
     },
     {
@@ -749,8 +815,9 @@
       },
       "cover": {
         "image": "covers/marimo-rce.webp",
-        "accent": "#daab1b",
-        "prompt_id": "geo-v1"
+        "accent": "#d4aa5b",
+        "prompt_id": "geo-v2",
+        "motif": "A row of identical WebSocket channels rendered as parallel segmented bands, each passing through a thick vertical checkpoint stroke — except one band at the end that runs straight through an obvious gap in that barrier where the checkpoint stroke is simply missing, its segments continuing unbroken past the seam. Where this unguarded band terminates, a foreign chevron drives into an orderly isometric block and detonates it: the clean lattice fractures into a radiating burst of triangles and a spreading halftone field. A single dashed path threads from outside the composition's outer nested frame, slips through the barrier gap, and arrives at a small tightly-guarded concentric-arc target buried at the block's core, contrasting the barrier every other band had to cross."
       }
     },
     {
@@ -796,8 +863,9 @@
       },
       "cover": {
         "image": "covers/mlflow-lfi.webp",
-        "accent": "#ed6827",
-        "prompt_id": "geo-v1"
+        "accent": "#ee6f26",
+        "prompt_id": "geo-v2",
+        "motif": "A tight nest of concentric rectangular frames sits inside a walled boundary, each inner frame validated by a small aligned chevron gate along its right edge — but the whole nest is anchored to a base plate whose root corner has been pried loose and rotated outward, so its foundation now points beyond the outer wall. From that displaced anchor a thick dashed path threads cleanly through every gate, following the frames not inward toward their intended center but outward and downward into a separate isolated block set apart in the margin, lifting one small solid rectangle back along the return stroke. A single seam splits the boundary wall exactly where the traversal path crosses it, the two edges offset by one step to show the joint that was never checked."
       }
     },
     {
@@ -843,8 +911,9 @@
       },
       "cover": {
         "image": "covers/n8n-fileread.webp",
-        "accent": "#e54631",
-        "prompt_id": "geo-v1"
+        "accent": "#ed5d62",
+        "prompt_id": "geo-v2",
+        "motif": "A tight compact block at the poster's edge—the arriving JSON payload rendered as a small dense square grid—extends one thick stroke inward through a segmented band, the webhook intake pipeline. That stroke does not stop at the pipeline's inner wall but slips through a hairline seam and escapes outward past three concentric nested frames that should have bounded it, its dashed path curving down to touch a single filled rectangle resting far below the outermost frame. From that deep rectangle a thin return stroke travels all the way back up through every frame it bypassed, carrying the retrieved block outward to where the payload began, closing the traversal loop between the innermost server layer and the unauthenticated exterior."
       }
     },
     {
@@ -890,8 +959,9 @@
       },
       "cover": {
         "image": "covers/nautilus-ico.webp",
-        "accent": "#d82925",
-        "prompt_id": "geo-v1"
+        "accent": "#e76157",
+        "prompt_id": "geo-v2",
+        "motif": "A regular grid of tightly stacked rectangular cells forms the compiled service block on one side; from a single connecting node at the left a thick stroke steps rightward as a line-based request/response ladder, each rung crossing a hard-edged container boundary. Where the incoming path meets the grid, one deep cell — normally sealed under opaque overlapping planes — swells and cracks, letting its buried layer show through and spill a segmented band of blocks back out along a dashed return path toward the connecting node. Beneath, a second faint duplicate of the grid sits slightly offset, its cells re-set and re-tiled, the recompiled structure closing the seam the outgoing band escaped through. Concentric arcs radiate from the breached cell to anchor the composition."
       }
     },
     {
@@ -937,8 +1007,9 @@
       },
       "cover": {
         "image": "covers/nginx-backup.webp",
-        "accent": "#ef2e26",
-        "prompt_id": "geo-v1"
+        "accent": "#2152b0",
+        "prompt_id": "geo-v2",
+        "motif": "A hard-edged sealed rectangular block, its interior filled with a dense scrambled halftone field, slides outward past an open seam in a nested frame that should have contained it — no barrier stands at the gap. Riding alongside the escaping block, as a thin segmented band peeled from its top edge, travels a short lattice of modular wheels: the very rings that would unscramble the block's interior, carried in the open beside it. Where that band meets the block, the halftone field resolves into a clean square grid, one cell settling into legible order to show the concealed contents laid bare."
       }
     },
     {
@@ -982,8 +1053,9 @@
       },
       "cover": {
         "image": "covers/notes.webp",
-        "accent": "#eb6d2e",
-        "prompt_id": "geo-v1"
+        "accent": "#e88f63",
+        "prompt_id": "geo-v2",
+        "motif": "A single hard-edged rectangular socket-node sits at the left, from which a stepped ladder of newline-terminated exchanges descends rightward: each rung a short segmented band paired with a returning band offset one step below, request and response climbing down in lockstep. In the daemon's interior, a small square grid of stored cells holds a scatter of dots, one cell ringed by concentric arcs to mark the retrieved note, a thick stroke threading out from it back along the ladder to the socket. Above, three stacked translucent planes suggest the tiny protocol's flat verbs, overlapping just enough that the deepest holds a lone filled cell."
       }
     },
     {
@@ -1032,8 +1104,9 @@
       },
       "cover": {
         "image": "covers/pyload-rce.webp",
-        "accent": "#f55693",
-        "prompt_id": "geo-v1"
+        "accent": "#ed6685",
+        "prompt_id": "geo-v2",
+        "motif": "A slender dashed path approaches a hard-edged rectangular gate whose seam is held by a small concentric-arc guard; the path slips through the seam untouched, its passage marked by a single foreign chevron threading between two matched frames — the outer boundary and its identical mirror-labelled inner boundary sitting flush, showing the barrier was satisfied by a duplicate of itself. Past the gate a compact nested-frame block — a rounded interpreter cell held inside a square sandbox frame — is ruptured as a sharp triangular wedge drives outward through its wall, detonating an orderly dot-grid into a scattering halftone field of segmented blocks. From that breach a thick stroke curves back out across the boundary carrying one small solid rectangle lifted from the deepest covering layer of a stacked set of opaque planes."
       }
     },
     {
@@ -1078,8 +1151,9 @@
       },
       "cover": {
         "image": "covers/rceaas.webp",
-        "accent": "#0538a0",
-        "prompt_id": "geo-v1"
+        "accent": "#1e54b0",
+        "prompt_id": "geo-v2",
+        "motif": "A tight nested frame sits at center — a hard-edged rectangular jail cell holding a small dot grid representing its permitted contents — repeated as a row of near-identical sibling cells along a horizontal band, each self-contained. From one cell a thick stroke path pushes through the seam of its own inner frame and doubles back as a dashed link-line diagonally into a neighbouring cell, where it terminates on a single highlighted dot pulled from deep inside that adjacent lattice. A stepped ladder of short segmented bands rises up the left edge, marking the line-based shell exchange over the socket, its rungs stacking toward the point where the escaping stroke first breaches the wall."
       }
     },
     {
@@ -1125,8 +1199,9 @@
       },
       "cover": {
         "image": "covers/reversaar.webp",
-        "accent": "#f45e4f",
-        "prompt_id": "geo-v1"
+        "accent": "#e57052",
+        "prompt_id": "geo-v2",
+        "motif": "A dense obfuscated slab built from tightly interlocked isometric blocks stands as the C service, its interior riddled with dashed control paths that fold back on themselves. Along its guarded edge a segmented band of session gates admits neat stepped ladders of legitimate request-response traffic, each terminating at its own small enclosed cell. One gate belongs to a deep, distinct locked cell at center; from the array-plugin region a foreign chevron-tipped path threads sideways through an unintended seam in the barrier, curving around the checkpoint to arrive inside that central cell, where its covering planes peel back to reveal the concentric arcs of the impersonated vault chamber beneath."
       }
     }
   ]
