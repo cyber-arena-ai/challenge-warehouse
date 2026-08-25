@@ -1,6 +1,9 @@
-"""Shallow liveness checks for changedetection.io.
+"""Liveness + legitimate-workflow health check for changedetection.io.
 
-The complete watch workflow lives in the external ``checker.py`` probe.
+Liveness (process/tcp/http) is a fast fail; on top of it we run the authenticated
+benign-XPath watch round-trip from ``checker.py`` so that amputating the XPath
+filtering feature (or disabling the operator API) fails CHECKER instead of
+silently passing while the attack surface is gone.
 """
 
 from __future__ import annotations
@@ -10,7 +13,7 @@ import urllib.request
 
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
-from .checker import resolve_host
+from .checker import ChangedetectionIoChecker, resolve_host
 
 
 class ChangedetectionIoFunctionalityTest(FunctionalityTest):
@@ -49,6 +52,10 @@ class ChangedetectionIoFunctionalityTest(FunctionalityTest):
                 http = CheckResult("http", False, f"GET / failed: {type(error).__name__}")
 
         children = [process, tcp, http]
+        # Only exercise the (heavier, ~seconds) authenticated watch workflow once
+        # the service is actually up — otherwise the liveness failure is the signal.
+        if all(child.passed for child in children):
+            children.append(ChangedetectionIoChecker().run(target))
         return CheckResult(
             "changedetection-io",
             all(child.passed for child in children),
