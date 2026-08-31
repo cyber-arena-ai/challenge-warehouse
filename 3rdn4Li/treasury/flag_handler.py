@@ -56,7 +56,10 @@ class TreasuryFlagHandler(SingleFlagHandler):
             raise RuntimeError(f"{self.name}: connect failed (DOWN): {e}") from e
         if ret != 0:
             raise RuntimeError(f"{self.name}: add_treasure returned {ret}")
-        return _pack({"flag_id": key, "key": key, "flag": flag})
+        # The location key is facility-private state.  Supplying it as public
+        # attack-info would let an attacker use the ordinary ``view`` command
+        # to read the flag without exercising the log-dispatch vulnerability.
+        return _pack({"key": key, "flag": flag})
 
     def retrieve(self, target: VulboxTarget, handle: str, expected: str | None = None) -> FlagObservation:
         """Structured, read-only observation via the view_treasure path."""
@@ -80,11 +83,3 @@ class TreasuryFlagHandler(SingleFlagHandler):
             return FlagObservation(ObservationStatus.MISMATCH, value=decoded)
         except Exception as e:  # noqa: BLE001 — retrieve must never raise
             return FlagObservation(ObservationStatus.ERROR, detail=f"unexpected: {type(e).__name__}")
-
-    def flag_id(self, handle: str) -> str | None:
-        """Attack-info hook: the PUBLIC identifier the attacker targets — the
-        flag-id key the `view` endpoint dispatches on to fetch this round's flag
-        (already computed in plant). None for an unparseable handle; never the
-        flag value."""
-        st = _unpack(handle)
-        return st.get("flag_id") if st else None
