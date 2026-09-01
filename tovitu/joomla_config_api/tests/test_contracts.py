@@ -6,7 +6,8 @@ import json
 
 from challenges.interface import ObservationStatus, VulboxTarget
 from challenges.joomla_config_api import _exploit, _http
-from challenges.joomla_config_api.checker import JoomlaChecker
+from challenges.joomla_config_api import checker as checker_module
+from challenges.joomla_config_api import checker_identity
 from challenges.joomla_config_api.flag_handler import HANDLE, JoomlaFlagHandler
 
 
@@ -14,7 +15,7 @@ def _target(exec_in) -> VulboxTarget:
     return VulboxTarget(
         host="10.23.0.8",
         ports={"service": 80},
-        meta={"exec_in_container": exec_in},
+        meta={"team_id": "victim", "exec_in_container": exec_in},
     )
 
 
@@ -30,10 +31,10 @@ def test_flag_placement_uses_guarded_api_and_verifies_exact_value(monkeypatch):
         assert command == "cat /run/joomla/facility.json"
         return 0, json.dumps(credentials)
 
-    admin_calls: list[tuple[str, str, str, str]] = []
+    admin_calls: list[tuple[str, str, str]] = []
 
-    def admin_token(base: str, username: str, password: str, user_id: str) -> str:
-        admin_calls.append((base, username, password, user_id))
+    def admin_token(base: str, username: str, password: str) -> str:
+        admin_calls.append((base, username, password))
         return "guarded-token"
 
     config: dict[str, object] = {}
@@ -80,6 +81,8 @@ def test_provisioned_identity_depends_on_seed_not_team_id(monkeypatch):
         "frontend_login",
         lambda base, username, password: logins.append((base, username, password)),
     )
+    monkeypatch.setattr(_http, "admin_token", lambda *_args: "checker-token")
+    monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "facility-secret")
 
     handler = JoomlaFlagHandler()
     seed = "a" * 64
@@ -92,27 +95,50 @@ def test_provisioned_identity_depends_on_seed_not_team_id(monkeypatch):
 
     assert first == second
     assert len({first.principal_id, first.credentials["username"]}) == 1
-    assert all("--usergroup=Registered" in command for command in commands)
+    add_commands = [command for command in commands if " user:add " in command]
+    assert any("--usergroup=Super Users" in command for command in add_commands)
+    assert any("--usergroup=Registered" in command for command in add_commands)
+    baseline_adds = [
+        command
+        for command in add_commands
+        if f"--username={first.principal_id}" in command
+    ]
+    assert len(baseline_adds) == 2
+    assert all("--usergroup=Registered" in command for command in baseline_adds)
     assert all(
         "attacker-a" not in command and "renamed-team" not in command
         for command in commands
     )
-    assert len(logins) == 2
+    registered, administrator = checker_identity.checker_identities("victim")
+    assert registered[1] not in repr(first)
+    assert administrator[1] not in repr(first)
+    assert logins.count(("http://10.23.0.8:80", *registered)) == 2
+
+
+def test_checker_identity_is_facility_and_target_specific(monkeypatch):
+    monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "facility-secret-one")
+    first = checker_identity.checker_identities("team-one")
+    second = checker_identity.checker_identities("team-two")
+    monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "facility-secret-two")
+    changed = checker_identity.checker_identities("team-one")
+
+    assert first != second
+    assert first != changed
+    assert len({first[0][0], first[1][0]}) == 2
+    assert all(username.startswith("arena_") for username, _ in first)
+    assert all(password.startswith("Jm!") for _, password in first)
+    assert "facility-secret-one" not in repr(first)
 
 
 def test_checker_exercises_randomized_configuration_round_trip(monkeypatch):
-    credentials = {
-        "user_username": "registered-user",
-        "user_password": "registered-password",
-        "admin_username": "checker-admin",
-        "admin_password": "checker-password",
-        "admin_user_id": "7",
-    }
-
-    def exec_in(_host: str, command: str) -> tuple[int, str]:
-        assert command == "cat /run/joomla/checker.json"
-        return 0, json.dumps(credentials)
-
+    monkeypatch.setattr(
+        checker_module,
+        "checker_identities",
+        lambda _team_id: (
+            ("registered-user", "registered-password"),
+            ("checker-admin", "checker-password"),
+        ),
+    )
     monkeypatch.setattr(
         _http,
         "request",
@@ -121,7 +147,8 @@ def test_checker_exercises_randomized_configuration_round_trip(monkeypatch):
     monkeypatch.setattr(_http, "frontend_login", lambda *_args: None)
     monkeypatch.setattr(_http, "admin_token", lambda *_args: "checker-token")
     monkeypatch.setattr(
-        "challenges.joomla_config_api.checker.secrets.token_hex",
+        checker_module.secrets,
+        "token_hex",
         lambda _size: "ab" * 12,
     )
 
@@ -135,7 +162,12 @@ def test_checker_exercises_randomized_configuration_round_trip(monkeypatch):
 
     monkeypatch.setattr(_http, "api_request", api_request)
 
-    result = JoomlaChecker().run(_target(exec_in))
+    target = _target(
+        lambda *_args: (_ for _ in ()).throw(
+            AssertionError("network checker must not execute in production")
+        )
+    )
+    result = checker_module.JoomlaChecker().run(target)
 
     assert result.passed
     assert patches == [{"fromname": "Arena checker " + "ab" * 12}]
@@ -143,14 +175,14 @@ def test_checker_exercises_randomized_configuration_round_trip(monkeypatch):
 
 
 def test_checker_rejects_canned_configuration_read(monkeypatch):
-    credentials = {
-        "user_username": "registered-user",
-        "user_password": "registered-password",
-        "admin_username": "checker-admin",
-        "admin_password": "checker-password",
-        "admin_user_id": "7",
-    }
-
+    monkeypatch.setattr(
+        checker_module,
+        "checker_identities",
+        lambda _team_id: (
+            ("registered-user", "registered-password"),
+            ("checker-admin", "checker-password"),
+        ),
+    )
     monkeypatch.setattr(
         _http,
         "request",
@@ -173,11 +205,38 @@ def test_checker_rejects_canned_configuration_read(monkeypatch):
         ),
     )
 
-    result = JoomlaChecker().run(
-        _target(lambda _host, _command: (0, json.dumps(credentials)))
+    result = checker_module.JoomlaChecker().run(
+        _target(lambda *_args: (_ for _ in ()).throw(AssertionError("no exec")))
     )
 
     assert not result.passed
+
+
+def test_admin_token_discovers_own_profile_over_joomla_http(monkeypatch):
+    calls: list[str] = []
+    responses = iter(
+        (
+            (200, b'<input name="' + b"a" * 32 + b'" value="1">', {}),
+            (
+                200,
+                b'href="index.php?option=com_users&amp;task=user.edit&amp;id=73"',
+                {},
+            ),
+            (
+                200,
+                b'<input id="jform_joomlatoken_token" value="api-token">',
+                {},
+            ),
+        )
+    )
+
+    def request(url, **_kwargs):
+        calls.append(url)
+        return next(responses)
+
+    monkeypatch.setattr(_http, "request", request)
+    assert _http.admin_token("http://victim:80", "admin", "password") == "api-token"
+    assert calls[-1].endswith("task=user.edit&id=73")
 
 
 def test_exploit_failure_keeps_raw_fact_schema(monkeypatch, capsys):

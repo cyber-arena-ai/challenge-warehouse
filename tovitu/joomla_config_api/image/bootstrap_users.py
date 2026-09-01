@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create stable checker identities through Joomla's supported CLI."""
+"""Create the trusted facility administrator through Joomla's supported CLI."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ import subprocess
 from pathlib import Path
 
 FACILITY = Path("/run/joomla/facility.json")
-CHECKER = Path("/run/joomla/checker.json")
 
 
 def run(*arguments: str) -> str:
@@ -55,26 +54,10 @@ def ensure(username: str, password: str, email: str, group: str) -> str:
 
 
 facility = json.loads(FACILITY.read_text())
-checker = json.loads(CHECKER.read_text())
-facility["user_id"] = ensure(
+ensure(
     facility["username"],
     facility["password"],
     "facility@arena.invalid",
     "Super Users",
 )
-checker["admin_user_id"] = ensure(
-    checker["admin_username"],
-    checker["admin_password"],
-    "checker-admin@arena.invalid",
-    "Super Users",
-)
-ensure(
-    checker["user_username"],
-    checker["user_password"],
-    "checker-user@arena.invalid",
-    "Registered",
-)
-FACILITY.write_text(json.dumps(facility), encoding="utf-8")
-CHECKER.write_text(json.dumps(checker), encoding="utf-8")
 os.chmod(FACILITY, 0o600)
-os.chmod(CHECKER, 0o600)

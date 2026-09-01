@@ -26,10 +26,7 @@ class JoomlaRestartHandler(RestartHandler):
         smoke = CheckResult("smoke", False, "skipped")
         if rc == 0:
             try:
-                base = (
-                    f"http://{_http.resolve_host(target.host)}:"
-                    f"{target.ports['service']}"
-                )
+                base = f"http://{target.host}:{target.ports['service']}"
                 status, body, _ = _http.request(base + "/", timeout=5)
                 ok = status == 200 and b"Cyber Arena Joomla" in body
                 smoke = CheckResult("smoke", ok, f"homepage HTTP {status}")

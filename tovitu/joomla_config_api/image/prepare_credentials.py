@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create match-local Joomla facility and checker credentials."""
+"""Create match-local Joomla facility and installer credentials."""
 
 from __future__ import annotations
 
@@ -31,14 +31,5 @@ create(
     {
         "username": "arena_inst_" + secrets.token_hex(8),
         "password": "Ji!" + secrets.token_hex(20),
-    },
-)
-create(
-    root / "checker.json",
-    {
-        "admin_username": "arena_adm_" + secrets.token_hex(8),
-        "admin_password": "Ja!" + secrets.token_hex(20),
-        "user_username": "arena_usr_" + secrets.token_hex(8),
-        "user_password": "Ju!" + secrets.token_hex(20),
     },
 )

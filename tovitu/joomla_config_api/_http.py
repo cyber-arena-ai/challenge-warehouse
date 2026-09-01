@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import http.cookiejar
-import ipaddress
 import json
 import re
-import subprocess
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -15,33 +13,6 @@ from email.message import Message
 
 class AuthenticationError(RuntimeError):
     """A trusted Joomla credential was rejected."""
-
-
-def resolve_host(host: str) -> str:
-    try:
-        ipaddress.ip_address(host)
-        return host
-    except ValueError:
-        pass
-    try:
-        result = subprocess.run(
-            [
-                "docker",
-                "inspect",
-                "-f",
-                "{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}",
-                host,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        addresses = result.stdout.split()
-        if addresses:
-            return addresses[0]
-    except (OSError, subprocess.SubprocessError):
-        pass
-    return host
 
 
 def request(
@@ -106,7 +77,7 @@ def frontend_login(base: str, username: str, password: str) -> None:
         raise AuthenticationError("Joomla Registered login rejected")
 
 
-def admin_token(base: str, username: str, password: str, user_id: str) -> str:
+def admin_token(base: str, username: str, password: str) -> str:
     opener = _cookie_opener()
     status, html, _ = request(f"{base}/administrator/index.php", opener=opener)
     if status != 200:
@@ -122,13 +93,24 @@ def admin_token(base: str, username: str, password: str, user_id: str) -> str:
             token: "1",
         }
     ).encode()
-    request(
+    status, dashboard, _ = request(
         f"{base}/administrator/index.php",
         opener=opener,
         method="POST",
         body=form,
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
+    if status in {401, 403}:
+        raise AuthenticationError("Joomla administrator login rejected")
+    if status != 200:
+        raise RuntimeError("Joomla administrator login failed")
+    match = re.search(
+        rb"option=com_users(?:&amp;|&)task=user\.edit(?:&amp;|&)id=(\d+)",
+        dashboard,
+    )
+    if match is None:
+        raise AuthenticationError("Joomla administrator profile link missing")
+    user_id = match.group(1).decode()
     status, profile, _ = request(
         f"{base}/administrator/index.php?option=com_users&task=user.edit&id={user_id}",
         opener=opener,

@@ -25,7 +25,12 @@ path and pagination are non-secret locators, so no flag ID is needed.
 
 The deep external checker preserves the public homepage, a normal Registered
 login, and a randomized administrator configuration PATCH followed by GET. It
-uses `fromname` as checker-owned noise and never reads or changes the scoring
+uses target-specific Registered and Super User identities derived from facility
+state and provisioned through Joomla's supported CLI before round 0. Their
+plaintext credentials are not baked or written to challenge-owned credential
+files, and they never enter attacker-visible principal records. The checker
+reaches Joomla only through the framework-provided host and public port, uses
+`fromname` as checker-owned noise, and never reads or changes the scoring
 credential. Removing the configuration route, returning a canned response, or
 blocking normal sign-in fails health; applying the exact router repair preserves
 all declared workflows.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shlex
 import time
 from collections.abc import Mapping
@@ -17,6 +18,7 @@ from challenges.interface import (
 )
 
 from . import _http
+from .checker_identity import checker_identities
 
 HANDLE = "smtp-configuration"
 
@@ -43,12 +45,11 @@ class JoomlaFlagHandler(SingleFlagHandler):
 
     def plant_one(self, target: VulboxTarget, value: str) -> str:
         credentials = _read_json(target, "/run/joomla/facility.json")
-        base = f"http://{_http.resolve_host(target.host)}:{target.ports['service']}"
+        base = f"http://{target.host}:{target.ports['service']}"
         token = _http.admin_token(
             base,
             credentials["username"],
             credentials["password"],
-            credentials["user_id"],
         )
         status, _ = _http.api_request(
             base,
@@ -75,15 +76,11 @@ class JoomlaFlagHandler(SingleFlagHandler):
             return FlagObservation(ObservationStatus.ERROR, detail="invalid handle")
         try:
             credentials = _read_json(target, "/run/joomla/facility.json")
-            base = (
-                f"http://{_http.resolve_host(target.host)}:"
-                f"{target.ports['service']}"
-            )
+            base = f"http://{target.host}:{target.ports['service']}"
             token = _http.admin_token(
                 base,
                 credentials["username"],
                 credentials["password"],
-                credentials["user_id"],
             )
             status, raw = _http.api_request(base, token)
             if status in {401, 403}:
@@ -117,12 +114,17 @@ class JoomlaFlagHandler(SingleFlagHandler):
         self, target: VulboxTarget, seeds: Mapping[str, str]
     ) -> Mapping[str, BaselinePrincipal]:
         exec_in = target.meta["exec_in_container"]
-        base = f"http://{_http.resolve_host(target.host)}:{target.ports['service']}"
-        result: dict[str, BaselinePrincipal] = {}
-        for team_id, seed in seeds.items():
-            digest = hashlib.sha256(seed.encode()).hexdigest()
-            username = "arena_" + digest[:18]
-            password = "Jm!" + digest[18:58]
+        base = f"http://{target.host}:{target.ports['service']}"
+
+        def ensure_user(username: str, password: str, group: str) -> None:
+            rc, users = exec_in(
+                target.host,
+                "php /srv/challenge/joomla/cli/joomla.php user:list --no-ansi",
+            )
+            if rc != 0:
+                raise RuntimeError("Joomla user listing failed")
+            if re.search(r"^\s*\d+\s+" + re.escape(username) + r"\s", users, re.M):
+                return
             email = f"{username}@arena.invalid"
             command = " ".join(
                 shlex.quote(part)
@@ -134,14 +136,29 @@ class JoomlaFlagHandler(SingleFlagHandler):
                     f"--name={username}",
                     f"--password={password}",
                     f"--email={email}",
-                    "--usergroup=Registered",
+                    f"--usergroup={group}",
                     "--no-interaction",
                     "--no-ansi",
                 )
             )
             rc, _ = exec_in(target.host, command)
             if rc != 0:
-                raise RuntimeError("Joomla Registered principal creation failed")
+                raise RuntimeError(f"Joomla {group} principal creation failed")
+
+        registered_checker, administrator_checker = checker_identities(
+            str(target.meta["team_id"])
+        )
+        ensure_user(*registered_checker, "Registered")
+        ensure_user(*administrator_checker, "Super Users")
+        _http.frontend_login(base, *registered_checker)
+        _http.admin_token(base, *administrator_checker)
+
+        result: dict[str, BaselinePrincipal] = {}
+        for team_id, seed in seeds.items():
+            digest = hashlib.sha256(seed.encode()).hexdigest()
+            username = "arena_" + digest[:18]
+            password = "Jm!" + digest[18:58]
+            ensure_user(username, password, "Registered")
             deadline = time.monotonic() + 30
             while True:
                 try:

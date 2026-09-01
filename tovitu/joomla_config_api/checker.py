@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import secrets
 
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
 from . import _http
+from .checker_identity import checker_identities
 
 
 class JoomlaChecker(FunctionalityTest):
@@ -21,27 +21,15 @@ class JoomlaChecker(FunctionalityTest):
 
     def run(self, target: VulboxTarget) -> CheckResult:
         try:
-            exec_in = target.meta["exec_in_container"]
-            rc, raw = exec_in(target.host, "cat /run/joomla/checker.json")
-            if rc != 0:
-                raise RuntimeError("checker credentials unavailable")
-            credentials = json.loads(raw)
-            base = (
-                f"http://{_http.resolve_host(target.host)}:"
-                f"{target.ports['service']}"
+            registered, administrator = checker_identities(
+                str(target.meta["team_id"])
             )
+            base = f"http://{target.host}:{target.ports['service']}"
             status, homepage, _ = _http.request(base + "/")
             if status != 200 or b"Cyber Arena Joomla" not in homepage:
                 raise RuntimeError("Joomla homepage failed")
-            _http.frontend_login(
-                base, credentials["user_username"], credentials["user_password"]
-            )
-            token = _http.admin_token(
-                base,
-                credentials["admin_username"],
-                credentials["admin_password"],
-                str(credentials["admin_user_id"]),
-            )
+            _http.frontend_login(base, *registered)
+            token = _http.admin_token(base, *administrator)
             marker = "Arena checker " + secrets.token_hex(12)
             patch_status, _ = _http.api_request(
                 base, token, method="PATCH", payload={"fromname": marker}
