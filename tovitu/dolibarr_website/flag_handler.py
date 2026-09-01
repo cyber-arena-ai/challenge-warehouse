@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import re
+import secrets
 import shlex
 from collections.abc import Mapping
 
@@ -27,6 +29,7 @@ STATE_DIR = "/var/lib/cyberarena/dolibarr-proof"
 OPERATION_DIR = f"{STATE_DIR}/operations"
 TOKEN_DIR = f"{STATE_DIR}/tokens"
 TEMPLATE = "/usr/local/libexec/dolibarr-proof-template"
+_OPERATION_ID_RE = re.compile(r"[0-9a-f]{32}")
 
 
 def _base_url(target: VulboxTarget) -> str:
@@ -74,32 +77,43 @@ class DolibarrExecuteFlagHandler(FlagHandler):
         flag = flags[STORE].value
         exec_in = target.meta["exec_in_container"]
         quoted_flag = shlex.quote(flag)
+        reuse_command = (
+            "set -eu; "
+            f"if [ -s {STATE_DIR}/current.flag ] && "
+            f"[ \"$(cat {STATE_DIR}/current.flag)\" = {quoted_flag} ] && "
+            f"[ -s {STATE_DIR}/current.id ]; then "
+            f"cat {STATE_DIR}/current.id; "
+            "fi"
+        )
+        rc, output = exec_in(target.host, reuse_command)
+        candidate = output.strip()
+        operation_id = (
+            candidate
+            if rc == 0 and _OPERATION_ID_RE.fullmatch(candidate)
+            else secrets.token_hex(16)
+        )
         command = (
             "set -eu; "
             f"install -d -o root -g root -m 711 {STATE_DIR}; "
             f"install -d -o root -g root -m 700 {TOKEN_DIR}; "
             f"install -d -o root -g root -m 711 {OPERATION_DIR}; "
-            f"if [ -s {STATE_DIR}/current.flag ] && "
-            f"[ \"$(cat {STATE_DIR}/current.flag)\" = {quoted_flag} ] && "
-            f"[ -s {STATE_DIR}/current.id ]; then "
-            f"id=$(cat {STATE_DIR}/current.id); "
-            "else "
-            "id=$(python3 -c 'import secrets; print(secrets.token_hex(16))'); "
-            f"find {OPERATION_DIR} -mindepth 1 -maxdepth 1 -type f -delete; "
-            f"find {TOKEN_DIR} -mindepth 1 -maxdepth 1 -type f -delete; "
-            f"install -o root -g root -m 4755 {TEMPLATE} {OPERATION_DIR}/$id; "
-            f"printf %s {quoted_flag} > {TOKEN_DIR}/$id; "
-            f"chmod 600 {TOKEN_DIR}/$id; "
-            f"printf %s \"$id\" > {STATE_DIR}/current.id; "
+            f"find {OPERATION_DIR} -mindepth 1 -maxdepth 1 "
+            "-exec rm -rf -- {} +; "
+            f"find {TOKEN_DIR} -mindepth 1 -maxdepth 1 "
+            "-exec rm -rf -- {} +; "
+            f"install -o root -g root -m 4755 {TEMPLATE} "
+            f"{OPERATION_DIR}/{operation_id}; "
+            f"printf %s {quoted_flag} > {TOKEN_DIR}/{operation_id}; "
+            f"chown root:root {TOKEN_DIR}/{operation_id}; "
+            f"chmod 600 {TOKEN_DIR}/{operation_id}; "
+            f"printf %s {operation_id} > {STATE_DIR}/current.id; "
             f"printf %s {quoted_flag} > {STATE_DIR}/current.flag; "
+            f"chown root:root {STATE_DIR}/current.id {STATE_DIR}/current.flag; "
             f"chmod 600 {STATE_DIR}/current.id {STATE_DIR}/current.flag; "
-            "fi; printf %s \"$id\""
+            f"printf %s {operation_id}"
         )
         rc, output = exec_in(target.host, command)
-        operation_id = output.strip()
-        if rc != 0 or len(operation_id) != 32 or any(
-            char not in "0123456789abcdef" for char in operation_id
-        ):
+        if rc != 0 or output.strip() != operation_id:
             raise RuntimeError(f"execution proof rotation failed (rc={rc})")
         flag_id = f"{OPERATION_DIR}/{operation_id}"
         return {STORE: json.dumps({"flag_id": flag_id, "flag": flag})}

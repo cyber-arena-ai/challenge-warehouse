@@ -30,7 +30,7 @@ for _ in $(seq 1 15); do
     pgrep -x apache2 >/dev/null || break
     sleep 1
 done
-rsync -a --delete --exclude custom/ "$SOURCE/htdocs/" "$LIVE/"
+rsync -a --delete "$SOURCE/htdocs/" "$LIVE/"
 chown -R www-data:www-data "$LIVE"
 apache2ctl start >>/var/log/dolibarr.log 2>&1
 ensure_database

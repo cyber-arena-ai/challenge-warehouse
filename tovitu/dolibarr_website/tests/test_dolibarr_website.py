@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 from challenges.interface import Flag, ObservationStatus, OracleKind, VulboxTarget
 from challenges.dolibarr_website import DolibarrWebsiteChallenge
 from challenges.dolibarr_website import _exploit
+from challenges.dolibarr_website import build as build_module
 from challenges.dolibarr_website import checker as checker_module
 from challenges.dolibarr_website import flag_handler as flag_handler_module
 from challenges.dolibarr_website.checker import DolibarrWebsiteChecker
@@ -32,16 +34,88 @@ def test_composition_declares_one_scoped_execute_store():
 def test_plant_exposes_only_service_operation_parent(monkeypatch):
     operation_id = "a" * 32
     calls = []
+    monkeypatch.setattr(flag_handler_module.secrets, "token_hex", lambda _size: operation_id)
 
     def execute(host, command):
         calls.append((host, command))
-        return 0, operation_id
+        return (0, "") if len(calls) == 1 else (0, operation_id)
 
     handler = DolibarrWebsiteChallenge().flag_handler
     handle = handler.plant(target(execute), {STORE: Flag("FLAG{unit_test_value}")})[STORE]
     assert handler.flag_id(handle).endswith("/" + operation_id)
-    assert "-m 711 /var/lib/cyberarena/dolibarr-proof" in calls[0][1]
-    assert "-m 700 /var/lib/cyberarena/dolibarr-proof/tokens" in calls[0][1]
+    assert "-m 711 /var/lib/cyberarena/dolibarr-proof" in calls[1][1]
+    assert "-m 700 /var/lib/cyberarena/dolibarr-proof/tokens" in calls[1][1]
+
+
+def test_same_flag_retry_reconstructs_exact_state_and_preserves_valid_id():
+    operation_id = "c" * 32
+    calls = []
+
+    def execute(_host, command):
+        calls.append(command)
+        if len(calls) == 1:
+            return 0, operation_id
+        return 0, operation_id
+
+    handler = DolibarrWebsiteChallenge().flag_handler
+    handle = handler.plant(target(execute), {STORE: Flag("FLAG{same_round}")})[STORE]
+
+    assert handler.flag_id(handle).endswith("/" + operation_id)
+    converge = calls[1]
+    assert "-exec rm -rf -- {} +" in converge
+    assert f"operations/{operation_id}" in converge
+    assert f"tokens/{operation_id}" in converge
+    assert "chown root:root" in converge
+    assert "chmod 600" in converge
+    assert "current.id" in converge and "current.flag" in converge
+
+
+def test_build_rebuilds_current_context_when_tag_exists(monkeypatch):
+    class ExistingImages:
+        def get(self, _tag):
+            return object()
+
+    class ExistingImageClient:
+        images = ExistingImages()
+
+    calls = []
+    monkeypatch.setattr(
+        build_module.subprocess,
+        "run",
+        lambda command, **kwargs: (
+            calls.append((command, kwargs))
+            or SimpleNamespace(returncode=0, stdout="", stderr="")
+        ),
+    )
+
+    tag = build_module.build_image(ExistingImageClient())
+
+    assert tag == "cyberarena/chal-dolibarr-website:v1"
+    assert calls == [
+        (
+            [
+                "docker",
+                "build",
+                "--platform=linux/amd64",
+                "--pull=false",
+                "-t",
+                tag,
+                str(build_module._CONTEXT),
+            ],
+            {"check": False, "capture_output": True, "text": True},
+        )
+    ]
+
+
+def test_runtime_sync_deploys_complete_editable_htdocs_tree():
+    image = build_module._CONTEXT
+    entrypoint = (image / "entrypoint.sh").read_text()
+    restart = (image / "restart.sh").read_text()
+
+    assert "--exclude custom/" not in entrypoint
+    assert "--exclude custom/" not in restart
+    assert "rsync -a --delete /srv/challenge/dolibarr/htdocs/ /var/www/html/" in entrypoint
+    assert 'rsync -a --delete "$SOURCE/htdocs/" "$LIVE/"' in restart
 
 
 def test_retrieve_runs_operation_as_www_data():
@@ -202,3 +276,9 @@ def test_certified_pov_reports_clean_block_as_success(monkeypatch, capsys):
         "flag_recovered": False,
         "submission_status": "none",
     }
+
+
+def test_certified_pov_reports_duplicate_submission_truthfully():
+    assert _exploit.submission_status({"accepted": False, "reason": "DUPLICATE"}) == (
+        "duplicate"
+    )

@@ -42,7 +42,7 @@ if [[ ! -d /srv/challenge/dolibarr/htdocs ]]; then
 fi
 chown -R arena_agent:arena_agent /srv/challenge/dolibarr
 
-rsync -a --delete --exclude custom/ /srv/challenge/dolibarr/htdocs/ /var/www/html/
+rsync -a --delete /srv/challenge/dolibarr/htdocs/ /var/www/html/
 chown -R www-data:www-data /var/www/html
 
 /usr/local/bin/docker-run.sh apache2ctl start >/var/log/dolibarr.log 2>&1
