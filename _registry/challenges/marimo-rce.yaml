@@ -45,5 +45,14 @@ provenance:
     restart_service.'
 cover:
   image: covers/marimo-rce.webp
-  accent: '#daab1b'
-  prompt_id: geo-v1
+  accent: '#d4aa5b'
+  prompt_id: geo-v2
+  motif: 'A row of identical WebSocket channels rendered as parallel segmented bands, each
+    passing through a thick vertical checkpoint stroke — except one band at the end that runs
+    straight through an obvious gap in that barrier where the checkpoint stroke is simply
+    missing, its segments continuing unbroken past the seam. Where this unguarded band terminates,
+    a foreign chevron drives into an orderly isometric block and detonates it: the clean lattice
+    fractures into a radiating burst of triangles and a spreading halftone field. A single
+    dashed path threads from outside the composition''s outer nested frame, slips through
+    the barrier gap, and arrives at a small tightly-guarded concentric-arc target buried at
+    the block''s core, contrasting the barrier every other band had to cross.'

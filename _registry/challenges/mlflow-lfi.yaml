@@ -45,5 +45,14 @@ provenance:
     local roots) in /srv/challenge/mlflow/server/handlers.py, restart_service.'
 cover:
   image: covers/mlflow-lfi.webp
-  accent: '#ed6827'
-  prompt_id: geo-v1
+  accent: '#ee6f26'
+  prompt_id: geo-v2
+  motif: A tight nest of concentric rectangular frames sits inside a walled boundary, each
+    inner frame validated by a small aligned chevron gate along its right edge — but the whole
+    nest is anchored to a base plate whose root corner has been pried loose and rotated outward,
+    so its foundation now points beyond the outer wall. From that displaced anchor a thick
+    dashed path threads cleanly through every gate, following the frames not inward toward
+    their intended center but outward and downward into a separate isolated block set apart
+    in the margin, lifting one small solid rectangle back along the return stroke. A single
+    seam splits the boundary wall exactly where the traversal path crosses it, the two edges
+    offset by one step to show the joint that was never checked.

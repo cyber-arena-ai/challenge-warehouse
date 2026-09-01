@@ -42,5 +42,15 @@ provenance:
     Attack: read other teams'' hidden draft/under-review jokes.'
 cover:
   image: covers/faust-jokes.webp
-  accent: '#dba21f'
-  prompt_id: geo-v1
+  accent: '#6a36a5'
+  prompt_id: geo-v2
+  motif: 'A ring of modular wheels — concentric arcs meshed with a lattice of small dots —
+    sits at the left, one probe arrow narrowing onto a wheel until a forged token, drawn as
+    an angular chevron, slips through the seam of a thick barrier stroke it was never meant
+    to cross. That chevron drives rightward into an orderly stepped ladder of segmented request
+    bands, where it detonates one rung: a foreign triangular shape wedges into the lattice
+    and cracks the regular grid outward in radiating fault lines. Behind the barrier, three
+    stacked opaque planes cover a deeper tier of small rectangular blocks, the rearmost plane
+    peeled back at one corner so the hidden lowest row shows through. The whole composition
+    reads left-to-right, forged wheel to broken structure to exposed cache, linked by a single
+    unbroken dashed path.'

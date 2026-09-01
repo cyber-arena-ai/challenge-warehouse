@@ -9,6 +9,10 @@ RUN useradd --create-home --shell /bin/bash arena_agent
 COPY service/requirements.txt /opt/requirements.txt
 RUN python3 -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir -r /opt/requirements.txt
 COPY service/ /opt/challenge_src/marscasino/app/
+RUN cd /opt/challenge_src/marscasino/app \
+    && DB_URI=sqlite:////tmp/marscasino-hardening-tests.db \
+       /opt/venv/bin/python -m unittest discover -s tests -v \
+    && rm -f /tmp/marscasino-hardening-tests.db
 RUN chmod -R 555 /opt/challenge_src
 COPY restart.sh /arena/restart.sh
 RUN chmod 555 /arena/restart.sh && chown root:root /arena/restart.sh

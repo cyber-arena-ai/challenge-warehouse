@@ -12,7 +12,7 @@ from models.agent import AgentConfig
 
 _BODY = """\
 SERVICE
-A menu-driven "vault" storage service (a compiled C binary) reachable over TCP on port `6789`. Clients store treasures/keys into vaults, retrieve them by a key or location, list holdings, and read an admin-only activity log gated by a password. Flags are held as vault contents; the public flag-id is the storage location/name the flag was placed under.
+A menu-driven "vault" storage service (a compiled C binary) reachable over TCP on port `6789`. Clients store treasures/keys into vaults, retrieve them by a key or location, list holdings, and read an admin-only activity log gated by a password. Flags are held as vault contents under unguessable location keys. This challenge has no public per-round flag-id: the intended log-dispatch exploit enumerates the stored treasures itself.
 
 SOURCE MAP
 • `main.c` — menu / command dispatch

@@ -48,5 +48,15 @@ provenance:
     how the challenge is generated and how review access is authorised, harden it, then restart_service.'
 cover:
   image: covers/8-bit-oracle.webp
-  accent: '#1b509e'
-  prompt_id: geo-v1
+  accent: '#e76953'
+  prompt_id: geo-v2
+  motif: A tall stepped ladder of paired rectangles climbs upward as a line-based TCP exchange,
+    each rung a request-and-response beat; midway a modular wheel of concentric arcs — the
+    challenge generator — spins, but its segments are visibly regular and evenly spaced, so
+    a thin dashed path traces the next segment before the wheel reaches it, predicting the
+    value. That predicted segment detaches and slides sideways as a small solid block into
+    a locked nested frame belonging to a neighbouring column, slipping past the seam of a
+    barrier band that should have separated the two. Behind the frame, a stack of opaque overlapping
+    planes parts just enough to reveal the deepest tile of a square grid — another user's
+    guarded record — now exposed. A faint halftone field fills the gap where the RSA keypair
+    wheel sits idle and bypassed off to one side.

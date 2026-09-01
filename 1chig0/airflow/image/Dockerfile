@@ -37,10 +37,13 @@ ENV AIRFLOW__CORE__AUTH_MANAGER=airflow.providers.fab.auth_manager.fab_auth_mana
 COPY dags/ /opt/airflow/dags/
 COPY provision.py /arena/provision.py
 COPY restart.sh /arena/restart.sh
-COPY checker.sh /arena/checker.sh
 COPY entrypoint.sh /arena/entrypoint.sh
-RUN chmod 555 /arena/restart.sh /arena/checker.sh /arena/entrypoint.sh /arena/provision.py \
-    && chown root:root /arena/restart.sh /arena/checker.sh /arena/entrypoint.sh /arena/provision.py
+# checker.sh is NOT baked in — the health-poller ships its bytes over stdin
+# (`bash -s`) so the defender (root on its own prod) can't read or overwrite the
+# CHECKER. See orche #103 "CHECKER out of prod's trust boundary". Do not re-add a
+# `COPY checker.sh` here.
+RUN chmod 555 /arena/restart.sh /arena/entrypoint.sh /arena/provision.py \
+    && chown root:root /arena/restart.sh /arena/entrypoint.sh /arena/provision.py
 
 # sshd: default-deny root (framework flips it on per-deploy for the agent).
 RUN mkdir -p /run/sshd /home/arena_agent/.ssh \
