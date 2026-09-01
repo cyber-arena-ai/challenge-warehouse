@@ -1,0 +1,9 @@
+# Dolibarr Website maintainer notes
+
+The application source is pinned to Dolibarr commit `a633766b23e25f7fce632a1c7c7bf6c7de827e9d`, the sole parent of direct repair `e0cd351b3eeb38909f5bffcfe7fcf3c00c93f06a`. The source archive is verified during the image build with SHA-256 `7782a31a781cd0a3fe33174011ff76eafc3740f073314298853fc779e7339dda`.
+
+Each attacker receives a distinct non-administrator Dolibarr account created through the supported Users UI. The account has Website read and HTML/JavaScript editing rights 10001 and 10002, while dynamic-PHP right 10003 is withheld. Principal provisioning also creates an equal-role checker identity whose credential is derived from private facility state and the victim identity; it is never read from prod or returned to a participant. The network-only checker logs in as that restricted editor, publishes fresh randomized HTML through the Website UI, and reads it through the public renderer. A valid defense must keep that workflow; disabling the module, denying normal edits, or returning canned content fails the checker.
+
+The EXECUTE store rotates a root-backed token behind a per-round setuid operation. The operation is reachable by pathname but only accepts real UID 33 (`www-data`); the token directory remains root-only. Retrieval invokes the same operation as `www-data`. Direct reads, direct token-shaped writes, root execution, and stale operation paths therefore do not prove service-context execution.
+
+The editable source lives at `/srv/challenge/dolibarr`. Restart validates and synchronizes that tree into the runtime web root without replacing MariaDB data, Website documents, principals, or the proof state. Apache is stopped by process name rather than `apache2ctl stop`: the Debian base image's inherited process group otherwise terminates unrelated co-resident services during a Docker exec restart.
