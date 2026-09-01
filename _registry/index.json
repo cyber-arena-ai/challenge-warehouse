@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-25",
-  "count": 25,
+  "generated": "2026-08-31",
+  "count": 26,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -1056,6 +1056,54 @@
         "accent": "#e88f63",
         "prompt_id": "geo-v2",
         "motif": "A single hard-edged rectangular socket-node sits at the left, from which a stepped ladder of newline-terminated exchanges descends rightward: each rung a short segmented band paired with a returning band offset one step below, request and response climbing down in lockstep. In the daemon's interior, a small square grid of stored cells holds a scatter of dots, one cell ringed by concentric arcs to mark the retrieved note, a thick stroke threading out from it back along the ladder to the socket. Above, three stacked translucent planes suggest the tiny protocol's flat verbs, overlapping just enough that the deepest holds a lone filled cell."
+      }
+    },
+    {
+      "slug": "projectsend-global-settings",
+      "title": "ProjectSend Global Settings Control",
+      "contributor": "tovitu",
+      "updated": "2026-08-31",
+      "tags": [
+        "real-world",
+        "web",
+        "auth-bypass",
+        "logic-bug",
+        "php",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "easy",
+        "vuln_class": "Authorization Bypass",
+        "cve": "CVE-2024-11680"
+      },
+      "card": {
+        "tagline": "A public request crosses ProjectSend's administrator-only settings boundary",
+        "summary": "ProjectSend provides authenticated Client file sharing while reserving global site settings for administrators. A historical request path permits an unauthenticated caller to persist a protected configuration value.",
+        "attack": "Cross the settings authorization boundary and persist the current verification mark as ProjectSend's public site title.",
+        "defense": "Harden settings authorization under /srv/challenge/projectsend, then restart the service while preserving administrator settings and normal Client file sharing."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "ProjectSend r1605 development revision",
+        "reference": "CVE-2024-11680",
+        "url": "https://github.com/projectsend/projectsend"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 80
+        },
+        "stack": "PHP 8.1 · Apache · MariaDB · ProjectSend"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-projectsend-global-settings:v1",
+        "source_intro": "ProjectSend is a self-hosted client file-sharing application. Attackers receive distinct normal Client accounts. Defenders may edit the complete pinned source under /srv/challenge/projectsend and reload it while preserving settings and Client authentication, upload, listing, and retrieval."
+      },
+      "cover": {
+        "image": "covers/projectsend-global-settings.webp",
+        "accent": "#5c7fd9",
+        "prompt_id": "geo-v2",
+        "motif": "A clean client-file grid feeds a guarded global settings panel through separate lanes. One thin public request ribbon bypasses the administrator gate and changes a single title strip, while the authenticated upload and retrieval lane remains intact."
       }
     },
     {
