@@ -1,0 +1,48 @@
+slug: horizont-cms-filemanager
+title: HorizontCMS FileManager
+contributor: tovitu
+updated: '2026-09-01'
+tags:
+- real-world
+- web
+- rce
+- file-write
+- php
+- cve
+classification:
+  difficulty: medium
+  vuln_class: Authenticated File Upload RCE
+  cve: CVE-2020-27387
+card:
+  tagline: An Editor turns ordinary media renaming into service-context PHP execution
+  summary: HorizontCMS lets Editors upload files under randomized names and rename
+    them through FileManager. At the pinned revision, the destination extension is
+    not constrained, so an ordinary Editor can publish PHP content for execution.
+  attack: Use an assigned Editor login to upload PHP content, rename the stored object
+    to a public PHP path, and invoke the current service-context proof operation.
+  defense: Validate dangerous extensions across upload and rename while preserving
+    independent Editor logins and ordinary randomized media management.
+origin:
+  type: real-world
+  source: HorizontCMS
+  reference: CVE-2020-27387
+  url: https://github.com/ttimot24/HorizontCMS/commit/436b5ab679fd27afa3d99c023dbe103113da4fee
+service:
+  protocol: web
+  ports:
+    service: 8080
+  stack: PHP 7.4 · Laravel · SQLite
+provenance:
+  image: cyberarena/chal-horizont-cms-filemanager:v1
+  source_intro: HorizontCMS at commit a056babd651c8e1aba4ec17433196b9859ed4866,
+    served as a PHP 7.4 application with persistent SQLite-backed CMS state. CVE-2020-27387
+    lets an authenticated Editor turn the supported FileManager upload and rename workflow
+    into PHP execution. The rotating objective measures host.command.execute in the www-data
+    service context.
+cover:
+  image: covers/horizont-cms-filemanager.webp
+  accent: '#d25f56'
+  prompt_id: geo-v2
+  motif: Two compact media tiles pass through a rename gate in a layered CMS frame;
+    one tile changes into a small executable bracket that crosses a broken extension
+    filter and reaches a rotating target ring inside the PHP service boundary.
