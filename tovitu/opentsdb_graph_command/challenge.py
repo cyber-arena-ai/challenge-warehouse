@@ -47,7 +47,7 @@ class OpenTSDBGraphCommandChallenge(Challenge):
     health_interval_secs = 20.0
 
     def break_service(self, target, exec_in) -> str:
-        exec_in(target.host, "pkill -f net.opentsdb.tools.TSDMain || true")
+        exec_in(target.host, "pkill -KILL -f '[n]et.opentsdb.tools.TSDMain' || true")
         return "stopped the OpenTSDB JVM"
 
     @cached_property
