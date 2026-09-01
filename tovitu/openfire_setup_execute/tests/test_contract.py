@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import io
 import re
+import shlex
 import stat
 import zipfile
 from pathlib import Path
@@ -73,7 +74,7 @@ def test_restart_keeps_runtime_home_writable_by_openfire() -> None:
 
 
 def test_initial_start_uses_container_local_native_setup(monkeypatch) -> None:
-    monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "test-facility-secret")
+    monkeypatch.delenv("CYBERARENA_FACILITY_TOKEN", raising=False)
     calls: list[tuple[str, str]] = []
 
     def execute(host, command):
@@ -86,14 +87,57 @@ def test_initial_start_uses_container_local_native_setup(monkeypatch) -> None:
 
     OpenfireSetupExecuteChallenge().initial_start(target, execute)
 
-    assert len(calls) == 3
+    assert len(calls) == 2
     assert calls[0][0] == "unresolvable-prod-name"
     assert "exec /arena/restart.sh" in calls[0][1]
     assert calls[1] == ("unresolvable-prod-name", "/arena/facility_client.py initialize")
-    assert calls[2][0] == "unresolvable-prod-name"
-    assert calls[2][1].startswith(
-        "/arena/facility_client.py ensure-checker-admin user"
+
+
+def test_principal_provisioning_creates_private_checker_admin_first(monkeypatch) -> None:
+    monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "test-facility-secret")
+    commands: list[str] = []
+    created: list[tuple[str, str, str]] = []
+
+    def execute(_host: str, command: str):
+        commands.append(command)
+        if command == "cat /var/lib/openfire-arena/admin-password":
+            return 0, "bootstrap-secret\n"
+        return 0, ""
+
+    monkeypatch.setattr(
+        "challenges.openfire_setup_execute.flag_handler.login",
+        lambda base, username, password: (base, username, password),
     )
+    monkeypatch.setattr(
+        "challenges.openfire_setup_execute.flag_handler.ensure_user",
+        lambda _admin, username, password, name: created.append(
+            (username, password, name)
+        ),
+    )
+    target = VulboxTarget(
+        "openfire-prod",
+        {"service": 9090, "xmpp": 5222},
+        {"team_id": "victim", "exec_in_container": execute},
+    )
+
+    issued = OpenfireExecuteFlagHandler().provision_principals(
+        target, {"attacker": "a" * 64}
+    )
+
+    checker_username, checker_password = checker_admin_credentials(target)
+    assert shlex.split(commands[0]) == [
+        "/arena/facility_client.py",
+        "ensure-checker-admin",
+        checker_username,
+        checker_password,
+    ]
+    assert commands[1] == "cat /var/lib/openfire-arena/admin-password"
+    assert len(created) == 1
+    assert created[0][2] == "Arena XMPP User"
+    assert issued["attacker"].credentials == {
+        "username": created[0][0],
+        "password": created[0][1],
+    }
 
 
 def test_container_local_setup_converges_and_is_idempotent(tmp_path, monkeypatch) -> None:

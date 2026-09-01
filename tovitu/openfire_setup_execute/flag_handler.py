@@ -18,7 +18,8 @@ from challenges.interface import (
 )
 
 from ._client import ensure_user, login
-from .challenge import ADMIN_PASSWORD_PATH
+from ._health_identity import checker_admin_credentials
+from .challenge import ADMIN_PASSWORD_PATH, FACILITY_CLIENT
 
 
 PROOF_DIR = "/var/lib/openfire-arena/proofs"
@@ -81,6 +82,22 @@ class OpenfireExecuteFlagHandler(SingleFlagHandler):
     def provision_principals(
         self, target: VulboxTarget, seeds: Mapping[str, str]
     ) -> Mapping[str, BaselinePrincipal]:
+        checker_username, checker_password = checker_admin_credentials(target)
+        command = " ".join(
+            shlex.quote(part)
+            for part in (
+                FACILITY_CLIENT,
+                "ensure-checker-admin",
+                checker_username,
+                checker_password,
+            )
+        )
+        rc, output = target.meta["exec_in_container"](target.host, command)
+        if rc != 0:
+            raise RuntimeError(
+                "Openfire checker administrator setup failed: "
+                f"{(output or f'rc={rc}')[-300:]}"
+            )
         base_url = f"http://{target.host}:{target.ports['service']}"
         admin = login(base_url, "admin", self._admin_password(target))
         issued: dict[str, BaselinePrincipal] = {}

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import shlex
 from functools import cached_property
 from pathlib import Path
 
@@ -17,8 +16,6 @@ from challenges.interface import (
     VulboxImage,
     VulboxTarget,
 )
-
-from ._health_identity import checker_admin_credentials
 
 OPENFIRE_COMMIT = "4025ae8a862d983b3bcc50185e89c23e1229a44f"
 ADMIN_PORT = 9090
@@ -66,17 +63,6 @@ class OpenfireSetupExecuteChallenge(Challenge):
         if rc != 0:
             raise RuntimeError(
                 f"Openfire native setup failed: {(output or f'rc={rc}')[-300:]}"
-            )
-        username, password = checker_admin_credentials(target)
-        command = " ".join(
-            shlex.quote(part)
-            for part in (FACILITY_CLIENT, "ensure-checker-admin", username, password)
-        )
-        rc, output = exec_in(target.host, command)
-        if rc != 0:
-            raise RuntimeError(
-                f"Openfire checker administrator setup failed: "
-                f"{(output or f'rc={rc}')[-300:]}"
             )
 
     @cached_property
