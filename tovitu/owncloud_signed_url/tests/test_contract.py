@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shlex
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,7 @@ from challenges.interface import OracleKind, VulboxTarget
 from challenges.owncloud_signed_url import _exploit, checker, functionality_test
 from challenges.owncloud_signed_url._health_identity import checker_credentials
 from challenges.owncloud_signed_url.challenge import OwnCloudSignedUrlChallenge
+from challenges.owncloud_signed_url.flag_handler import OwnCloudFlagHandler
 
 
 PACKAGE = Path(__file__).resolve().parents[1]
@@ -102,8 +104,33 @@ def test_external_checker_has_no_private_or_container_path():
     assert not any(value in source for value in forbidden)
 
 
-def test_trusted_phase_provisions_derived_users_then_checks_liveness(monkeypatch):
+def test_principal_provisioning_creates_checker_users_once(monkeypatch):
     monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "test-facility-secret")
+    commands: list[tuple[str, str]] = []
+
+    def exec_in(host, command):
+        commands.append((host, command))
+        return 0, ""
+
+    target = VulboxTarget(
+        "owncloud-box",
+        {"service": 8080},
+        {"team_id": 4, "exec_in_container": exec_in},
+    )
+    issued = OwnCloudFlagHandler().provision_principals(
+        target, {"attacker": "a" * 64}
+    )
+
+    ensure = [command for _, command in commands if " ensure-user " in command]
+    assert len(ensure) == 3
+    checker_users = [username for username, _ in checker_credentials(target)]
+    assert [shlex.split(command)[2] for command in ensure[:2]] == checker_users
+    assert shlex.split(ensure[2])[2] == issued["attacker"].principal_id
+    assert all(host == target.host for host, _ in commands)
+
+
+def test_recurring_functionality_does_not_provision_users(monkeypatch):
+    monkeypatch.delenv("CYBERARENA_FACILITY_TOKEN", raising=False)
     commands: list[tuple[str, str]] = []
 
     def exec_in(host, command):
@@ -118,9 +145,7 @@ def test_trusted_phase_provisions_derived_users_then_checks_liveness(monkeypatch
     result = functionality_test.OwnCloudFunctionalityTest().run(target)
 
     assert result.passed
-    ensure = [command for _, command in commands if " ensure-user " in command]
-    assert len(ensure) == 2
-    assert all("arena_sla" not in command for command in ensure)
+    assert all("ensure-user" not in command for _, command in commands)
     assert all(host == target.host for host, _ in commands)
 
 

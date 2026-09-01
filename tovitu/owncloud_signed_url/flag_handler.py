@@ -20,6 +20,8 @@ from challenges.interface import (
     state_scan_observe,
 )
 
+from ._health_identity import checker_credentials
+
 
 READ_STORE = "private-file"
 WRITE_STORE = "private-file-write"
@@ -150,23 +152,28 @@ class OwnCloudFlagHandler(FlagHandler):
     def provision_principals(
         self, target: VulboxTarget, seeds: Mapping[str, str]
     ) -> Mapping[str, BaselinePrincipal]:
-        principals: dict[str, BaselinePrincipal] = {}
-        for attacker, seed in seeds.items():
-            digest = hashlib.sha256(seed.encode()).hexdigest()
-            username = f"arena_{digest[:16]}"
-            password = f"Oc-{digest[16:48]}!"
+        def ensure_user(username: str, password: str) -> None:
             deadline = time.monotonic() + 60
             rc, out = -1, ""
             while time.monotonic() < deadline:
                 rc, out = _exec(target, "ensure-user", username, password)
                 if rc == 0:
-                    break
+                    return
                 time.sleep(2)
-            if rc != 0:
-                raise RuntimeError(
-                    f"ownCloud principal provisioning failed on {target.host}: "
-                    f"rc={rc}, detail={(out or '')[-160:]!r}"
-                )
+            raise RuntimeError(
+                f"ownCloud principal provisioning failed on {target.host}: "
+                f"rc={rc}, detail={(out or '')[-160:]!r}"
+            )
+
+        for username, password in checker_credentials(target):
+            ensure_user(username, password)
+
+        principals: dict[str, BaselinePrincipal] = {}
+        for attacker, seed in seeds.items():
+            digest = hashlib.sha256(seed.encode()).hexdigest()
+            username = f"arena_{digest[:16]}"
+            password = f"Oc-{digest[16:48]}!"
+            ensure_user(username, password)
             principals[attacker] = BaselinePrincipal(
                 principal_id=username,
                 credentials={"username": username, "password": password},
