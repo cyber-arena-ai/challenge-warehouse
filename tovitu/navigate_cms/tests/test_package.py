@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+from types import SimpleNamespace
 import urllib.parse
 
 from challenges.interface import Flag, ObservationStatus, VulboxTarget
-from challenges.navigate_cms import _exploit, _http
+from challenges.navigate_cms import _exploit, _http, config
 from challenges.navigate_cms.checker import NavigateChecker
 from challenges.navigate_cms.flag_handler import NavigateFlagHandler
 
@@ -16,7 +17,7 @@ def _target(exec_in, *, host: str = "198.51.100.27", port: int = 8088):
     return VulboxTarget(
         host=host,
         ports={"service": port},
-        meta={"exec_in_container": exec_in},
+        meta={"exec_in_container": exec_in, "team_id": "victim-team"},
     )
 
 
@@ -83,6 +84,7 @@ def test_principals_are_seed_derived_and_created_through_supported_ui(monkeypatc
 
     monkeypatch.setattr(_http, "login", login)
     monkeypatch.setattr(_http, "create_user", create_user)
+    monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "facility-owned-test-secret")
     seeds = {"red-team": "1" * 64, "blue-team": "2" * 64}
     result = NavigateFlagHandler().provision_principals(_target(exec_in), seeds)
 
@@ -92,6 +94,19 @@ def test_principals_are_seed_derived_and_created_through_supported_ui(monkeypatc
         admin["username"],
         admin["password"],
     )
+    checker_user, checker_password = config.checker_identity("victim-team")
+    assert (
+        opener,
+        "http://198.51.100.27:8088/navigate",
+        checker_user,
+        checker_password,
+    ) in creations
+    assert (
+        "http://198.51.100.27:8088/navigate",
+        checker_user,
+        checker_password,
+    ) in logins
+    assert checker_user not in {principal.principal_id for principal in result.values()}
     for team_id, seed in seeds.items():
         digest = hashlib.sha256(seed.encode()).hexdigest()
         principal = result[team_id]
@@ -131,13 +146,50 @@ def test_create_user_requests_the_normal_user_profile(monkeypatch):
     assert observed["opener"] is opener
 
 
-def test_checker_uses_framework_network_target_and_fresh_upload(monkeypatch):
-    credentials = {"username": "checker", "password": "checker-secret"}
-    observed = {}
+def test_login_retries_the_historical_first_dashboard_404(monkeypatch):
+    class Headers:
+        @staticmethod
+        def get_all(name: str, default=None):
+            if name == "Set-Cookie":
+                return ["NVSID_test=session-id; Path=/"]
+            return default
 
-    def exec_in(host: str, command: str):
-        observed["exec"] = (host, command)
-        return 0, json.dumps(credentials)
+    class Response:
+        headers = Headers()
+
+        def __init__(self, status: int, body: bytes):
+            self.status = status
+            self._body = body
+
+        def read(self):
+            return self._body
+
+    dashboard_statuses = iter((404, 200))
+    dashboard_calls = []
+
+    def request(url: str, **_kwargs):
+        if url.endswith("/login.php"):
+            return Response(302, b"")
+        dashboard_calls.append(url)
+        status = next(dashboard_statuses)
+        body = b'<main id="navigate-content"></main>' if status == 200 else b""
+        return Response(status, body)
+
+    monkeypatch.setattr(_http, "request", request)
+    monkeypatch.setattr(
+        _http.urllib.request,
+        "build_opener",
+        lambda *_args: SimpleNamespace(addheaders=[]),
+    )
+
+    _, session_id = _http.login("http://navigate.test/navigate", "alice", "secret")
+
+    assert session_id == "session-id"
+    assert len(dashboard_calls) == 2
+
+
+def test_checker_uses_framework_network_target_and_fresh_upload(monkeypatch):
+    observed = {}
 
     def login(base: str, username: str, password: str):
         observed["login"] = (base, username, password)
@@ -148,17 +200,21 @@ def test_checker_uses_framework_network_target_and_fresh_upload(monkeypatch):
 
     monkeypatch.setattr(_http, "login", login)
     monkeypatch.setattr(_http, "ordinary_upload", ordinary_upload)
-    result = NavigateChecker().run(_target(exec_in))
+    monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "facility-owned-test-secret")
+    result = NavigateChecker().run(
+        VulboxTarget(
+            host="198.51.100.27",
+            ports={"service": 8088},
+            meta={"team_id": "victim-team"},
+        )
+    )
 
     assert result.passed
-    assert observed["exec"] == (
-        "198.51.100.27",
-        "cat /run/navigate/checker.json",
-    )
+    checker_user, checker_password = config.checker_identity("victim-team")
     assert observed["login"] == (
         "http://198.51.100.27:8088/navigate",
-        "checker",
-        "checker-secret",
+        checker_user,
+        checker_password,
     )
     base, session, filename, marker = observed["upload"]
     assert base == "http://198.51.100.27:8088/navigate"

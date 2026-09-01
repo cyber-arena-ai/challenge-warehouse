@@ -58,6 +58,9 @@ def login(base: str, username: str, password: str):
     ]
     dashboard = request(f"{base}/navigate.php?fid=dashboard", opener=opener)
     dashboard_body = dashboard.read()
+    if dashboard.status == 404:
+        dashboard = request(f"{base}/navigate.php?fid=dashboard", opener=opener)
+        dashboard_body = dashboard.read()
     if dashboard.status != 200 or b'id="navigate-content"' not in dashboard_body:
         raise RuntimeError("authenticated dashboard failed")
     return opener, session_id

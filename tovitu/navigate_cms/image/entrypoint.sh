@@ -34,10 +34,6 @@ if [ ! -s /run/navigate/admin.json ]; then
     python3 -c 'import json,secrets; json.dump({"username":"arena_admin_"+secrets.token_hex(8),"password":"Aa!"+secrets.token_hex(20)},open("/run/navigate/admin.json","w"))'
     chmod 0600 /run/navigate/admin.json
 fi
-if [ ! -s /run/navigate/checker.json ]; then
-    python3 -c 'import json,secrets; json.dump({"username":"arena_check_"+secrets.token_hex(8),"password":"Cc!"+secrets.token_hex(20)},open("/run/navigate/checker.json","w"))'
-    chmod 0600 /run/navigate/checker.json
-fi
 php /arena/bootstrap.php
 chown -R arena_agent:www-data /srv/challenge/navigate
 find /srv/challenge/navigate -type d -exec chmod 0775 {} +

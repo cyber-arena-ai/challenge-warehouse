@@ -20,6 +20,7 @@ from challenges.interface import (
 )
 
 from . import _http
+from .config import checker_identity
 
 STORE = "command_execution"
 PROOF_PREFIX = "/usr/local/bin/nv-proof-"
@@ -105,6 +106,16 @@ class NavigateFlagHandler(FlagHandler):
                 if time.monotonic() >= deadline:
                     raise RuntimeError("Navigate supported administration unavailable")
                 time.sleep(1)
+
+        checker_user, checker_password = checker_identity(
+            str(target.meta.get("team_id", ""))
+        )
+        try:
+            _http.create_user(opener, base, checker_user, checker_password)
+            _http.login(base, checker_user, checker_password)
+        except RuntimeError as exc:
+            raise RuntimeError("checker User provisioning failed") from exc
+
         result: dict[str, BaselinePrincipal] = {}
         for team_id, seed in seeds.items():
             digest = hashlib.sha256(seed.encode()).hexdigest()

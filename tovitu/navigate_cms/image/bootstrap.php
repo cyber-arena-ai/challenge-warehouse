@@ -33,10 +33,8 @@ function ensure_arena_user($credentials, $profile) {
 }
 
 $admin = json_decode(file_get_contents('/run/navigate/admin.json'), true);
-$checker = json_decode(file_get_contents('/run/navigate/checker.json'), true);
-if(!$admin || !$checker) { fwrite(STDERR, "credential bootstrap unavailable\n"); exit(1); }
+if(!$admin) { fwrite(STDERR, "credential bootstrap unavailable\n"); exit(1); }
 ensure_arena_user($admin, 1);
-ensure_arena_user($checker, 2);
 $user = new user();
 $admin_id = $DB->query_single('id', 'nv_users', 'username = "'.$admin['username'].'"');
 $user->load($admin_id);

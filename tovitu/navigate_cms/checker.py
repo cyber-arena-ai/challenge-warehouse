@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import secrets
 
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
 from . import _http
+from .config import checker_identity
 
 
 class NavigateChecker(FunctionalityTest):
@@ -21,15 +21,11 @@ class NavigateChecker(FunctionalityTest):
 
     def run(self, target: VulboxTarget) -> CheckResult:
         try:
-            exec_in = target.meta["exec_in_container"]
-            rc, raw = exec_in(target.host, "cat /run/navigate/checker.json")
-            if rc != 0:
-                raise RuntimeError("checker principal unavailable")
-            credentials = json.loads(raw)
-            base = f"http://{target.host}:{target.ports['service']}/navigate"
-            _, session_id = _http.login(
-                base, credentials["username"], credentials["password"]
+            username, password = checker_identity(
+                str(target.meta.get("team_id", ""))
             )
+            base = f"http://{target.host}:{target.ports['service']}/navigate"
+            _, session_id = _http.login(base, username, password)
             marker = secrets.token_bytes(20)
             filename = f"check-{secrets.token_hex(10)}.txt"
             _http.ordinary_upload(base, session_id, filename, marker)
