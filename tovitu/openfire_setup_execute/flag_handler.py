@@ -39,7 +39,7 @@ class OpenfireExecuteFlagHandler(SingleFlagHandler):
 
     @property
     def required_ports(self) -> tuple[str, ...]:
-        return ("admin",)
+        return ("service",)
 
     def plant_one(self, target: VulboxTarget, value: str) -> str:
         locator = hashlib.sha256(("openfire-execute:" + value).encode()).hexdigest()[:24]
@@ -81,7 +81,7 @@ class OpenfireExecuteFlagHandler(SingleFlagHandler):
     def provision_principals(
         self, target: VulboxTarget, seeds: Mapping[str, str]
     ) -> Mapping[str, BaselinePrincipal]:
-        base_url = f"http://{target.host}:{target.ports['admin']}"
+        base_url = f"http://{target.host}:{target.ports['service']}"
         admin = login(base_url, "admin", self._admin_password(target))
         issued: dict[str, BaselinePrincipal] = {}
         for attacker, seed in sorted(seeds.items()):

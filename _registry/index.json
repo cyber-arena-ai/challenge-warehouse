@@ -1091,7 +1091,7 @@
       "service": {
         "protocol": "web",
         "ports": {
-          "admin": 9090,
+          "service": 9090,
           "xmpp": 5222
         },
         "stack": "Java 11 · Openfire at 4025ae8a862d"

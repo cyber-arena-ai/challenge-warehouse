@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import io
 import re
 import stat
 import zipfile
 from pathlib import Path
 
+import pytest
+
 from challenges.interface import ObservationStatus, OracleKind, VulboxTarget
 
-from challenges.openfire_setup_execute import challenge as challenge_module
 from challenges.openfire_setup_execute import checker, functionality_test
-from challenges.openfire_setup_execute._client import Response
+from challenges.openfire_setup_execute._client import OpenfireError, Response
 from challenges.openfire_setup_execute._health_identity import checker_admin_credentials
-from challenges.openfire_setup_execute._plugin import health_plugin, proof_plugin
+from challenges.openfire_setup_execute._plugin import health_plugin, health_property, proof_plugin
 from challenges.openfire_setup_execute.challenge import OpenfireSetupExecuteChallenge
 from challenges.openfire_setup_execute.flag_handler import OpenfireExecuteFlagHandler
 
@@ -21,13 +23,13 @@ from challenges.openfire_setup_execute.flag_handler import OpenfireExecuteFlagHa
 PACKAGE = Path(__file__).resolve().parents[1]
 
 
-def test_declares_one_service_execution_objective() -> None:
+def test_declares_primary_service_port_and_one_execution_objective() -> None:
     challenge = OpenfireSetupExecuteChallenge()
     specs = challenge.flag_store_specs()
     assert [(spec.name, spec.kind, spec.scope) for spec in specs] == [
         ("default", OracleKind.EXECUTE, "host.command.execute")
     ]
-    assert challenge.vulbox.exposed_ports == {"admin": 9090, "xmpp": 5222}
+    assert challenge.vulbox.exposed_ports == {"service": 9090, "xmpp": 5222}
 
 
 def test_pinned_vulnerable_source_archive_is_exact() -> None:
@@ -70,50 +72,84 @@ def test_restart_keeps_runtime_home_writable_by_openfire() -> None:
     assert mode & stat.S_IXGRP
 
 
-def test_native_setup_is_followed_by_restart_before_bootstrap_login(monkeypatch) -> None:
-    events: list[str] = []
+def test_initial_start_uses_container_local_native_setup(monkeypatch) -> None:
+    monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "test-facility-secret")
+    calls: list[tuple[str, str]] = []
 
-    def execute(_host, command):
-        if command.startswith("cat "):
-            events.append("read-password")
-            return 0, "bootstrap-password\n"
-        events.append("restart" if command == "/arena/restart.sh" else "initial-start")
+    def execute(host, command):
+        calls.append((host, command))
         return 0, ""
 
-    def login(*args):
-        events.append(f"login:{args[2]}")
-        if args[2] == "bootstrap-password" and events.count(
-            "login:bootstrap-password"
-        ) == 1:
-            raise challenge_module.OpenfireError("setup incomplete")
-        return object()
-
-    monkeypatch.setattr(challenge_module, "wait_http", lambda *args: None)
-    monkeypatch.setattr(challenge_module, "login", login)
-    monkeypatch.setattr(
-        challenge_module,
-        "setup_openfire",
-        lambda *args: events.append("native-setup"),
+    target = VulboxTarget(
+        "unresolvable-prod-name", {"service": 9090, "xmpp": 5222}, {"team_id": 1}
     )
-    monkeypatch.setattr(
-        challenge_module,
-        "ensure_user",
-        lambda *args: events.append("set-password"),
-    )
-    target = VulboxTarget("prod", {"admin": 9090, "xmpp": 5222})
 
     OpenfireSetupExecuteChallenge().initial_start(target, execute)
 
-    assert events == [
-        "initial-start",
-        "read-password",
-        "login:bootstrap-password",
-        "native-setup",
-        "restart",
+    assert len(calls) == 3
+    assert calls[0][0] == "unresolvable-prod-name"
+    assert "exec /arena/restart.sh" in calls[0][1]
+    assert calls[1] == ("unresolvable-prod-name", "/arena/facility_client.py initialize")
+    assert calls[2][0] == "unresolvable-prod-name"
+    assert calls[2][1].startswith(
+        "/arena/facility_client.py ensure-checker-admin user"
+    )
+
+
+def test_container_local_setup_converges_and_is_idempotent(tmp_path, monkeypatch) -> None:
+    path = PACKAGE / "image/facility_client.py"
+    spec = importlib.util.spec_from_file_location("openfire_facility_client_test", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    secret = tmp_path / "admin-password"
+    secret.write_text("configured-password")
+    module.ADMIN_PASSWORD = secret
+    state = {"configured": False, "password_set": False}
+    events: list[str] = []
+
+    def login(_username, password):
+        events.append("login:" + password)
+        if password == "configured-password" and state["password_set"]:
+            return object()
+        if password == "admin" and state["configured"]:
+            return object()
+        raise RuntimeError("not configured")
+
+    def setup():
+        events.append("setup")
+        state["configured"] = True
+
+    def set_password(*_args):
+        events.append("set-password")
+        state["password_set"] = True
+
+    monkeypatch.setattr(module, "login", login)
+    monkeypatch.setattr(module, "setup_openfire", setup)
+    monkeypatch.setattr(module, "wait_http", lambda: events.append("wait-http"))
+    monkeypatch.setattr(module, "set_password", set_password)
+    monkeypatch.setattr(
+        module.subprocess,
+        "run",
+        lambda command, check: events.append("restart:" + " ".join(command)),
+    )
+
+    module.initialize()
+    first = list(events)
+    module.initialize()
+
+    assert first == [
+        "login:configured-password",
+        "login:admin",
+        "setup",
+        "restart:/arena/restart.sh",
+        "wait-http",
         "login:admin",
         "set-password",
-        "login:bootstrap-password",
+        "login:configured-password",
     ]
+    assert events[len(first) :] == ["login:configured-password"]
 
 
 def test_runtime_installs_the_private_helper_interpreter() -> None:
@@ -131,7 +167,7 @@ def test_execute_plant_rotates_locator_and_audit_invokes_helper_as_service() -> 
             return 0, expected + "\n"
         return 0, ""
 
-    target = VulboxTarget("prod", {"admin": 9090}, {"exec_in_container": execute})
+    target = VulboxTarget("prod", {"service": 9090}, {"exec_in_container": execute})
     handler = OpenfireExecuteFlagHandler()
     locator = handler.plant_one(target, expected)
     assert len(locator) == 24
@@ -161,30 +197,35 @@ def test_proof_plugin_carries_only_locator_and_compiled_bounded_payload() -> Non
     assert b"ProcessBuilder" in bytecode
 
 
-def test_health_plugin_is_distinct_noop_payload() -> None:
+def test_health_plugin_has_benign_nonce_bound_effect() -> None:
     canonical, payload = health_plugin("b2" * 8)
-    assert canonical == "arena-health-" + "b2" * 8
+    assert canonical == "integration-" + "b2" * 8
+    assert health_property("b2" * 8) == "plugin.integration." + "b2" * 8
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        metadata = archive.read("plugin.xml")
         inner = archive.read("lib/plugin.jar")
+    assert b"Arena Health" not in metadata
+    assert b"Cyber Arena" not in metadata
     with zipfile.ZipFile(io.BytesIO(inner)) as archive:
         bytecode = archive.read("arena/HealthPlugin.class")
     assert b"openfire-proof" not in bytecode
+    assert b"plugin.integration." in bytecode
 
 
 def test_checker_admin_identity_is_facility_derived_and_team_scoped(monkeypatch) -> None:
     monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "test-facility-secret")
-    first = VulboxTarget("first", {"admin": 9090}, {"team_id": 1})
-    second = VulboxTarget("second", {"admin": 9090}, {"team_id": 2})
+    first = VulboxTarget("first", {"service": 9090}, {"team_id": 1})
+    second = VulboxTarget("second", {"service": 9090}, {"team_id": 2})
 
     identity = checker_admin_credentials(first)
     assert identity == checker_admin_credentials(first)
     assert identity != checker_admin_credentials(second)
-    assert identity[0].startswith("arena-health-")
+    assert identity[0].startswith("user")
+    assert "health" not in identity[0].lower()
     assert "test-facility-secret" not in identity[0] + identity[1]
 
 
-def test_trusted_phase_provisions_checker_admin_through_runtime_helper(monkeypatch) -> None:
-    monkeypatch.setenv("CYBERARENA_FACILITY_TOKEN", "test-facility-secret")
+def test_recurring_functionality_does_not_transmit_checker_credentials() -> None:
     commands: list[tuple[str, str]] = []
 
     def execute(host: str, command: str):
@@ -193,16 +234,13 @@ def test_trusted_phase_provisions_checker_admin_through_runtime_helper(monkeypat
 
     target = VulboxTarget(
         "openfire-prod",
-        {"admin": 9090, "xmpp": 5222},
-        {"team_id": 3, "exec_in_container": execute},
+        {"service": 9090, "xmpp": 5222},
+        {"exec_in_container": execute},
     )
     result = functionality_test.OpenfireFunctionalityTest().run(target)
 
     assert result.passed
-    assert commands[0][1].startswith(
-        "/arena/facility_client.py ensure-checker-admin arena-health-"
-    )
-    assert "admin-password" not in commands[0][1]
+    assert all("ensure-checker-admin" not in command for _, command in commands)
     assert all(host == target.host for host, _ in commands)
 
 
@@ -213,8 +251,20 @@ def test_external_checker_uses_target_network_without_exec_or_prod_secret(monkey
     exchanges: list[tuple[str, int]] = []
 
     class Admin:
+        property_reads = 0
+
         def request(self, method, path):
-            return Response(200, path, b"Arena Health " + b"a" * 16)
+            if path == "/plugin-admin.jsp":
+                return Response(200, path, b"Integration " + b"a" * 16)
+            if path.startswith("/server-properties.jsp?searchName="):
+                self.property_reads += 1
+                body = (
+                    b"plugin.integration." + b"a" * 16 + b"=active-" + b"a" * 16
+                    if self.property_reads == 1
+                    else b""
+                )
+                return Response(200, path, body)
+            return Response(200, path, b"")
 
     def fake_login(base_url, username, password):
         logins.append((base_url, username, password))
@@ -232,7 +282,7 @@ def test_external_checker_uses_target_network_without_exec_or_prod_secret(monkey
     )
     target = VulboxTarget(
         "trusted-openfire.example",
-        {"admin": 9090, "xmpp": 5222},
+        {"service": 9090, "xmpp": 5222},
         {"team_id": 5},
     )
 
@@ -242,6 +292,21 @@ def test_external_checker_uses_target_network_without_exec_or_prod_secret(monkey
     assert logins
     assert all(url == "http://trusted-openfire.example:9090" for url, _, _ in logins)
     assert exchanges == [(target.host, target.ports["xmpp"])]
+
+
+def test_http_error_cannot_prove_plugin_property_deletion(monkeypatch) -> None:
+    class FailingAdmin:
+        def request(self, method, path):
+            return Response(500, path, b"")
+
+    ticks = iter((0.0, 1.0, 16.0))
+    monkeypatch.setattr(checker.time, "monotonic", lambda: next(ticks))
+    monkeypatch.setattr(checker.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(OpenfireError, match="did not disappear"):
+        checker._wait_for_property(
+            FailingAdmin(), "plugin.integration." + "a" * 16, "a" * 16, False
+        )
 
 
 def test_external_checker_source_has_no_private_or_container_path() -> None:

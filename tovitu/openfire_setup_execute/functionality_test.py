@@ -2,42 +2,7 @@
 
 from __future__ import annotations
 
-import shlex
-
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
-
-from ._health_identity import checker_admin_credentials
-
-
-FACILITY_CLIENT = "/arena/facility_client.py"
-
-
-def _ensure_checker_admin(target: VulboxTarget) -> CheckResult:
-    try:
-        username, password = checker_admin_credentials(target)
-        command = " ".join(
-            shlex.quote(part)
-            for part in (FACILITY_CLIENT, "ensure-checker-admin", username, password)
-        )
-        rc, output = target.meta["exec_in_container"](target.host, command)
-        if rc != 0:
-            return CheckResult(
-                name="checker-principal",
-                passed=False,
-                detail=f"supported admin setup failed: {(output or f'rc={rc}')[-160:]}",
-            )
-        return CheckResult(
-            name="checker-principal",
-            passed=True,
-            detail="facility-derived administrator provisioned through Openfire",
-        )
-    except Exception as error:
-        return CheckResult(
-            name="checker-principal",
-            passed=False,
-            detail=f"setup failed: {type(error).__name__}",
-        )
-
 
 class OpenfireFunctionalityTest(FunctionalityTest):
     @property
@@ -46,11 +11,10 @@ class OpenfireFunctionalityTest(FunctionalityTest):
 
     @property
     def required_ports(self) -> tuple[str, ...]:
-        return ("admin", "xmpp")
+        return ("service", "xmpp")
 
     def run(self, target: VulboxTarget) -> CheckResult:
         exec_in = target.meta["exec_in_container"]
-        checker_principal = _ensure_checker_admin(target)
         process_rc, _ = exec_in(
             target.host,
             "test -s /run/openfire-arena.pid && kill -0 $(cat /run/openfire-arena.pid)",
@@ -73,7 +37,7 @@ class OpenfireFunctionalityTest(FunctionalityTest):
         xmpp = CheckResult(
             name="xmpp", passed=xmpp_rc == 0, detail=f"connect rc={xmpp_rc}"
         )
-        children = [checker_principal, process, admin, xmpp]
+        children = [process, admin, xmpp]
         return CheckResult(
             name="openfire-setup-execute",
             passed=all(child.passed for child in children),

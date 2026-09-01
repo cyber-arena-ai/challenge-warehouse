@@ -19,4 +19,4 @@ def checker_admin_credentials(target: VulboxTarget) -> tuple[str, str]:
         f"openfire-checker:{team_id}:administrator".encode(),
         hashlib.sha256,
     ).hexdigest()
-    return f"arena-health-{digest[:12]}", f"Of9!{digest[12:52]}"
+    return f"user{digest[:12]}", f"Of9!{digest[12:52]}"

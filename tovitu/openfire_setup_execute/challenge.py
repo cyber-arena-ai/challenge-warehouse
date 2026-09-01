@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 from functools import cached_property
 from pathlib import Path
 
@@ -17,13 +18,13 @@ from challenges.interface import (
     VulboxTarget,
 )
 
-from ._client import OpenfireError, ensure_user, login, setup_openfire, wait_http
-
+from ._health_identity import checker_admin_credentials
 
 OPENFIRE_COMMIT = "4025ae8a862d983b3bcc50185e89c23e1229a44f"
 ADMIN_PORT = 9090
 XMPP_PORT = 5222
 ADMIN_PASSWORD_PATH = "/var/lib/openfire-arena/admin-password"
+FACILITY_CLIENT = "/arena/facility_client.py"
 _BUILD_CONTEXT = Path(__file__).resolve().parent / "image"
 
 _DOCS = ChallengeDocs(
@@ -42,7 +43,8 @@ _DOCS = ChallengeDocs(
         "xmpp — the client listener accepts a connection on port 5222.\n"
         "checker — two random ordinary users authenticate and exchange a random "
         "XMPP message; the administrator creates/deletes users and uploads/removes "
-        "a random no-op plugin through the supported console."
+        "a random plugin whose initializer writes a nonce-bound native property "
+        "that its destroy hook removes through the supported console."
     ),
 )
 
@@ -60,36 +62,28 @@ class OpenfireSetupExecuteChallenge(Challenge):
         )
         if rc != 0:
             raise RuntimeError(f"initial Openfire start failed: {(output or '')[-300:]}")
-        base_url = f"http://{target.host}:{target.ports['admin']}"
-        wait_http(base_url, "/setup/index.jsp")
-        rc, output = exec_in(target.host, f"cat {ADMIN_PASSWORD_PATH}")
-        admin_password = (output or "").strip()
-        if rc != 0 or not admin_password:
-            raise RuntimeError("Openfire bootstrap administrator secret is unavailable")
-        try:
-            login(base_url, "admin", admin_password)
-        except OpenfireError:
-            setup_openfire(base_url)
-            rc, output = exec_in(target.host, "/arena/restart.sh")
-            if rc != 0:
-                raise RuntimeError(
-                    f"post-setup Openfire restart failed: {(output or '')[-300:]}"
-                )
-            wait_http(base_url)
-            default_admin = login(base_url, "admin", "admin")
-            ensure_user(
-                default_admin,
-                "admin",
-                admin_password,
-                "Openfire Administrator",
+        rc, output = exec_in(target.host, f"{FACILITY_CLIENT} initialize")
+        if rc != 0:
+            raise RuntimeError(
+                f"Openfire native setup failed: {(output or f'rc={rc}')[-300:]}"
             )
-            login(base_url, "admin", admin_password)
+        username, password = checker_admin_credentials(target)
+        command = " ".join(
+            shlex.quote(part)
+            for part in (FACILITY_CLIENT, "ensure-checker-admin", username, password)
+        )
+        rc, output = exec_in(target.host, command)
+        if rc != 0:
+            raise RuntimeError(
+                f"Openfire checker administrator setup failed: "
+                f"{(output or f'rc={rc}')[-300:]}"
+            )
 
     @cached_property
     def vulbox(self) -> VulboxImage:
         return VulboxImage(
             reference="cyberarena/chal-openfire-setup-execute:v1",
-            exposed_ports={"admin": ADMIN_PORT, "xmpp": XMPP_PORT},
+            exposed_ports={"service": ADMIN_PORT, "xmpp": XMPP_PORT},
             build_context=str(_BUILD_CONTEXT),
         )
 

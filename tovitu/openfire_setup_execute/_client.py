@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import http.client
-import re
 import secrets
-import time
 import urllib.parse
 from dataclasses import dataclass
 
@@ -115,97 +113,6 @@ class WebSession:
         )
 
 
-def wait_http(base_url: str, path: str = "/login.jsp", timeout: float = 120.0) -> None:
-    deadline = time.monotonic() + timeout
-    last = "not attempted"
-    while time.monotonic() < deadline:
-        try:
-            response = WebSession(base_url).request("GET", path, timeout=5)
-            last = f"HTTP {response.status}"
-            if response.status == 200:
-                return
-        except (OSError, OpenfireError) as exc:
-            last = type(exc).__name__
-        time.sleep(1)
-    raise OpenfireError(f"Openfire did not become ready: {last}")
-
-
-def setup_openfire(base_url: str) -> None:
-    session = WebSession(base_url)
-    response = session.request("GET", "/setup/index.jsp")
-    if response.status != 200:
-        raise OpenfireError(f"setup index returned HTTP {response.status}")
-    body = response.body.decode("utf-8", "replace")
-    match = re.search(r'name="csrf" value="([^"]+)"', body)
-    if not match:
-        raise OpenfireError("setup index lacked its CSRF field")
-    response = session.request(
-        "GET",
-        "/setup/index.jsp?"
-        + urllib.parse.urlencode(
-            {"csrf": match.group(1), "localeCode": "en", "save": "Continue"}
-        ),
-        follow=True,
-    )
-    if not response.path.endswith("/setup/setup-host-settings.jsp"):
-        raise OpenfireError("setup did not reach host settings")
-
-    body = response.body.decode("utf-8", "replace")
-    match = re.search(r'name="csrf" value="([^"]+)"', body)
-    if not match:
-        raise OpenfireError("host settings lacked its CSRF field")
-    response = session.form(
-        "/setup/setup-host-settings.jsp",
-        {
-            "csrf": match.group(1),
-            "domain": "openfire.test",
-            "fqdn": "openfire.test",
-            "embeddedPort": "9090",
-            "securePort": "9091",
-            "encryptionAlgorithm": "Blowfish",
-            "encryptionKey": "arena-openfire-key",
-            "encryptionKey1": "arena-openfire-key",
-            "continue": "Continue",
-        },
-    )
-    if not response.path.endswith("/setup/setup-datasource-settings.jsp"):
-        raise OpenfireError("setup did not reach data-source settings")
-
-    response = session.request("GET", "/setup/setup-datasource-settings.jsp")
-    body = response.body.decode("utf-8", "replace")
-    match = re.search(r'name="csrf" value="([^"]+)"', body)
-    if not match:
-        raise OpenfireError("data-source settings lacked its CSRF field")
-    response = session.request(
-        "GET",
-        "/setup/setup-datasource-settings.jsp?"
-        + urllib.parse.urlencode(
-            {
-                "csrf": match.group(1),
-                "next": "true",
-                "mode": "embedded",
-                "continue": "Continue",
-            }
-        ),
-        follow=True,
-    )
-    if not response.path.endswith("/setup/setup-profile-settings.jsp"):
-        raise OpenfireError("setup did not reach profile settings")
-
-    response = session.form(
-        "/setup/setup-profile-settings.jsp",
-        {"mode": "default", "continue": "Continue"},
-    )
-    if not response.path.endswith("/setup/setup-admin-settings.jsp"):
-        raise OpenfireError("setup did not reach administrator settings")
-    response = session.form(
-        "/setup/setup-admin-settings.jsp",
-        {"doSkip": "Skip This Step"},
-    )
-    if not response.path.endswith("/setup/setup-finished.jsp"):
-        raise OpenfireError(f"Openfire setup did not finish: {response.path}")
-
-
 def login(base_url: str, username: str, password: str) -> WebSession:
     session = WebSession(base_url)
     response = session.request("GET", "/login.jsp")
@@ -290,6 +197,11 @@ def delete_user(session: WebSession, username: str) -> None:
     )
     if "deletesuccess=true" not in response.path:
         raise OpenfireError(f"deleting Openfire user {username} failed")
+    summary = session.request("GET", "/user-summary.jsp")
+    if summary.status != 200 or (
+        f"username={urllib.parse.quote(username)}".encode() in summary.body
+    ):
+        raise OpenfireError(f"deleted Openfire user {username} is still listed")
 
 
 def upload_plugin(session: WebSession, filename: str, payload: bytes) -> None:
@@ -319,3 +231,6 @@ def delete_plugin(session: WebSession, canonical_name: str) -> None:
     )
     if "deletesuccess=true" not in response.path:
         raise OpenfireError(f"deleting Openfire plugin {canonical_name} failed")
+    page = session.request("GET", "/plugin-admin.jsp")
+    if page.status != 200 or canonical_name.encode() in page.body:
+        raise OpenfireError(f"deleted Openfire plugin {canonical_name} is still listed")

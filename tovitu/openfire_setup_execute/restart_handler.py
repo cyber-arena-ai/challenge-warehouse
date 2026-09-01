@@ -12,7 +12,7 @@ class OpenfireRestartHandler(RestartHandler):
 
     @property
     def required_ports(self) -> tuple[str, ...]:
-        return ("admin", "xmpp")
+        return ("service", "xmpp")
 
     def run(self, target: VulboxTarget) -> CheckResult:
         rc, output = target.meta["exec_in_container"](
