@@ -29,8 +29,8 @@ _DOCS = ChallengeDocs(
     agent_prompts={},
     func_test_spec=(
         "tcp     — check_service reached the service (not DOWN).\n"
-        "checker — register/login/voucher activation and cross-user item "
-        "purchase round-trip returned OK."
+        "checker — register/login, voucher activation, one normal referral, "
+        "cross-user item purchase, and a valid roulette round returned OK."
     ),
 )
 

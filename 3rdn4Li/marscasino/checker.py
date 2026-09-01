@@ -2,9 +2,10 @@
 Health Poller over the network (never execs into prod).
 
 Register a buyer, run the voucher round-trip (log in, play game2 to get a
-voucher, activate it, confirm "You won"), then register a seller, publish a
-low-cost marker item, buy it cross-user as the buyer, and verify its content.
-This supersedes the old (weaker, index-page-only) image/checker.sh.
+voucher, activate it, confirm "You won"), recruit a seller through the buyer's
+random friend code, publish a low-cost marker item, buy it cross-user, and play
+one valid roulette round. This supersedes the old (weaker, index-page-only)
+image/checker.sh.
 """
 from __future__ import annotations
 
@@ -66,13 +67,20 @@ class MarscasinoChecker(FunctionalityTest):
             if resp.status_code != 200 or "You won" not in resp.text:
                 return False, "activate voucher failed"
 
-            seller_reg = _client.full_register(base)
+            friend_code = _client.referral_code(buyer_session, base)
+            if friend_code is None:
+                return False, "could not read buyer friend code"
+
+            seller_reg = _client.full_register(base, fcode=friend_code)
             if seller_reg is None:
-                return False, "seller register failed"
+                return False, "referred seller register failed"
             seller, seller_password = seller_reg
             resp = _client.login(seller_session, base, seller, seller_password)
             if resp.status_code != 200 or "Wrong" in resp.text:
                 return False, "seller login failed"
+            resp = _client.home(seller_session, base)
+            if resp.status_code != 200 or "You have 50 coins" not in resp.text:
+                return False, "referral bonus failed"
             marker = _client.random_string(20)
             # The buyer started with 10 coins and spent 3 on game2, so it always
             # retains at least 7 even when the legitimate voucher pays out zero.
@@ -86,7 +94,19 @@ class MarscasinoChecker(FunctionalityTest):
             resp = _client.buy(buyer_session, base, seller)
             if resp.status_code != 200 or marker not in resp.text:
                 return False, "cross-user buy failed"
-            return True, "register/login/voucher/buy round-trip OK"
+
+            resp = _client.play_roulette(buyer_session, base, 1, "0")
+            result = re.search(
+                r"The number was\s+(\d+)\s+and you win\s+(\d+)\s+coins",
+                resp.text,
+            )
+            if resp.status_code != 200 or result is None:
+                return False, "roulette round failed"
+            number, win = (int(value) for value in result.groups())
+            expected_win = 36 if number == 0 else 0
+            if win != expected_win:
+                return False, "roulette zero payout was inconsistent with the draw"
+            return True, "register/login/voucher/referral/buy/roulette round-trip OK"
         finally:
             # Checker accounts are disposable. Best-effort cleanup prevents
             # health probes from polluting the player-visible user/item lists.
