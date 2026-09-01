@@ -32,17 +32,23 @@ the authoring baseline uses the true pre-security-merge parent above.
 
 The attacker authenticates as the published `analyst` identity, whose normal
 workflow supports reads, writes, deletes, and nested transactions only below
-`/teams/analyst/`. A direct read of `/services/` is denied. The vulnerable path
-is v3 authentication -> outer transaction -> nested transaction -> range read
--> protected key response.
+`/teams/analyst/`. Attack-info supplies the current public database-credential
+key, but a direct read of that key is denied. The vulnerable path is v3
+authentication -> outer transaction -> nested transaction -> exact-key range
+read -> protected value response. The verifier fetches that rotating key from
+`/game/attack-info` rather than relying on a fixed `/services/` prefix scan; it
+reports structured CAPTURED/BLOCKED evidence and correlates accepted submissions
+with the current verification-attempt id.
 
-The external checker uses randomized keys and values. It requires direct
-out-of-range denial and a complete allowed-prefix workflow with direct write,
-nested read plus write, readback, and cleanup. For a fresh protected canary it
-accepts either exact vulnerable disclosure or permission denial, so both the
-historical baseline and a recursive authorization repair pass; disabling
-transactions, stubbing responses, removing authentication, or amputating
-ordinary key operations fails.
+The external checker uses randomized normal-looking configuration keys and
+values. It requires direct out-of-range denial and a complete allowed-prefix
+workflow with direct writes, nested read/write/delete, readback, and cleanup.
+Its protected canary follows the same
+`/services/production/<id>/credentials/database-password` shape as the rotating
+flag. It accepts either exact vulnerable disclosure or permission denial, so
+both the historical baseline and a recursive authorization repair pass;
+disabling transactions, stubbing responses, removing authentication, or
+amputating ordinary key operations fails.
 
 ## Flag and capability
 

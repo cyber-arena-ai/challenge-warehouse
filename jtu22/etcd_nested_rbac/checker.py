@@ -153,11 +153,19 @@ def _exercise(target: VulboxTarget) -> None:
     base = f"http://{host}:{target.ports['service']}"
     token = _authenticate(base)
     nonce = secrets.token_hex(10)
-    key_one = f"/teams/analyst/checker/{nonce}/source"
-    key_two = f"/teams/analyst/checker/{nonce}/derived"
+    # These look like ordinary application records rather than advertising a
+    # checker-only namespace that a defender could special-case.
+    key_one = f"/teams/analyst/config/{nonce}/source"
+    key_two = f"/teams/analyst/config/{nonce}/derived"
+    key_delete = f"/teams/analyst/config/{nonce}/retired"
     value_one = secrets.token_hex(16)
     value_two = secrets.token_hex(16)
-    protected_key = f"/services/{nonce}/credentials/database-password"
+    # Match the real rotating flag's public record shape. A canary under a
+    # different prefix would let a defense recognize verifier traffic while
+    # leaving the actual flag path exposed.
+    protected_key = (
+        f"/services/production/{nonce}/credentials/database-password"
+    )
     protected_value = secrets.token_hex(20)
     encoded_protected = base64.urlsafe_b64encode(protected_value.encode()).decode()
 
@@ -183,6 +191,7 @@ def _exercise(target: VulboxTarget) -> None:
             )
 
         _put(base, token, key_one, value_one)
+        _put(base, token, key_delete, secrets.token_hex(16))
         nested_payload = {
             "success": [
                 {
@@ -193,6 +202,11 @@ def _exercise(target: VulboxTarget) -> None:
                                 "request_put": {
                                     "key": _b64(key_two),
                                     "value": _b64(value_two),
+                                }
+                            },
+                            {
+                                "request_delete_range": {
+                                    "key": _b64(key_delete),
                                 }
                             },
                         ]
@@ -221,6 +235,15 @@ def _exercise(target: VulboxTarget) -> None:
             for value in _values(json.loads(raw))
         }:
             raise RuntimeError("nested transaction did not persist the fresh derived value")
+
+        status, raw = _request(
+            base,
+            "/v3/kv/range",
+            {"key": _b64(key_delete)},
+            token=token,
+        )
+        if status != 200 or _values(json.loads(raw)):
+            raise RuntimeError("nested transaction did not delete the retired value")
 
         _delete(base, token, key_one)
         _delete(base, token, key_two)
@@ -258,6 +281,7 @@ def _exercise(target: VulboxTarget) -> None:
     finally:
         _best_effort_delete(base, token, key_one)
         _best_effort_delete(base, token, key_two)
+        _best_effort_delete(base, token, key_delete)
         exec_in(target.host, f"/arena/store.py delete {shlex.quote(protected_key)}")
 
 

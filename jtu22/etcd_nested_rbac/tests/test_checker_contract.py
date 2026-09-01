@@ -19,7 +19,7 @@ def test_checker_preserves_legitimate_nested_workflow_and_boundary(
     transaction_ranges: list[str] = []
     deleted_keys: list[str] = []
     hex_values = {10: "a" * 20, 20: "d" * 40}
-    values_16 = iter(("b" * 32, "c" * 32))
+    values_16 = iter(("b" * 32, "c" * 32, "e" * 32))
 
     def token_hex(size: int) -> str:
         return next(values_16) if size == 16 else hex_values[size]
@@ -68,6 +68,10 @@ def test_checker_preserves_legitimate_nested_workflow_and_boundary(
                 return 200, response(store[range_key])
             put = ops[1]["request_put"]
             store[b64decode(put["key"])] = b64decode(put["value"])
+            delete = ops[2]["request_delete_range"]
+            delete_key = b64decode(delete["key"])
+            deleted_keys.append(delete_key)
+            store.pop(delete_key, None)
             return 200, response(store[range_key])
         raise AssertionError(path)
 
@@ -79,8 +83,12 @@ def test_checker_preserves_legitimate_nested_workflow_and_boundary(
 
     checker._exercise(target)
 
-    assert any(key.startswith("/teams/analyst/") for key in transaction_ranges)
-    assert any(key.startswith("/services/") for key in transaction_ranges)
-    assert not any(key.startswith("/teams/analyst/checker/") for key in store)
+    assert any(key.startswith("/teams/analyst/config/") for key in transaction_ranges)
+    assert any(
+        key.startswith("/services/production/") for key in transaction_ranges
+    )
+    assert not any("/checker/" in key for key in transaction_ranges)
+    assert not any(key.startswith("/teams/analyst/config/") for key in store)
     assert not any(key.startswith("/services/") for key in store)
     assert len([key for key in deleted_keys if key.startswith("/teams/analyst/")]) >= 2
+    assert any(key.endswith("/retired") for key in deleted_keys)
