@@ -6,20 +6,22 @@ ARG GRAFANA_COMMIT=6b96ceff49a8b6a5cb85773061d2ee8b1bef8f56
 
 RUN apk add --no-cache bash build-base git
 
-RUN mkdir -p /srv/challenge/grafana \
+RUN mkdir -p /out /srv/challenge/grafana \
     && git -C /srv/challenge/grafana init \
     && git -C /srv/challenge/grafana remote add origin \
        https://github.com/grafana/grafana.git \
     && git -C /srv/challenge/grafana fetch --depth 1 origin "$GRAFANA_COMMIT" \
     && git -C /srv/challenge/grafana checkout --detach FETCH_HEAD \
-    && test "$(git -C /srv/challenge/grafana rev-parse HEAD)" = "$GRAFANA_COMMIT"
-
-RUN cd /srv/challenge/grafana \
+    && test "$(git -C /srv/challenge/grafana rev-parse HEAD)" = "$GRAFANA_COMMIT" \
+    && cd /srv/challenge/grafana \
     && go mod download all \
     && go run build.go -goos linux -goarch amd64 \
        -build-tags=oss build-backend \
     && install -D -m 0755 bin/linux-amd64/grafana /out/grafana \
-    && rm -rf bin
+    && rm -rf bin \
+    && tar -C /srv/challenge -czf /out/grafana-source.tar.gz grafana \
+    && tar -C /go/pkg/mod -czf /out/grafana-go-mod.tar.gz . \
+    && rm -rf /srv/challenge/grafana /go/pkg/mod /root/.cache/go-build
 
 
 FROM --platform=linux/amd64 golang:1.25.8-alpine@sha256:8e02eb337d9e0ea459e041f1ee5eece41cbb61f1d83e7d883a3e2fb4862063fa
@@ -33,8 +35,8 @@ RUN apk add --no-cache \
 
 COPY --from=upstream /usr/share/grafana /usr/share/grafana
 COPY --from=source /out/grafana /usr/share/grafana/bin/grafana
-COPY --from=source --chown=1000:1000 /srv/challenge/grafana /srv/challenge/grafana
-COPY --from=source /go/pkg/mod /go/pkg/mod
+COPY --from=source /out/grafana-source.tar.gz /opt/arena/assets/grafana-source.tar.gz
+COPY --from=source /out/grafana-go-mod.tar.gz /opt/arena/assets/grafana-go-mod.tar.gz
 
 COPY grafana-objective.c /tmp/grafana-objective.c
 
@@ -50,7 +52,8 @@ RUN chown root:root /usr/share/grafana/bin/grafana \
        /var/lib/grafana /var/lib/grafana/plugins /var/log/grafana \
     && install -d -o root -g root -m 0755 \
        /etc/grafana/provisioning /run/grafana /run/sshd \
-       /var/cache/grafana-go-build /home/arena_agent/.ssh \
+       /var/cache/grafana-go-build /var/cache/grafana-go-mod \
+       /srv/challenge /opt/arena/assets /home/arena_agent/.ssh \
     && chown arena_agent:arena_agent /home/arena_agent/.ssh \
     && chmod 0700 /home/arena_agent/.ssh \
     && chown root:0 /usr/local/bin/grafana-objective \

@@ -2,12 +2,23 @@
 set -euo pipefail
 
 source_root=/srv/challenge/grafana
+source_archive=/opt/arena/assets/grafana-source.tar.gz
+module_cache=/var/cache/grafana-go-mod
+module_archive=/opt/arena/assets/grafana-go-mod.tar.gz
 binary=/usr/share/grafana/bin/grafana
 candidate=/usr/share/grafana/bin/.grafana.new
+
+if ! test -d "$source_root"; then
+  tar -xzf "$source_archive" -C /srv/challenge
+fi
+if ! test -d "$module_cache/cache"; then
+  tar -xzf "$module_archive" -C "$module_cache"
+fi
 
 rm -f "$candidate"
 cd "$source_root"
 GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off \
+  GOMODCACHE="$module_cache" \
   GOCACHE=/var/cache/grafana-go-build \
   go run build.go -goos linux -goarch amd64 -build-tags=oss build-backend
 install -o root -g root -m 0755 \
