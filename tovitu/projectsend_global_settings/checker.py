@@ -8,11 +8,11 @@ from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
 from ._client import (
     ProjectSendError,
-    admin_set_title,
+    admin_mail_from_name,
+    admin_set_mail_from_name,
     file_is_listed,
     locate_upload,
     login,
-    public_title,
     upload,
 )
 from .checker_identity import checker_identities
@@ -33,16 +33,16 @@ class ProjectSendGlobalSettingsChecker(FunctionalityTest):
         try:
             identities = checker_identities(str(target.meta["team_id"]))
             admin = login(base_url, *identities["administrator"])
-            previous_title = public_title(base_url)
-            checker_title = "Arena check " + nonce
+            previous_sender = admin_mail_from_name(admin)
+            checker_sender = "Arena check " + nonce
             try:
-                admin_set_title(admin, checker_title)
-                if public_title(base_url) != checker_title:
-                    raise ProjectSendError("authorized title update absent")
+                admin_set_mail_from_name(admin, checker_sender)
+                if admin_mail_from_name(admin) != checker_sender:
+                    raise ProjectSendError("authorized mail sender update absent")
             finally:
-                admin_set_title(admin, previous_title)
-            if public_title(base_url) != previous_title:
-                raise ProjectSendError("title restore absent")
+                admin_set_mail_from_name(admin, previous_sender)
+            if admin_mail_from_name(admin) != previous_sender:
+                raise ProjectSendError("mail sender restore absent")
 
             username, password = identities["client"]
             client = login(base_url, username, password)
@@ -53,7 +53,7 @@ class ProjectSendGlobalSettingsChecker(FunctionalityTest):
             if not file_is_listed(client, filename):
                 raise ProjectSendError("uploaded file absent from Client list")
             passed = True
-            detail = "authorized setting and randomized Client upload passed"
+            detail = "authorized mail setting and randomized Client upload passed"
         except (ProjectSendError, OSError, KeyError, RuntimeError) as exc:
             passed = False
             detail = f"workflow failed: {type(exc).__name__}"

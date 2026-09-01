@@ -39,8 +39,8 @@ _DOCS = ChallengeDocs(
     func_test_spec=(
         "The liveness probe requires the public ProjectSend login page. The external "
         "checker uses facility-owned administrator and Client identities to exercise "
-        "an authorized setting update and restore, then verifies randomized upload, "
-        "listing, and public retrieval."
+        "an authorized mail-sender setting update and restore, then verifies "
+        "randomized upload, listing, and public retrieval."
     ),
 )
 
@@ -78,7 +78,7 @@ class ProjectSendGlobalSettingsChallenge(Challenge):
         return [
             StateRegionSpec(
                 OPTIONS_REGION,
-                "/var/lib/mysql/projectsend-bin",
+                "/var/lib/mysql/projectsend/tbl_options.MYD",
                 max_bytes=4 * 1024 * 1024,
             )
         ]

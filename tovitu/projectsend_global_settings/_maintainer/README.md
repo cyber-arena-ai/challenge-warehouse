@@ -13,20 +13,20 @@ The known anonymous settings request demonstrates the reachable floor. An attemp
 PHP upload was saved but denied by the upstream Apache policy, so this package does
 not declare command execution.
 
-The flag handler keeps its rotating integrity token in a root-only anchor. Claims
-are adjudicated by scanning MariaDB's row-based transaction log for the
-attempt-specific mark written to ProjectSend's protected options table. This gives
-the trusted host snapshot a defender-independent record of an actual committed
-application write without executing a reader in defender-controlled production;
-all requests and mutations still go through ProjectSend's normal HTTP and database
-paths.
+The flag handler keeps its rotating integrity token in a root-only anchor and
+converges the public site title on a round-specific context through ProjectSend's
+administrator workflow. Claims scan only the natural `tbl_options` MyISAM data
+file for the attempt-specific mark. The table-scoped trusted snapshot records a
+committed protected-setting write without accepting ordinary Client uploads or
+executing a reader in defender-controlled production; all requests and mutations
+still go through ProjectSend's normal HTTP and database paths.
 
 Trusted principal setup uses ProjectSend's normal administrator forms to provision
 target-specific checker accounts derived from facility state. The network-only
-semantic checker uses those accounts to verify an authorized administrator title
-change and restore, then checks Client authentication plus randomized upload,
-listing, and public retrieval. Source replacement preserves MariaDB state, Client
-principals, and uploaded files.
+semantic checker uses those accounts to verify an authorized mail-sender change
+and restore independently of the objective title, then checks Client authentication
+plus randomized upload, listing, and public retrieval. Source replacement preserves
+MariaDB state, Client principals, and uploaded files.
 
 Run the focused tests from the orchestrator checkout with this warehouse selected,
 then run the canonical static, build, and game gates. Admission controls must also

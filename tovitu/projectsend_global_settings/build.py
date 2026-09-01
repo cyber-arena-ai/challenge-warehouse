@@ -16,12 +16,7 @@ _CONTEXT = Path(__file__).resolve().parent / "image"
 
 
 def build_image(client: docker.DockerClient | None = None) -> str:
-    client = client or docker.from_env()
-    try:
-        client.images.get(IMAGE_REFERENCE)
-        return IMAGE_REFERENCE
-    except docker.errors.ImageNotFound:
-        pass
+    del client
     completed = subprocess.run(
         [
             "docker",

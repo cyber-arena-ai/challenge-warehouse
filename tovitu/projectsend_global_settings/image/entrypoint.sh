@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-mkdir -p /run/sshd /run/mysqld /arena/private /srv/challenge \
-    /var/lib/mysql/projectsend-bin
+mkdir -p /run/sshd /run/mysqld /arena/private /srv/challenge
 ssh-keygen -A >/dev/null 2>&1 || true
 chown -R mysql:mysql /run/mysqld /var/lib/mysql
 
@@ -10,9 +9,7 @@ if [[ ! -d /var/lib/mysql/mysql ]]; then
     mariadb-install-db --user=mysql --datadir=/var/lib/mysql >/dev/null
 fi
 mysqld_safe --user=mysql --datadir=/var/lib/mysql --bind-address=127.0.0.1 \
-    --innodb-file-per-table=1 --skip-syslog \
-    --log-bin=/var/lib/mysql/projectsend-bin/events --binlog-format=ROW \
-    --binlog-row-image=FULL --server-id=1 >/var/log/mariadb-safe.log 2>&1 &
+    --innodb-file-per-table=1 --skip-syslog >/var/log/mariadb-safe.log 2>&1 &
 for _ in $(seq 1 90); do
     mysqladmin ping --silent 2>/dev/null && break
     sleep 1
@@ -49,6 +46,8 @@ apache2ctl start >/var/log/projectsend.log 2>&1
 export PROJECTSEND_ADMIN_PASSWORD
 PROJECTSEND_ADMIN_PASSWORD=$(cat /arena/private/admin-password)
 python3 /arena/bootstrap.py
+mysql --protocol=socket -uroot \
+    -e 'ALTER TABLE projectsend.tbl_options ENGINE=MyISAM'
 
 touch /arena/private/ready
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-import secrets
+import hashlib
 import shlex
 from collections.abc import Mapping
 
@@ -18,7 +18,13 @@ from challenges.interface import (
     state_scan_observe,
 )
 
-from ._client import ensure_client, ensure_system_user, login
+from ._client import (
+    admin_set_title,
+    ensure_client,
+    ensure_system_user,
+    login,
+    public_title,
+)
 from .challenge import OPTIONS_REGION
 from .checker_identity import checker_identities
 
@@ -29,6 +35,7 @@ ADMIN_USER = "arenaadmin"
 ADMIN_SECRET_PATH = "/arena/private/admin-password"
 STATE_DIR = "/var/lib/cyberarena/projectsend-write"
 ANCHOR = f"{STATE_DIR}/integrity"
+ROUND_TITLE_PREFIX = "ProjectSend Arena context "
 
 
 def _admin_password(target: VulboxTarget) -> str:
@@ -41,6 +48,11 @@ def _admin_password(target: VulboxTarget) -> str:
 
 def _base_url(target: VulboxTarget) -> str:
     return f"http://{target.host}:{target.ports['service']}"
+
+
+def _round_suffix(target: VulboxTarget, token: str) -> str:
+    coordinates = f"{target.meta['team_id']}:{token}".encode()
+    return hashlib.sha256(coordinates).hexdigest()[:16]
 
 
 def _unpack(handle: str) -> dict[str, str] | None:
@@ -74,6 +86,14 @@ class ProjectSendSettingsFlagHandler(FlagHandler):
         if set(flags) != {STORE}:
             raise ValueError(f"expected only store {STORE!r}")
         token = flags[STORE].value
+        suffix = _round_suffix(target, token)
+        base_url = _base_url(target)
+        admin = login(base_url, ADMIN_USER, _admin_password(target))
+        round_title = ROUND_TITLE_PREFIX + suffix
+        admin_set_title(admin, round_title)
+        if public_title(base_url) != round_title:
+            raise RuntimeError("ProjectSend round context was not persisted")
+
         exec_in = target.meta["exec_in_container"]
         command = (
             f"install -d -o root -g root -m 700 {STATE_DIR}; "
@@ -83,7 +103,7 @@ class ProjectSendSettingsFlagHandler(FlagHandler):
         rc, _ = exec_in(target.host, command)
         if rc != 0:
             raise RuntimeError("ProjectSend integrity-anchor rotation failed")
-        target_id = f"{PUBLIC_TARGET}/{secrets.token_hex(8)}"
+        target_id = f"{PUBLIC_TARGET}/{suffix}"
         return {STORE: json.dumps({"token": token, "target_id": target_id})}
 
     def retrieve(

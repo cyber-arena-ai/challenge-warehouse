@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from challenges.interface import Flag, ObservationStatus, OracleKind, VulboxTarget
 from challenges.projectsend_global_settings import ProjectSendGlobalSettingsChallenge
 from challenges.projectsend_global_settings import _client
 from challenges.projectsend_global_settings import checker
 from challenges.projectsend_global_settings import checker_identity
+from challenges.projectsend_global_settings import build
 from challenges.projectsend_global_settings import _exploit
 from challenges.projectsend_global_settings import flag_handler as handler_module
 from challenges.projectsend_global_settings.flag_handler import STORE
@@ -27,26 +29,81 @@ def test_composition_declares_one_scoped_write_store():
         (STORE, OracleKind.WRITE, "app.privileged.control")
     ]
     assert challenge.vulbox.exposed_ports == {"service": 80}
-    assert challenge.authoritative_state_regions()[0].path.endswith(
-        "/projectsend-bin"
+    assert challenge.authoritative_state_regions()[0].path == (
+        "/var/lib/mysql/projectsend/tbl_options.MYD"
     )
 
 
-def test_plant_rotates_only_the_integrity_anchor():
+def test_options_state_is_table_scoped_before_service_readiness():
+    entrypoint = (
+        Path(__file__).resolve().parents[1] / "image" / "entrypoint.sh"
+    ).read_text()
+    conversion = "ALTER TABLE projectsend.tbl_options ENGINE=MyISAM"
+    assert conversion in entrypoint
+    assert entrypoint.index(conversion) < entrypoint.index(
+        "touch /arena/private/ready"
+    )
+
+
+def test_build_always_uses_the_current_package_context(monkeypatch):
     calls = []
+
+    class Completed:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    monkeypatch.setattr(
+        build.subprocess,
+        "run",
+        lambda command, **kwargs: calls.append((command, kwargs)) or Completed(),
+    )
+    assert build.build_image(object()) == build.IMAGE_REFERENCE
+    assert len(calls) == 1
+    assert calls[0][0][-1] == str(build._CONTEXT)
+
+
+def test_plant_converges_real_round_context_and_rotates_with_token(monkeypatch):
+    calls = []
+    titles = []
 
     def execute(host, command):
         calls.append((host, command))
         return 0, ""
 
+    monkeypatch.setattr(handler_module, "_admin_password", lambda _target: "secret")
+    monkeypatch.setattr(handler_module, "login", lambda *_args: object())
+    monkeypatch.setattr(
+        handler_module,
+        "admin_set_title",
+        lambda _admin, value: titles.append(value),
+    )
+    monkeypatch.setattr(handler_module, "public_title", lambda _base: titles[-1])
     handler = ProjectSendGlobalSettingsChallenge().flag_handler
-    handle = handler.plant(target(execute), {STORE: Flag("FLAG{unit_value}")})[STORE]
-    state = json.loads(handle)
-    assert state["token"] == "FLAG{unit_value}"
-    assert state["target_id"].startswith("this_install_title/")
-    assert len(calls) == 1
-    assert "/var/lib/cyberarena/projectsend-write/integrity" in calls[0][1]
-    assert "tbl_options" not in calls[0][1]
+    first = json.loads(
+        handler.plant(target(execute), {STORE: Flag("FLAG{unit_value}")})[STORE]
+    )
+    repeated = json.loads(
+        handler.plant(target(execute), {STORE: Flag("FLAG{unit_value}")})[STORE]
+    )
+    rotated = json.loads(
+        handler.plant(target(execute), {STORE: Flag("FLAG{next_value}")})[STORE]
+    )
+    assert first["token"] == "FLAG{unit_value}"
+    assert first["target_id"] == repeated["target_id"]
+    assert first["target_id"] != rotated["target_id"]
+    suffix = first["target_id"].removeprefix("this_install_title/")
+    assert titles[:2] == [
+        handler_module.ROUND_TITLE_PREFIX + suffix,
+        handler_module.ROUND_TITLE_PREFIX + suffix,
+    ]
+    assert titles[2] != titles[1]
+    assert len(calls) == 3
+    assert all(
+        "/var/lib/cyberarena/projectsend-write/integrity" in command
+        and "tbl_options" not in command
+        for _host, command in calls
+    )
 
 
 def test_retrieve_uses_anchor_for_the_exact_planted_token():
@@ -187,7 +244,7 @@ def test_checker_administrator_is_created_through_projectsend(monkeypatch):
 
 
 def test_checker_uses_network_only_facility_identities(monkeypatch):
-    title = ["ProjectSend Arena"]
+    sender = ["ProjectSend Arena"]
     logins = []
     identities = {
         "administrator": ("health-admin", "admin-password"),
@@ -200,9 +257,11 @@ def test_checker_uses_network_only_facility_identities(monkeypatch):
 
     monkeypatch.setattr(checker, "checker_identities", lambda _team_id: identities)
     monkeypatch.setattr(checker, "login", fake_login)
-    monkeypatch.setattr(checker, "public_title", lambda _base_url: title[0])
+    monkeypatch.setattr(checker, "admin_mail_from_name", lambda _admin: sender[0])
     monkeypatch.setattr(
-        checker, "admin_set_title", lambda _admin, value: title.__setitem__(0, value)
+        checker,
+        "admin_set_mail_from_name",
+        lambda _admin, value: sender.__setitem__(0, value),
     )
     monkeypatch.setattr(checker, "upload", lambda *_args: 1234.0)
     monkeypatch.setattr(checker, "locate_upload", lambda *_args: "upload/file")
@@ -219,19 +278,19 @@ def test_checker_uses_network_only_facility_identities(monkeypatch):
         ("health-admin", "admin-password"),
         ("health-client", "client-password"),
     ]
-    assert title == ["ProjectSend Arena"]
+    assert sender == ["ProjectSend Arena"]
 
 
-def test_checker_restores_the_title_after_a_failed_verification_read(monkeypatch):
-    title = ["ProjectSend Arena"]
+def test_checker_restores_mail_sender_after_a_failed_verification_read(monkeypatch):
+    sender = ["ProjectSend Arena"]
     reads = 0
 
-    def read_title(_base_url):
+    def read_sender(_admin):
         nonlocal reads
         reads += 1
         if reads == 2:
             raise _client.ProjectSendError("transient read failure")
-        return title[0]
+        return sender[0]
 
     monkeypatch.setattr(
         checker,
@@ -242,15 +301,48 @@ def test_checker_restores_the_title_after_a_failed_verification_read(monkeypatch
         },
     )
     monkeypatch.setattr(checker, "login", lambda *_args: object())
-    monkeypatch.setattr(checker, "public_title", read_title)
+    monkeypatch.setattr(checker, "admin_mail_from_name", read_sender)
     monkeypatch.setattr(
-        checker, "admin_set_title", lambda _admin, value: title.__setitem__(0, value)
+        checker,
+        "admin_set_mail_from_name",
+        lambda _admin, value: sender.__setitem__(0, value),
     )
     result = checker.ProjectSendGlobalSettingsChecker().run(
         target(lambda *_args: (0, ""))
     )
     assert not result.passed
-    assert title == ["ProjectSend Arena"]
+    assert sender == ["ProjectSend Arena"]
+
+
+def test_mail_sender_update_preserves_checked_email_options():
+    submitted = {}
+
+    class Admin:
+        def request(self, path):
+            assert path == "options.php?section=email"
+            return 200, {}, (
+                b'<input name="csrf_token" id="csrf_token" value="abc123">'
+                b'<input type="text" name="mail_from_name" id="mail_from_name" '
+                b'value="Existing &amp; Sender">'
+                b'<input type="checkbox" name="notifications_send_when_saving_files" '
+                b'value="1" checked>'
+                b'<input type="checkbox" name="mail_copy_user_upload" value="1">'
+            )
+
+        def form(self, path, values):
+            assert path == "options.php"
+            submitted.update(values)
+            return 200, {}, b""
+
+    admin = Admin()
+    assert _client.admin_mail_from_name(admin) == "Existing & Sender"
+    _client.admin_set_mail_from_name(admin, "Fresh Sender")
+    assert submitted == {
+        "csrf_token": "abc123",
+        "section": "email",
+        "mail_from_name": "Fresh Sender",
+        "notifications_send_when_saving_files": "1",
+    }
 
 
 def test_certified_pov_claims_only_after_public_mark_verification(monkeypatch, capsys):

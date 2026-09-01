@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import email.utils
 import hashlib
+import html
 import http.cookiejar
 import json
 import re
@@ -102,6 +103,47 @@ def admin_set_title(admin: Session, value: str) -> None:
         },
     )
     _require(status == 200, "authorized setting update failed")
+
+
+def _admin_option_form(
+    admin: Session, section: str
+) -> tuple[str, bytes, dict[str, str]]:
+    status, _, body = admin.request(f"options.php?section={section}")
+    csrf_match = re.search(
+        rb'name="csrf_token" id="csrf_token" value="([a-f0-9]+)"', body
+    )
+    _require(status == 200 and csrf_match is not None, "options form unavailable")
+    checked: dict[str, str] = {}
+    for tag in re.findall(rb"<input\b[^>]*>", body):
+        if b'type="checkbox"' not in tag or b"checked" not in tag:
+            continue
+        name_match = re.search(rb'name="([^"]+)"', tag)
+        if name_match is not None:
+            checked[name_match.group(1).decode()] = "1"
+    return csrf_match.group(1).decode(), body, checked
+
+
+def admin_mail_from_name(admin: Session) -> str:
+    _, body, _ = _admin_option_form(admin, "email")
+    match = re.search(
+        rb'id="mail_from_name"[^>]*value="([^"]*)"', body
+    )
+    _require(match is not None, "mail sender name unavailable")
+    return html.unescape(match.group(1).decode("utf-8", "replace"))
+
+
+def admin_set_mail_from_name(admin: Session, value: str) -> None:
+    token, _, checked = _admin_option_form(admin, "email")
+    status, _, _ = admin.form(
+        "options.php",
+        {
+            "csrf_token": token,
+            "section": "email",
+            "mail_from_name": value,
+            **checked,
+        },
+    )
+    _require(status == 200, "authorized mail sender update failed")
 
 
 def anonymous_set_title(base_url: str, value: str) -> int:

@@ -11,8 +11,6 @@ ensure_database() {
     chown -R mysql:mysql /run/mysqld /var/lib/mysql
     nohup mysqld_safe --user=mysql --datadir=/var/lib/mysql \
         --bind-address=127.0.0.1 --innodb-file-per-table=1 --skip-syslog \
-        --log-bin=/var/lib/mysql/projectsend-bin/events --binlog-format=ROW \
-        --binlog-row-image=FULL --server-id=1 \
         >/var/log/mariadb-safe.log 2>&1 </dev/null &
     for _ in $(seq 1 90); do
         mysqladmin ping --silent 2>/dev/null && return
