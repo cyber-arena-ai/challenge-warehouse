@@ -29,7 +29,13 @@ class WebminChecker(FunctionalityTest):
                 username, password, _ = identities[role]
                 client = login(base_url, username, password)
                 status, _, page = client.request("GET", "/change-user/")
-                if status != 200 or b"Change Language and Theme" not in page:
+                preference_markers = (
+                    b"Change Language and Theme",
+                    b"Modification de la langue et du th",
+                )
+                if status != 200 or not any(
+                    marker in page for marker in preference_markers
+                ):
                     raise WebminError("preference module unavailable")
                 client.change_language("fr")
                 status, _, page = client.request("GET", "/change-user/")

@@ -64,13 +64,17 @@ def test_checker_uses_network_only_facility_identities(monkeypatch) -> None:
     logged_in: list[tuple[str, str]] = []
 
     class FakeClient:
+        def __init__(self, initial_page: bytes):
+            self.page = initial_page
+
         def request(self, _method, path):
             if path == "/change-user/":
-                return 200, {}, b"Change Language and Theme Modification de la langue et du th"
+                return 200, {}, self.page
             return 200, {}, b'data-title-initial="Error'
 
         def change_language(self, language):
             assert language == "fr"
+            self.page = b"Modification de la langue et du th"
 
     class FakeAdmin:
         def file_manager_download(self, _url, destination):
@@ -102,7 +106,14 @@ def test_checker_uses_network_only_facility_identities(monkeypatch) -> None:
 
     def fake_login(_base, username, password):
         logged_in.append((username, password))
-        return FakeAdmin() if username == "health-admin" else FakeClient()
+        if username == "health-admin":
+            return FakeAdmin()
+        initial_page = (
+            b"Modification de la langue et du th"
+            if username == "health-two"
+            else b"Change Language and Theme"
+        )
+        return FakeClient(initial_page)
 
     monkeypatch.setattr(checker, "checker_identities", lambda _team_id: identities)
     monkeypatch.setattr(checker, "login", fake_login)
