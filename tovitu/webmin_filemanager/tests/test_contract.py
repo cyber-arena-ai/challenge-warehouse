@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import urllib.request
 from pathlib import Path
 
@@ -37,7 +38,7 @@ def test_principal_derivation_is_distinct_and_does_not_embed_seed() -> None:
     assert seed_two not in "".join(second)
 
 
-def test_execute_store_rotates_a_locator_without_exposing_plaintext() -> None:
+def test_execute_store_rotates_token_free_helper_without_readable_proof() -> None:
     calls: list[str] = []
 
     def exec_in(_host: str, command: str):
@@ -55,13 +56,25 @@ def test_execute_store_rotates_a_locator_without_exposing_plaintext() -> None:
     assert len(locator) == 24
     assert release == f"/var/lib/webmin-arena/releases/release-{locator}"
     assert "FLAG{round-proof}" not in calls[0]
+    assert "/var/lib/webmin-arena/proofs" not in calls[0]
+    assert f"SET $ARGV[1] $ARGV[2]" in calls[0]
+    assert f"release_broker.pl get {locator}" in calls[0]
     observation = handler.retrieve(target, locator, expected="FLAG{round-proof}")
     assert observation.value == "FLAG{round-proof}"
     assert calls[-1] == release
 
 
+def test_restart_stops_previous_generation_before_fallible_validation() -> None:
+    script = (PACKAGE / "image" / "restart.sh").read_text()
+    stop = script.index('if [ -s "$PIDFILE" ]')
+    validation = script.index('test -f "$EDITABLE/miniserv.pl"')
+    spawn = script.index('nohup env PERLLIB="$EDITABLE"')
+    assert stop < validation < spawn
+
+
 def test_checker_uses_network_only_facility_identities(monkeypatch) -> None:
     logged_in: list[tuple[str, str]] = []
+    payload_names: list[str] = []
 
     class FakeClient:
         def __init__(self, initial_page: bytes):
@@ -94,7 +107,8 @@ def test_checker_uses_network_only_facility_identities(monkeypatch) -> None:
         def __exit__(self, *_args):
             return None
 
-        def add(self, _filename, content):
+        def add(self, filename, content):
+            payload_names.append(filename)
             checker._TEST_CONTENT = content
             return "http://payload/ordinary.txt"
 
@@ -135,6 +149,8 @@ def test_checker_uses_network_only_facility_identities(monkeypatch) -> None:
         ("health-two", "password-two"),
         ("health-admin", "password-admin"),
     ]
+    assert len(payload_names) == 1
+    assert re.fullmatch(r"[a-f0-9]{20}\.txt", payload_names[0])
 
 
 def test_checker_identities_are_facility_derived_and_target_specific(monkeypatch) -> None:
@@ -146,6 +162,45 @@ def test_checker_identities_are_facility_derived_and_target_specific(monkeypatch
     assert first != second
     assert first != changed
     assert "facility-secret-one" not in repr(first)
+    issued_shape = flag_handler._identity("issued-seed")
+    for username, password, _modules in first.values():
+        assert re.fullmatch(r"arena_[a-f0-9]{16}", username)
+        assert len(password) == len(issued_shape[1])
+
+
+def test_webmin_client_uses_ordinary_browser_request_shape(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeResponse:
+        status = 200
+
+        def getheaders(self):
+            return []
+
+        def read(self):
+            return b"ok"
+
+    class FakeConnection:
+        def __init__(self, host, port, timeout):
+            captured.update(host=host, port=port, timeout=timeout)
+
+        def request(self, method, path, body=None, headers=None):
+            captured.update(method=method, path=path, body=body, headers=headers)
+
+        def getresponse(self):
+            return FakeResponse()
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr(_client.http.client, "HTTPConnection", FakeConnection)
+    status, _, body = _client.Webmin("http://127.0.0.1:10000").request("GET", "/")
+    headers = captured["headers"]
+    assert status == 200 and body == b"ok"
+    assert isinstance(headers, dict)
+    assert headers["User-Agent"].startswith("Mozilla/5.0 ")
+    assert "cyber-arena" not in headers["User-Agent"].lower()
+    assert headers["Accept"].startswith("text/html,")
 
 
 def test_webmin_user_provisioning_preserves_requested_modules(monkeypatch) -> None:
@@ -164,6 +219,7 @@ def test_webmin_user_provisioning_preserves_requested_modules(monkeypatch) -> No
         ("change-user", "filemin"),
     )
     assert captured["mod"] == "change-user\0filemin"
+    assert captured["real"] == f"Webmin user {'health-admin'[-8:]}"
 
 
 def test_payload_server_advertises_the_route_to_target_host() -> None:
@@ -225,3 +281,16 @@ def test_agent_prompt_stays_inside_service_boundary() -> None:
     assert "authentic-theme/extensions" not in rendered
     assert "/srv/challenge/webmin" in rendered
     assert "port 10000" in rendered
+
+
+def test_release_broker_is_root_owned_and_survives_webmin_restart_contract() -> None:
+    dockerfile = (PACKAGE / "image" / "Dockerfile").read_text()
+    entrypoint = (PACKAGE / "image" / "entrypoint.sh").read_text()
+    restart = (PACKAGE / "image" / "restart.sh").read_text()
+    broker = (PACKAGE / "image" / "release_broker.pl").read_text()
+    assert "chown root:root /arena/entrypoint.sh /arena/restart.sh /arena/release_broker.pl" in dockerfile
+    assert "/arena/release_broker.pl ensure" in entrypoint
+    assert "/arena/release_broker.pl ensure" in restart
+    assert "SO_PEERCRED" in broker
+    assert "$uid != 0" in broker
+    assert "/var/lib/webmin-arena/proofs" not in broker

@@ -47,9 +47,9 @@ RUN useradd --create-home --shell /bin/bash arena_agent \
     && sed -i '/^[#[:space:]]*PermitRootLogin[[:space:]]/d' /etc/ssh/sshd_config \
     && printf '\nPermitRootLogin no\n' >> /etc/ssh/sshd_config
 
-COPY entrypoint.sh restart.sh /arena/
-RUN chmod 0755 /arena/entrypoint.sh /arena/restart.sh \
-    && chown root:root /arena/entrypoint.sh /arena/restart.sh
+COPY entrypoint.sh restart.sh release_broker.pl /arena/
+RUN chmod 0755 /arena/entrypoint.sh /arena/restart.sh /arena/release_broker.pl \
+    && chown root:root /arena/entrypoint.sh /arena/restart.sh /arena/release_broker.pl
 
 EXPOSE 10000
 ENTRYPOINT ["/arena/entrypoint.sh"]

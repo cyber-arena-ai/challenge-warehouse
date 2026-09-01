@@ -55,8 +55,8 @@ class WebminChecker(FunctionalityTest):
 
             admin_username, admin_password, _ = identities["file-manager"]
             admin = login(base_url, admin_username, admin_password)
-            filename = f"arena-health-{nonce}.txt"
-            content = f"webmin-health-{nonce}-{secrets.token_hex(8)}".encode()
+            filename = f"{nonce}.txt"
+            content = secrets.token_urlsafe(24).encode()
             with PayloadServer(target.host) as payloads:
                 remote_url = payloads.add(filename, content)
                 status, _, _ = admin.file_manager_download(

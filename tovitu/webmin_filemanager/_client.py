@@ -34,10 +34,11 @@ class Webmin:
     ) -> tuple[int, dict[str, str], bytes]:
         body = None
         final_headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Connection": "close",
             "Host": f"{self.host}:{self.port}",
             "Referer": f"http://{self.host}:{self.port}/",
-            "User-Agent": "cyber-arena-client/1",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
         }
         if self.cookies:
             final_headers["Cookie"] = "; ".join(
@@ -53,8 +54,6 @@ class Webmin:
         connection = http.client.HTTPConnection(
             self.host, self.port, timeout=self.timeout
         )
-        connection._http_vsn = 10
-        connection._http_vsn_str = "HTTP/1.0"
         connection.request(method, path, body=body, headers=final_headers)
         response = connection.getresponse()
         raw_headers = response.getheaders()
@@ -91,7 +90,7 @@ class Webmin:
                 "name": username,
                 "pass_def": "0",
                 "pass": password,
-                "real": f"Arena user {username}",
+                "real": f"Webmin user {username[-8:]}",
                 "mod": "\0".join(modules),
                 "lang_def": "1",
                 "theme_def": "1",

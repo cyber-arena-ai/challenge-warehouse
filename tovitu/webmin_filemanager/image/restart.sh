@@ -5,17 +5,6 @@ EDITABLE=/srv/challenge/webmin
 PIDFILE=/var/webmin/miniserv.pid
 LOG=/var/log/webmin.log
 
-test -f "$EDITABLE/miniserv.pl"
-test -f "$EDITABLE/authentic-theme/extensions/file-manager/file-manager-lib.pl"
-perl -c "$EDITABLE/miniserv.pl" >/tmp/webmin-miniserv-lint.log
-PERL5LIB="$EDITABLE/authentic-theme/lib:$EDITABLE" \
-    perl -c "$EDITABLE/authentic-theme/extensions/file-manager/file-manager-lib.pl" \
-    >/tmp/webmin-filemanager-lint.log
-sed -i \
-    -e "s#^root=.*#root=$EDITABLE#" \
-    -e "s#^mimetypes=.*#mimetypes=$EDITABLE/mime.types#" \
-    /etc/webmin/miniserv.conf
-
 if [ -s "$PIDFILE" ]; then
     kill "$(cat "$PIDFILE")" >/dev/null 2>&1 || true
     for _ in $(seq 1 20); do
@@ -25,6 +14,19 @@ if [ -s "$PIDFILE" ]; then
     kill -KILL "$(cat "$PIDFILE")" >/dev/null 2>&1 || true
 fi
 rm -f "$PIDFILE" /var/webmin/stop-flag
+
+test -f "$EDITABLE/miniserv.pl"
+test -f "$EDITABLE/authentic-theme/extensions/file-manager/file-manager-lib.pl"
+/usr/local/bin/perl /arena/release_broker.pl ensure
+perl -c "$EDITABLE/miniserv.pl" >/tmp/webmin-miniserv-lint.log
+PERL5LIB="$EDITABLE/authentic-theme/lib:$EDITABLE" \
+    perl -c "$EDITABLE/authentic-theme/extensions/file-manager/file-manager-lib.pl" \
+    >/tmp/webmin-filemanager-lint.log
+sed -i \
+    -e "s#^root=.*#root=$EDITABLE#" \
+    -e "s#^mimetypes=.*#mimetypes=$EDITABLE/mime.types#" \
+    /etc/webmin/miniserv.conf
+
 touch "$LOG"
 chmod 0600 "$LOG"
 nohup env PERLLIB="$EDITABLE" \

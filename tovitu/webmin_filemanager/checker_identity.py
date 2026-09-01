@@ -21,7 +21,7 @@ def checker_identities(team_id: str) -> dict[str, tuple[str, str, tuple[str, ...
             f"webmin-filemanager-checker:{team_id}:{role}".encode(),
             hashlib.sha256,
         ).hexdigest()
-        return f"health_{digest[:16]}", f"Wm9!{digest[16:48]}"
+        return f"arena_{digest[:16]}", f"Wm9!{digest[16:44]}"
 
     first = derive("restricted-1")
     second = derive("restricted-2")

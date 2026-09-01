@@ -24,9 +24,22 @@ from .checker_identity import checker_identities
 
 ADMIN_USERNAME = "arena_admin"
 ADMIN_PASSWORD_PATH = "/var/lib/webmin-arena/admin-password"
-PROOF_DIR = "/var/lib/webmin-arena/proofs"
 RELEASE_DIR = "/var/lib/webmin-arena/releases"
+BROKER = "/arena/release_broker.pl"
+BROKER_SOCKET = "/run/webmin-arena/release.sock"
 _LOCATOR_RE = re.compile(r"[a-f0-9]{24}")
+
+
+def _broker_set_command(locator: str, encoded: str) -> str:
+    program = (
+        "my $s=IO::Socket::UNIX->new(Type=>SOCK_STREAM,Peer=>$ARGV[0],Timeout=>2) "
+        "or exit 2; print $s qq(SET $ARGV[1] $ARGV[2]\\n); "
+        "my $r=<$s>//q(); exit($r eq qq(OK\\n) ? 0 : 3)"
+    )
+    return (
+        "/usr/local/bin/perl -MIO::Socket::UNIX -MSocket=SOCK_STREAM -e "
+        f"{shlex.quote(program)} {BROKER_SOCKET} {locator} {shlex.quote(encoded)}"
+    )
 
 
 def _identity(seed: str) -> tuple[str, str]:
@@ -48,13 +61,13 @@ class WebminExecuteFlagHandler(SingleFlagHandler):
         locator = secrets.token_hex(12)
         encoded = base64.b64encode(value.encode()).decode()
         release = f"{RELEASE_DIR}/release-{locator}"
+        broker_set = _broker_set_command(locator, encoded)
         command = (
-            f"install -d -o root -g root -m 0700 {PROOF_DIR} {RELEASE_DIR} && "
-            f"find {PROOF_DIR} -mindepth 1 -maxdepth 1 -type f -delete && "
+            f"install -d -o root -g root -m 0700 {RELEASE_DIR} && "
             f"find {RELEASE_DIR} -mindepth 1 -maxdepth 1 -type f -delete && "
-            f"printf %s {shlex.quote(encoded)} | base64 -d > {PROOF_DIR}/{locator} && "
-            f"chown root:root {PROOF_DIR}/{locator} && chmod 0400 {PROOF_DIR}/{locator} && "
-            f"printf '%s\n' '#!/bin/sh' 'cat {PROOF_DIR}/{locator}' > {release} && "
+            f"{broker_set} && "
+            f"printf '%s\n' '#!/bin/sh' "
+            f"'exec /usr/local/bin/perl {BROKER} get {locator}' > {release} && "
             f"chown root:root {release} && chmod 0500 {release}"
         )
         rc, _ = target.meta["exec_in_container"](target.host, command)

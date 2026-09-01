@@ -35,7 +35,13 @@ sed -i \
     /etc/webmin/miniserv.conf
 chown root:root "$STATE/admin-password" "$STATE/initialized"
 chmod 0600 "$STATE/admin-password" "$STATE/initialized"
-install -d -o root -g root -m 0700 "$STATE/proofs" "$STATE/releases"
+install -d -o root -g root -m 0700 /run/webmin-arena "$STATE/releases"
+find "$STATE/releases" -mindepth 1 -maxdepth 1 -type f -delete
+if [ -d "$STATE/proofs" ]; then
+    find "$STATE/proofs" -mindepth 1 -maxdepth 1 -type f -delete
+    rmdir "$STATE/proofs" 2>/dev/null || true
+fi
+/usr/local/bin/perl /arena/release_broker.pl ensure
 
 /arena/restart.sh
 exec /usr/sbin/sshd -D -e
