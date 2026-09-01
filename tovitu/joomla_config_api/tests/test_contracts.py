@@ -6,6 +6,7 @@ import json
 
 from challenges.interface import ObservationStatus, VulboxTarget
 from challenges.joomla_config_api import _exploit, _http
+from challenges.joomla_config_api import build as build_module
 from challenges.joomla_config_api import checker as checker_module
 from challenges.joomla_config_api import checker_identity
 from challenges.joomla_config_api.flag_handler import HANDLE, JoomlaFlagHandler
@@ -17,6 +18,40 @@ def _target(exec_in) -> VulboxTarget:
         ports={"service": 80},
         meta={"team_id": "victim", "exec_in_container": exec_in},
     )
+
+
+def test_build_rebuilds_current_context_when_tag_exists(monkeypatch):
+    class ExistingImages:
+        def get(self, _tag):
+            return object()
+
+    class ExistingImageClient:
+        images = ExistingImages()
+
+    calls = []
+    monkeypatch.setattr(
+        build_module.subprocess,
+        "run",
+        lambda command, *, check: calls.append((command, check)),
+    )
+
+    tag = build_module.build_image(ExistingImageClient())
+
+    assert tag == "cyberarena/chal-joomla-config-api:v1"
+    assert calls == [
+        (
+            [
+                "docker",
+                "build",
+                "--platform=linux/amd64",
+                "--pull=false",
+                "-t",
+                tag,
+                str(build_module._BUILD_CONTEXT),
+            ],
+            True,
+        )
+    ]
 
 
 def test_flag_placement_uses_guarded_api_and_verifies_exact_value(monkeypatch):
