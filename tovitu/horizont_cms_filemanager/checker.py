@@ -25,9 +25,9 @@ class HorizontCmsChecker(FunctionalityTest):
         try:
             observations = []
             identities = checker_identities(str(target.meta.get("team_id", "")))
-            for index, (username, password) in enumerate(identities, start=1):
-                content = f"horizont-health-{nonce}-{index}-{secrets.token_hex(8)}".encode()
-                destination = f"health-{nonce}-{index}-{secrets.token_hex(4)}.txt"
+            for username, password in identities:
+                content = f"{nonce}-{secrets.token_hex(12)}".encode()
+                destination = f"{secrets.token_hex(16)}.txt"
                 session = login(base_url, username, password)
                 exercise_filemanager(session, content, destination)
                 observations.append(destination)

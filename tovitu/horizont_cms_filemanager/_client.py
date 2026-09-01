@@ -11,6 +11,12 @@ import urllib.parse
 import urllib.request
 
 
+DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+)
+
+
 class HorizontError(RuntimeError):
     """A public HorizontCMS workflow did not produce its expected result."""
 
@@ -43,7 +49,7 @@ class Session:
         request = urllib.request.Request(
             self.base_url + path,
             data=data,
-            headers={"User-Agent": "cyber-arena-horizont/1", **(headers or {})},
+            headers={"User-Agent": DEFAULT_USER_AGENT, **(headers or {})},
         )
         opener = self._opener if redirects else self._no_redirect
         try:
@@ -78,7 +84,7 @@ class Session:
         content_type: str,
         content: bytes,
     ) -> tuple[int, str, dict[str, str], bytes]:
-        boundary = "----horizont-arena-" + secrets.token_hex(12)
+        boundary = "----WebKitFormBoundary" + secrets.token_hex(12)
         parts: list[bytes] = []
         for name, value in fields.items():
             parts.extend(
@@ -230,7 +236,8 @@ def rename(session: Session, token: str, old_name: str, new_name: str) -> None:
 
 def exercise_filemanager(session: Session, content: bytes, destination: str) -> None:
     token, _ = file_manager(session)
-    stored = upload(session, token, "ordinary.txt", "text/plain", content)
+    source = secrets.token_hex(12) + ".txt"
+    stored = upload(session, token, source, "text/plain", content)
     rename(session, token, stored, destination)
     status, _, _, received = session.get("/storage/" + destination)
     _require(status == 200 and received == content, "renamed content did not round-trip")

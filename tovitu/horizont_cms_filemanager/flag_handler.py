@@ -69,7 +69,9 @@ class HorizontCmsExecuteFlagHandler(SingleFlagHandler):
         )
 
     def flag_id(self, handle: str) -> str | None:
-        return handle if _LOCATOR_RE.fullmatch(handle) else None
+        if not _LOCATOR_RE.fullmatch(handle):
+            return None
+        return f"{PROOF_HELPER} {handle}"
 
     def _admin_password(self, target: VulboxTarget) -> str:
         rc, output = target.meta["exec_in_container"](
@@ -86,20 +88,15 @@ class HorizontCmsExecuteFlagHandler(SingleFlagHandler):
         base_url = f"http://{target.host}:{target.ports['service']}"
         admin_password = self._admin_password(target)
         team_id = str(target.meta.get("team_id", ""))
-        for index, (username, password) in enumerate(
-            checker_identities(team_id), start=1
-        ):
-            ensure_editor(
-                base_url,
-                ADMIN_USERNAME,
-                admin_password,
-                username,
-                password,
-                "Arena Editor",
-            )
+        assignments: list[tuple[str, str, str | None]] = [
+            (username, password, None)
+            for username, password in checker_identities(team_id)
+        ]
+        assignments.extend(
+            (*_identity(seed), attacker) for attacker, seed in seeds.items()
+        )
         issued: dict[str, BaselinePrincipal] = {}
-        for attacker, seed in sorted(seeds.items()):
-            username, password = _identity(seed)
+        for username, password, attacker in sorted(assignments):
             session = ensure_editor(
                 base_url,
                 ADMIN_USERNAME,
@@ -108,6 +105,8 @@ class HorizontCmsExecuteFlagHandler(SingleFlagHandler):
                 password,
                 "Arena Editor",
             )
+            if attacker is None:
+                continue
             file_manager(session)
             issued[attacker] = BaselinePrincipal(
                 principal_id=username,
