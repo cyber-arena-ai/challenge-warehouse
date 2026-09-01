@@ -1,0 +1,46 @@
+slug: webmin-filemanager-execute
+title: Webmin File Manager
+contributor: tovitu
+updated: '2026-08-31'
+tags:
+- real-world
+- web
+- rce
+- auth-bypass
+- config-fix
+- cve
+classification:
+  difficulty: medium
+  vuln_class: Authenticated Module ACL Bypass to Command Execution
+  cve: CVE-2022-0824
+card:
+  tagline: A preference-only Webmin user crosses a module ACL into root command execution
+  summary: Webmin gives each user an explicit module set. At the pinned core and Authentic
+    Theme revisions, a user limited to personal preferences can still operate the theme's
+    File Manager against the root-running service tree.
+  attack: Use an assigned restricted login and application workflows to make the current
+    root service release the rotating command-execution objective.
+  defense: Enforce Webmin's native module security check in the theme File Manager while
+    preserving restricted preferences and the administrator's dynamic file operations.
+origin:
+  type: real-world
+  source: Webmin
+  reference: CVE-2022-0824
+  url: https://github.com/webmin/webmin/commit/39ea464f0c40b325decd6a5bfb7833fa4a142e38
+service:
+  protocol: web
+  ports:
+    service: 10000
+  stack: Perl · Webmin MiniServ · Authentic Theme
+provenance:
+  image: cyberarena/chal-webmin-filemanager-execute:v1
+  source_intro: Webmin core b374ad7d281a84f644c8ccace063c58793540cc6 with Authentic
+    Theme d9b774412239092b2539a713327edda092d85f56, installed from exact Git-derived
+    archives on a period-compatible Debian 11 Perl runtime.
+cover:
+  image: covers/webmin-filemanager-execute.webp
+  accent: '#5b7dbb'
+  prompt_id: geo-v2
+  motif: A compact preference card crosses a segmented module gate into a nested file
+    browser frame, where a command pulse reaches a rotating target inside a privileged
+    service ring.
