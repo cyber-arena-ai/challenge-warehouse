@@ -35,11 +35,23 @@ def test_composition_declares_one_scoped_write_store():
 
 
 def test_options_state_is_table_scoped_before_service_readiness():
+    package = Path(__file__).resolve().parents[1]
     entrypoint = (
-        Path(__file__).resolve().parents[1] / "image" / "entrypoint.sh"
+        package / "image" / "entrypoint.sh"
     ).read_text()
+    bootstrap = (package / "image" / "bootstrap.py").read_text()
     conversion = "ALTER TABLE projectsend.tbl_options ENGINE=MyISAM"
+    initial_title = "ProjectSend Arena context 0000000000000000"
+    standard_mark = "MARK{" + "A" * 32 + "}"
+    assert f'"install_title": "{initial_title}"' in bootstrap
+    round_title = handler_module.ROUND_TITLE_PREFIX + "0" * 16
+    assert len(initial_title) >= len(standard_mark)
+    assert len(round_title) >= len(standard_mark)
+    assert len(initial_title) == len(round_title)
     assert conversion in entrypoint
+    assert entrypoint.index("python3 /arena/bootstrap.py") < entrypoint.index(
+        conversion
+    )
     assert entrypoint.index(conversion) < entrypoint.index(
         "touch /arena/private/ready"
     )

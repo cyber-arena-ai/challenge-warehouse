@@ -38,7 +38,7 @@ def main() -> None:
     status, body = request(
         "install/index.php",
         {
-            "install_title": "ProjectSend Arena",
+            "install_title": "ProjectSend Arena context 0000000000000000",
             "base_uri": "/",
             "admin_name": "Arena Administrator",
             "admin_email": "admin@example.invalid",
