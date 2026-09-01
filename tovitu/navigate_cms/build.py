@@ -15,14 +15,9 @@ _BUILD_CONTEXT = Path(__file__).resolve().parent / "image"
 
 
 def build_image(client: docker.DockerClient | None = None) -> str:
+    del client
     tag = NavigateCmsChallenge().vulbox.reference
-    client = client or docker.from_env()
-    try:
-        client.images.get(tag)
-        return tag
-    except docker.errors.ImageNotFound:
-        pass
-    subprocess.run(
+    completed = subprocess.run(
         [
             "docker",
             "build",
@@ -32,7 +27,14 @@ def build_image(client: docker.DockerClient | None = None) -> str:
             tag,
             str(_BUILD_CONTEXT),
         ],
-        check=True,
+        check=False,
+        capture_output=True,
+        text=True,
     )
+    if completed.returncode != 0:
+        raise RuntimeError(
+            "Navigate CMS image build failed\n"
+            f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
+        )
     log.info("built %s", tag)
     return tag

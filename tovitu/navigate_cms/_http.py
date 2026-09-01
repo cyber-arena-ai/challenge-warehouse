@@ -77,8 +77,8 @@ def multipart(field: str, filename: str, content: bytes) -> tuple[bytes, str]:
 
 
 def ordinary_upload(base: str, session_id: str, filename: str, marker: bytes) -> None:
-    body, content_type = multipart("upload", filename, marker)
-    query = urllib.parse.urlencode({"session_id": session_id, "engine": "dropzone"})
+    body, content_type = multipart("file", filename, marker)
+    query = urllib.parse.urlencode({"session_id": session_id, "engine": "tinymce"})
     response = request(
         f"{base}/navigate_upload.php?{query}",
         data=body,
@@ -91,12 +91,42 @@ def ordinary_upload(base: str, session_id: str, filename: str, marker: bytes) ->
         value = json.loads(payload)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise RuntimeError("ordinary media upload returned invalid JSON") from exc
-    if (
-        not isinstance(value, dict)
-        or value.get("filename") != filename
-        or not str(value.get("temporal", "")).startswith("upload-")
-    ):
-        raise RuntimeError("ordinary media upload returned the wrong file")
+    if not isinstance(value, dict) or not isinstance(value.get("location"), str):
+        raise RuntimeError("ordinary media upload returned no registered file")
+    base_parts = urllib.parse.urlsplit(base)
+    parts = urllib.parse.urlsplit(
+        urllib.parse.urljoin(base.rstrip("/") + "/", value["location"])
+    )
+    expected_path = base_parts.path.rstrip("/") + "/navigate_download.php"
+    download_query = urllib.parse.parse_qsl(parts.query, keep_blank_values=True)
+    valid_location = (
+        (parts.scheme, parts.netloc) == (base_parts.scheme, base_parts.netloc)
+        and parts.path == expected_path
+        and not parts.fragment
+        and len(download_query) == 1
+        and download_query[0][0] == "id"
+        and download_query[0][1].isdigit()
+        and int(download_query[0][1]) > 0
+    )
+    if not valid_location:
+        raise RuntimeError("ordinary media upload returned an invalid download URL")
+    download_query.append(("sid", session_id))
+    download_url = urllib.parse.urlunsplit(
+        (
+            base_parts.scheme,
+            base_parts.netloc,
+            expected_path,
+            urllib.parse.urlencode(download_query),
+            "",
+        )
+    )
+    download = request(
+        download_url,
+        opener=urllib.request.build_opener(_NoRedirect()),
+    )
+    downloaded = download.read()
+    if download.status != 200 or downloaded != marker:
+        raise RuntimeError("registered media did not round-trip over HTTP")
 
 
 def create_user(opener: urllib.request.OpenerDirector, base: str, username: str,

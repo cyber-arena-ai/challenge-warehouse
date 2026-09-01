@@ -30,7 +30,8 @@ _DOCS = ChallengeDocs(
         "process — Apache and MariaDB are alive.\n"
         "tcp — the public HTTP port accepts connections.\n"
         "protocol — GET /navigate/login.php returns the login page.\n"
-        "checker — a stable User logs in, opens the dashboard, and uploads fresh media."
+        "checker — a stable User logs in, opens the dashboard, registers fresh media, "
+        "and downloads its exact bytes."
     ),
 )
 

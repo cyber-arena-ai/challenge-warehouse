@@ -29,6 +29,8 @@ class NavigateChecker(FunctionalityTest):
             marker = secrets.token_bytes(20)
             filename = f"check-{secrets.token_hex(10)}.txt"
             _http.ordinary_upload(base, session_id, filename, marker)
-            return CheckResult("checker", True, "User login/dashboard/media upload passed")
+            return CheckResult(
+                "checker", True, "User login/dashboard/media round-trip passed"
+            )
         except Exception as exc:
             return CheckResult("checker", False, f"workflow failed: {type(exc).__name__}")

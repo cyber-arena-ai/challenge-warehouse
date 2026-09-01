@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 from types import SimpleNamespace
 import urllib.parse
 
+import pytest
+
 from challenges.interface import Flag, ObservationStatus, VulboxTarget
-from challenges.navigate_cms import _exploit, _http, config
+from challenges.navigate_cms import _exploit, _http, build, config
 from challenges.navigate_cms.checker import NavigateChecker
 from challenges.navigate_cms.flag_handler import NavigateFlagHandler
 
@@ -186,6 +189,101 @@ def test_login_retries_the_historical_first_dashboard_404(monkeypatch):
 
     assert session_id == "session-id"
     assert len(dashboard_calls) == 2
+
+
+def test_ordinary_upload_registers_and_downloads_fresh_media(monkeypatch):
+    requests = []
+
+    class Response:
+        status = 200
+
+        def __init__(self, body: bytes):
+            self._body = body
+
+        def read(self):
+            return self._body
+
+    marker = b"fresh-media-marker"
+
+    def request(url: str, **kwargs):
+        requests.append((url, kwargs))
+        if kwargs.get("data") is not None:
+            return Response(
+                json.dumps({"location": "navigate_download.php?id=17"}).encode()
+            )
+        return Response(marker)
+
+    monkeypatch.setattr(_http, "request", request)
+    _http.ordinary_upload(
+        "http://navigate.test/navigate", "session-id", "fresh.txt", marker
+    )
+
+    upload_url, upload = requests[0]
+    assert "engine=tinymce" in upload_url
+    assert b'name="file"; filename="fresh.txt"' in upload["data"]
+    download_url, download = requests[1]
+    assert isinstance(download["opener"], urllib.request.OpenerDirector)
+    assert download_url == (
+        "http://navigate.test/navigate/navigate_download.php?id=17&sid=session-id"
+    )
+
+
+@pytest.mark.parametrize(
+    "location",
+    [
+        "http://other.test/navigate/navigate_download.php?id=17",
+        "echo.php?id=17",
+        "navigate_download.php?id=17&id=18",
+        "navigate_download.php?id=not-a-number",
+    ],
+)
+def test_ordinary_upload_rejects_untrusted_download_location(
+    monkeypatch, location
+):
+    class Response:
+        status = 200
+
+        def read(self):
+            return json.dumps({"location": location}).encode()
+
+    calls = []
+
+    def request(url: str, **kwargs):
+        calls.append((url, kwargs))
+        return Response()
+
+    monkeypatch.setattr(_http, "request", request)
+    with pytest.raises(RuntimeError, match="invalid download URL"):
+        _http.ordinary_upload(
+            "http://navigate.test/navigate",
+            "session-id",
+            "fresh.txt",
+            b"fresh-media-marker",
+        )
+    assert len(calls) == 1
+
+
+def test_build_always_uses_current_package_context(monkeypatch):
+    calls = []
+
+    class Completed:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    monkeypatch.setattr(
+        build.subprocess,
+        "run",
+        lambda command, **kwargs: calls.append((command, kwargs)) or Completed(),
+    )
+
+    assert build.build_image(object()) == (
+        build.NavigateCmsChallenge().vulbox.reference
+    )
+    assert len(calls) == 1
+    assert calls[0][0][-1] == str(
+        Path(build.__file__).resolve().parent / "image"
+    )
 
 
 def test_checker_uses_framework_network_target_and_fresh_upload(monkeypatch):
