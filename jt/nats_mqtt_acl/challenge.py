@@ -10,9 +10,7 @@ from challenges.interface import (
     ChallengeDocs,
     ExecFn,
     FlagHandler,
-    FlagStoreSpec,
     FunctionalityTest,
-    OracleKind,
     RestartHandler,
     VulboxImage,
     VulboxTarget,
@@ -24,17 +22,20 @@ _DOCS = ChallengeDocs(
     intro=(
         "NATS Server v2.12.5, an editable Go message broker with MQTT, retained "
         "QoS1 messages, JetStream persistence, and subject-level authorization. "
-        "Each attacker receives a distinct ordinary device account under the same "
-        "allow/deny policy. The READ objective is a retained victim message denied "
-        "at its concrete subject; EXECUTE is a protected UID-1000 service operation. "
-        "Defenders edit the complete pinned source and rebuild offline."
+        "CVE-2026-58209 affects delivery of retained and QoS messages selected by "
+        "a wildcard subscription: the broker does not re-check the concrete topic's "
+        "deny rule before replay. The challenge stores one rotating flag as a retained "
+        "victim message and exposes its topic as the public flag id. Defenders edit "
+        "the complete pinned source and rebuild offline; NATS v2.12.12 contains the "
+        "upstream repair (commit 181b1f51f40b9954c57e9d478e051fb257679356)."
     ),
     agent_prompts={},
     func_test_spec=(
         "process/tcp/protocol — NATS runs as UID 1000 and serves MQTT 1883 plus "
-        "NATS 4222. checker — a device account can publish/read its own retained "
-        "QoS1 telemetry and subscribe to victim public telemetry, receives a denied "
-        "SUBACK for a concrete guarded subject, and the victim remains authorized."
+        "NATS 4222. checker — the same ordinary device account exposed to players "
+        "can publish/read its own retained QoS1 telemetry, read victim public "
+        "telemetry directly and through a wildcard, and receives a denied SUBACK "
+        "for the corresponding concrete guarded subject."
     ),
 )
 
@@ -42,14 +43,6 @@ _DOCS = ChallengeDocs(
 class NatsMqttAclChallenge(Challenge):
     name = "nats-mqtt-acl"
     health_interval_secs = 30.0
-
-    def flag_store_specs(self) -> list[FlagStoreSpec]:
-        return [
-            FlagStoreSpec("retained_secret", OracleKind.READ,
-                          scope="app.cross_boundary.read"),
-            FlagStoreSpec("command", OracleKind.EXECUTE,
-                          scope="host.command.execute"),
-        ]
 
     def break_service(self, target: VulboxTarget, exec_in: ExecFn) -> str:
         rc, out = exec_in(

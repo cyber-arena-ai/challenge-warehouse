@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-07",
-  "count": 24,
+  "generated": "2026-09-01",
+  "count": 25,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -845,6 +845,54 @@
         "image": "covers/n8n-fileread.webp",
         "accent": "#e54631",
         "prompt_id": "geo-v1"
+      }
+    },
+    {
+      "slug": "nats-mqtt-acl",
+      "title": "NATS MQTT Authorization Boundary",
+      "contributor": "jt",
+      "updated": "2026-08-21",
+      "tags": [
+        "real-world",
+        "net",
+        "go",
+        "logic-bug",
+        "recompile",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "MQTT Authorization Enforcement",
+        "cve": "CVE-2026-58209"
+      },
+      "card": {
+        "tagline": "A denied retained MQTT message crosses an authorization boundary",
+        "summary": "NATS Server v2.12.5 gives each attacker an ordinary MQTT device account whose direct access to a guarded victim subject is denied. Internal MQTT routing and retained delivery nevertheless expose the same protected message when a broader wildcard subscription selects it.",
+        "attack": "Reach the current denied retained message through MQTT replay behavior.",
+        "defense": "Enforce concrete subject denies during retained/QoS delivery while preserving own telemetry, public victim subscriptions, MQTT, and JetStream."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "NATS Server v2.12.5 (commit 0f6c831ec1df25bc3dc81d25faae0ed0bac15a96)",
+        "reference": "CVE-2026-58209",
+        "url": "https://github.com/nats-io/nats-server/releases/tag/v2.12.5"
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 1883,
+          "nats": 4222
+        },
+        "stack": "Go 1.25 · NATS Server 2.12.5 · MQTT · JetStream"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-nats-mqtt-acl:v1",
+        "source_intro": "NATS Server v2.12.5 is an editable Go message broker with MQTT, retained QoS1 messages, JetStream persistence, and subject-level authorization. One ordinary device account may read its own telemetry and allowed victim telemetry but is denied concrete guarded victim subjects. The rotating flag is a retained victim message. Defenders edit the complete pinned source and rebuild offline.\n"
+      },
+      "cover": {
+        "image": null,
+        "accent": null,
+        "prompt_id": null
       }
     },
     {

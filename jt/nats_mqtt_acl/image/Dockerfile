@@ -8,7 +8,7 @@ ENV GOMODCACHE=/opt/go/pkg/mod \
     GOTOOLCHAIN=local
 
 RUN apk add --no-cache \
-        bash ca-certificates gcc musl-dev mosquitto-clients openssh-server \
+        bash ca-certificates mosquitto-clients openssh-server \
         python3 su-exec \
     && addgroup -S -g 1000 nats \
     && adduser -S -D -H -u 1000 -G nats nats \
@@ -30,20 +30,11 @@ RUN mkdir -p /srv/challenge/nats-server /srv/runtime /opt/go/pkg/mod /opt/go/cac
     && chown root:root /srv/runtime/nats-server \
     && chmod 0755 /srv/runtime/nats-server
 
-COPY nats-objective.c /tmp/nats-objective.c
-RUN gcc -Os -static -Wall -Wextra -o /usr/local/bin/nats-objective \
-        /tmp/nats-objective.c \
-    && strip /usr/local/bin/nats-objective \
-    && chown root:nats /usr/local/bin/nats-objective \
-    && chmod 4750 /usr/local/bin/nats-objective \
-    && rm /tmp/nats-objective.c \
-    && apk del gcc musl-dev
-
 COPY entrypoint.sh restart.sh facility.py /arena/
 RUN mkdir -p /arena/secrets /arena/state /etc/nats /data/jetstream \
-        /opt/arena/objective /run/sshd /home/arena_agent/.ssh \
+        /run/sshd /home/arena_agent/.ssh \
     && chown -R nats:nats /data /etc/nats \
-    && chmod 0700 /arena/secrets /arena/state /opt/arena/objective \
+    && chmod 0700 /arena/secrets /arena/state \
     && chown root:root /arena/entrypoint.sh /arena/restart.sh /arena/facility.py \
     && chmod 0555 /arena/entrypoint.sh /arena/restart.sh /arena/facility.py \
     && chown arena_agent:arena_agent /home/arena_agent/.ssh \

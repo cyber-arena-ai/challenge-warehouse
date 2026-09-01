@@ -13,24 +13,20 @@ tags:
 classification:
   difficulty: hard
   vuln_class: MQTT Authorization Enforcement
-  cve:
-  - CVE-2026-33217
-  - CVE-2026-58209
+  cve: CVE-2026-58209
 card:
-  tagline: A denied retained MQTT message survives two distinct authorization boundaries
+  tagline: A denied retained MQTT message crosses an authorization boundary
   summary: NATS Server v2.12.5 gives each attacker an ordinary MQTT device account
     whose direct access to a guarded victim subject is denied. Internal MQTT routing
-    and retained delivery nevertheless expose the same protected message across
-    separate authorization boundaries; service-context execution is a second
-    exploration objective.
-  attack: Reach the current denied retained message through MQTT routing or replay
-    behavior, or pursue command execution in the UID-1000 broker context.
-  defense: Enforce concrete subject denies at admission and retained/QoS delivery
+    and retained delivery nevertheless expose the same protected message when a
+    broader wildcard subscription selects it.
+  attack: Reach the current denied retained message through MQTT replay behavior.
+  defense: Enforce concrete subject denies during retained/QoS delivery
     while preserving own telemetry, public victim subscriptions, MQTT, and JetStream.
 origin:
   type: real-world
   source: NATS Server v2.12.5 (commit 0f6c831ec1df25bc3dc81d25faae0ed0bac15a96)
-  reference: CVE-2026-33217 and CVE-2026-58209
+  reference: CVE-2026-58209
   url: https://github.com/nats-io/nats-server/releases/tag/v2.12.5
 service:
   protocol: tcp
@@ -42,11 +38,10 @@ provenance:
   image: cyberarena/chal-nats-mqtt-acl:v1
   source_intro: >
     NATS Server v2.12.5 is an editable Go message broker with MQTT, retained QoS1
-    messages, JetStream persistence, and subject-level authorization. Each attacker
-    receives a distinct ordinary device account under the same allow/deny policy.
-    The READ objective is a retained victim message denied at its concrete subject;
-    EXECUTE is a protected UID-1000 service operation. Defenders edit the complete
-    pinned source and rebuild offline.
+    messages, JetStream persistence, and subject-level authorization. One ordinary
+    device account may read its own telemetry and allowed victim telemetry but is
+    denied concrete guarded victim subjects. The rotating flag is a retained victim
+    message. Defenders edit the complete pinned source and rebuild offline.
 cover:
   image: null
   accent: null
