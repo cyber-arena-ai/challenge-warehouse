@@ -1,0 +1,47 @@
+# generated fields validated against the package; copy is maintained here
+slug: owncloud-signed-url
+title: ownCloud Signed WebDAV
+contributor: tovitu
+updated: '2026-09-01'
+tags:
+- real-world
+- web
+- auth-bypass
+- file-write
+- php
+- cve
+classification:
+  difficulty: medium
+  vuln_class: Signed URL Authentication Bypass
+  cve: CVE-2023-49105
+card:
+  tagline: Uninitialized signing keys turn public links into cross-user file access
+  summary: ownCloud accepts a pre-signed WebDAV URL for an ordinary user whose signing
+    key was never initialized. A forged public request can read or overwrite that user's
+    protected current-round file while ordinary cross-user WebDAV remains denied.
+  attack: Forge a current signed WebDAV GET or PUT for the published victim file.
+  defense: Reject signed requests when the credential user's signing key is uninitialized.
+origin:
+  type: real-world
+  source: ownCloud core
+  reference: CVE-2023-49105
+  url: https://github.com/owncloud/core
+service:
+  protocol: web
+  ports:
+    service: 8080
+  stack: PHP 7.4 · ownCloud 10.13.1 RC1
+provenance:
+  image: cyberarena/chal-owncloud-signed-url:v1
+  source_intro: >-
+    ownCloud 10.13.1 RC1 at upstream commit ac4f3383952837bc6d260408d2db6d107a47c42c.
+    The service exposes ordinary authenticated file storage and public pre-signed WebDAV links.
+    Each attacker receives a distinct ordinary account; current protected victim file locators
+    rotate by round. Defenders edit /srv/challenge/owncloud and reload with restart_service.
+cover:
+  image: covers/owncloud-signed-url.webp
+  accent: '#3b65a7'
+  prompt_id: geo-v2
+  motif: Two offset cloud-shaped file grids share a narrow signed-link bridge; an empty keyhole
+    at the bridge center opens a path into one protected blue document while a second red mark
+    crosses into a separate document, with a repaired solid gate shown below.
