@@ -1,0 +1,62 @@
+"""Construct bounded Openfire plugin archives used by the PoV and checker."""
+
+from __future__ import annotations
+
+import base64
+import io
+import re
+import zipfile
+
+
+_PROOF_INNER = "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"
+_HEALTH_INNER = "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"
+_SAFE = re.compile(r"[a-f0-9]{12,32}")
+
+
+def _outer(plugin_xml: str, inner: str) -> bytes:
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\n")
+        archive.writestr("lib/plugin.jar", base64.b64decode(inner))
+        archive.writestr("plugin.xml", plugin_xml)
+    return output.getvalue()
+
+
+def proof_plugin(locator: str) -> tuple[str, bytes]:
+    if not re.fullmatch(r"[a-f0-9]{24}", locator):
+        raise ValueError("invalid execution locator")
+    canonical = "arena-execute-" + locator
+    metadata = f"""<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+  <class>arena.ProofPlugin</class>
+  <name>Arena Execute {locator}</name>
+  <description>{locator}</description>
+  <author>Cyber Arena</author>
+  <version>1.0</version>
+  <minServerVersion>4.7.0</minServerVersion>
+</plugin>
+"""
+    return canonical, _outer(metadata, _PROOF_INNER)
+
+
+def health_plugin(nonce: str) -> tuple[str, bytes]:
+    if not _SAFE.fullmatch(nonce):
+        raise ValueError("invalid integration plugin nonce")
+    canonical = "integration-" + nonce
+    metadata = f"""<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+  <class>arena.HealthPlugin</class>
+  <name>Integration {nonce}</name>
+  <description>{nonce}</description>
+  <author>Openfire</author>
+  <version>1.0</version>
+  <minServerVersion>4.7.0</minServerVersion>
+</plugin>
+"""
+    return canonical, _outer(metadata, _HEALTH_INNER)
+
+
+def health_property(nonce: str) -> str:
+    if not _SAFE.fullmatch(nonce):
+        raise ValueError("invalid integration plugin nonce")
+    return "plugin.integration." + nonce

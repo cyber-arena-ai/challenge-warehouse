@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-25",
-  "count": 25,
+  "generated": "2026-09-01",
+  "count": 26,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -1056,6 +1056,55 @@
         "accent": "#e88f63",
         "prompt_id": "geo-v2",
         "motif": "A single hard-edged rectangular socket-node sits at the left, from which a stepped ladder of newline-terminated exchanges descends rightward: each rung a short segmented band paired with a returning band offset one step below, request and response climbing down in lockstep. In the daemon's interior, a small square grid of stored cells holds a scatter of dots, one cell ringed by concentric arcs to mark the retrieved note, a thick stroke threading out from it back along the ladder to the socket. Above, three stacked translucent planes suggest the tiny protocol's flat verbs, overlapping just enough that the deepest holds a lone filled cell."
+      }
+    },
+    {
+      "slug": "openfire-setup-execute",
+      "title": "Openfire Setup Auth Bypass RCE",
+      "contributor": "tovitu",
+      "updated": "2026-09-01",
+      "tags": [
+        "real-world",
+        "web",
+        "auth-bypass",
+        "rce",
+        "cve",
+        "recompile"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Setup Path Authentication Bypass",
+        "cve": "CVE-2023-32315"
+      },
+      "card": {
+        "tagline": "Slip through setup routing, gain administrator control, and load server code",
+        "summary": "An encoded setup path reaches administrator-only pages after Openfire setup is complete, letting an unauthenticated caller create a privileged account. That account can use normal plugin administration to execute code as the Openfire service user.",
+        "attack": "Traverse the setup-console exclusion, create an administrator, then upload a plugin that invokes the current execution-proof operation.",
+        "defense": "Restrict the setup exclusion to genuine setup routes as in upstream commit bef928fc92d0c0185ee8a8408b7c33e5170ae395, then rebuild and restart the service."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "Openfire",
+        "reference": "CVE-2023-32315 / GHSA-gw42-f939-fhvm",
+        "url": "https://github.com/igniterealtime/Openfire/security/advisories/GHSA-gw42-f939-fhvm"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 9090,
+          "xmpp": 5222
+        },
+        "stack": "Java 11 · Openfire at 4025ae8a862d"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-openfire-setup-execute:v1",
+        "source_intro": "Openfire at commit 4025ae8a862d983b3bcc50185e89c23e1229a44f, with its native HTTP administrator console, XMPP listener, embedded database, user administration, and plugin lifecycle. An unauthenticated caller can cross the configured administrator boundary and use normal plugin installation to obtain the Openfire service execution context. The rotating objective measures host.command.execute as the openfire user."
+      },
+      "cover": {
+        "image": "covers/openfire-setup-execute.webp",
+        "accent": "#e36497",
+        "prompt_id": "geo-v2",
+        "motif": "A dashed path approaches thick nested setup frames and slips through the narrow seam where two guarded rectangular barriers fail to meet, reaching a compact inner administration grid. From that grid, a tightly packed isometric block travels along a segmented band and unfolds into angular chevrons and concentric arcs inside a deeper service-process frame, scattering its orderly dot lattice. One continuous horizontal chain links the bypassed perimeter, reached grid, packed block, and disrupted inner process."
       }
     },
     {
