@@ -1,0 +1,53 @@
+slug: navigate-cms
+title: Navigate CMS Command Execution
+contributor: tovitu
+updated: '2026-08-31'
+tags:
+- real-world
+- web
+- auth-bypass
+- file-write
+- php
+- cve
+classification:
+  difficulty: hard
+  vuln_class: Authentication Bypass and Arbitrary File Write
+  cve:
+  - CVE-2018-17552
+  - CVE-2018-17553
+card:
+  tagline: A forged CMS session turns a legacy media import into service command execution
+  summary: Navigate CMS 2.8 r1302 exposes a public PHP/MySQL administration service with
+    normal User dashboard and media workflows. A historical session boundary and media
+    consumer can be chained to execute commands in the application service context.
+  attack: Cross the public session boundary, reach the legacy media consumer, and recover
+    the rotating command-execution witness.
+  defense: Harden session and media handling in /srv/challenge/navigate, then call restart_service
+    while preserving the dashboard and ordinary upload.
+origin:
+  type: real-world
+  source: Navigate CMS 2.8 r1302
+  reference:
+  - CVE-2018-17552
+  - CVE-2018-17553
+  url: https://github.com/NavigateCMS/Navigate-CMS
+service:
+  protocol: web
+  ports:
+    service: 80
+  stack: PHP 7.4 · Apache · MariaDB · Navigate CMS 2.8 r1302
+provenance:
+  image: cyberarena/chal-navigate-cms:v1
+  source_intro: Navigate CMS 2.8 r1302 is a PHP/MySQL content-management system. Attackers
+    receive a distinct normal User account for dashboard and media workflows. Defenders
+    may edit the application under /srv/challenge/navigate and reload it with restart_service
+    while preserving login and ordinary upload.
+cover:
+  image: covers/navigate-cms.webp
+  accent: '#d95b45'
+  prompt_id: geo-v2
+  motif: A dashboard grid and media-file stack share one framed service boundary; a narrow
+    session ribbon slips across the frame and bends through an obsolete import slot, where
+    one media tile becomes an executable block. A separate rotating target marker hangs
+    beyond the grid, reached only by the command path, while a clean parallel upload lane
+    remains intact for ordinary User traffic.
