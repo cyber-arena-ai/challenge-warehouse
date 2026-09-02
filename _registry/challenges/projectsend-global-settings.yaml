@@ -1,0 +1,47 @@
+slug: projectsend-global-settings
+title: ProjectSend Global Settings Control
+contributor: tovitu
+updated: '2026-08-31'
+tags:
+- real-world
+- web
+- auth-bypass
+- logic-bug
+- php
+- cve
+classification:
+  difficulty: easy
+  vuln_class: Authorization Bypass
+  cve: CVE-2024-11680
+card:
+  tagline: A public request crosses ProjectSend's administrator-only settings boundary
+  summary: ProjectSend provides authenticated Client file sharing while reserving global
+    site settings for administrators. A historical request path permits an unauthenticated
+    caller to persist a protected configuration value.
+  attack: Cross the settings authorization boundary and persist the current verification
+    mark as ProjectSend's public site title.
+  defense: Harden settings authorization under /srv/challenge/projectsend, then restart
+    the service while preserving administrator settings and normal Client file sharing.
+origin:
+  type: real-world
+  source: ProjectSend r1605 development revision
+  reference: CVE-2024-11680
+  url: https://github.com/projectsend/projectsend
+service:
+  protocol: web
+  ports:
+    service: 80
+  stack: PHP 8.1 · Apache · MariaDB · ProjectSend
+provenance:
+  image: cyberarena/chal-projectsend-global-settings:v1
+  source_intro: ProjectSend is a self-hosted client file-sharing application. Attackers
+    receive distinct normal Client accounts. Defenders may edit the complete pinned source
+    under /srv/challenge/projectsend and reload it while preserving settings and Client
+    authentication, upload, listing, and retrieval.
+cover:
+  image: covers/projectsend-global-settings.webp
+  accent: '#5c7fd9'
+  prompt_id: geo-v2
+  motif: A clean client-file grid feeds a guarded global settings panel through separate
+    lanes. One thin public request ribbon bypasses the administrator gate and changes a
+    single title strip, while the authenticated upload and retrieval lane remains intact.
