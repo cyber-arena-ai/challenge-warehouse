@@ -1,0 +1,62 @@
+# hand-authored to _registry/schematic.md; cover pass not yet run
+slug: grav-editor-sandbox
+title: Grav Editor Sandbox Escape
+contributor: jt
+updated: '2026-08-21'
+tags:
+- real-world
+- web
+- php
+- ssti
+- info-leak
+- cve
+classification:
+  difficulty: hard
+  vuln_class: Template Sandbox Escape and Object Disclosure
+  cve:
+  - CVE-2026-42610
+  - CVE-2026-56700
+  - CVE-2026-44738
+card:
+  tagline: A content editor's page Twig reaches the site's signing key and a host command
+  summary: The official grav-admin 2.0.0-beta.1 bundle serves editor-published pages
+    through Twig. A least-privilege content editor — refused every config, user and
+    scheduler operation — reaches the site's real API signing credential through the
+    Grav object graph, and turns the same page-authoring surface into code running as
+    the unprivileged service account. Two independently scored outcomes on one identity.
+  attack: Publish a page whose Twig reads the signing credential, then a second that
+    plants a request-serving endpoint and runs /usr/local/bin/catflag with the round's
+    operation id.
+  defense: Harden the content Twig sandbox and the configuration exposure under
+    /srv/challenge/grav, then call restart_service, keeping editor login, page publishing
+    and safe Twig rendering intact.
+origin:
+  type: real-world
+  source: Grav CMS (grav-admin 2.0.0-beta.1, core commit 26a2d519c59c620e2b0a54d0baf33889d7d5db0a)
+  reference: CVE-2026-42610 / CVE-2026-56700 (closed in 2.0.0-beta.2); CVE-2026-44738
+    (closed in 2.0.0-rc.2)
+  url: https://github.com/getgrav/grav/releases/tag/2.0.0-beta.1
+service:
+  protocol: web
+  ports:
+    service: 8080
+  stack: PHP 8.3 · Grav CMS 2.0.0-beta.1 · Admin2 / API / Login plugins
+provenance:
+  image: cyberarena/chal-grav-editor-sandbox:v1
+  source_intro: >
+    Grav CMS — the official grav-admin 2.0.0-beta.1 bundle (core commit
+    26a2d519c59c620e2b0a54d0baf33889d7d5db0a) on PHP 8.3, serving a flat-file site on
+    TCP 8080 with the bundled Admin2, API and Login plugins. Every attacker holds its
+    own content-editor account: it may log in, read pages and publish pages whose
+    bodies are processed by Twig, and it is refused every privileged config, user,
+    scheduler and GPM operation. Two scored outcomes: recovering the site's API
+    signing credential (plugins.api.auth.jwt_secret), and reaching command execution
+    in the service context, which is proven by running the fixed helper
+    /usr/local/bin/catflag with the round's published operation id. The complete
+    editable source is /srv/challenge/grav; defenders harden it and call
+    restart_service, keeping login, page publishing, Twig rendering and the
+    privileged-config denial intact.
+cover:
+  image: null
+  accent: null
+  prompt_id: null
