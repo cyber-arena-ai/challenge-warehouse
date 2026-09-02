@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-25",
-  "count": 25,
+  "generated": "2026-09-01",
+  "count": 26,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -1056,6 +1056,53 @@
         "accent": "#e88f63",
         "prompt_id": "geo-v2",
         "motif": "A single hard-edged rectangular socket-node sits at the left, from which a stepped ladder of newline-terminated exchanges descends rightward: each rung a short segmented band paired with a returning band offset one step below, request and response climbing down in lockstep. In the daemon's interior, a small square grid of stored cells holds a scatter of dots, one cell ringed by concentric arcs to mark the retrieved note, a thick stroke threading out from it back along the ladder to the socket. Above, three stacked translucent planes suggest the tiny protocol's flat verbs, overlapping just enough that the deepest holds a lone filled cell."
+      }
+    },
+    {
+      "slug": "opentsdb-graph-command",
+      "title": "OpenTSDB Graph Command",
+      "contributor": "tovitu",
+      "updated": "2026-09-01",
+      "tags": [
+        "real-world",
+        "web",
+        "command-injection",
+        "cve",
+        "recompile"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Gnuplot Command Injection",
+        "cve": "CVE-2023-36812"
+      },
+      "card": {
+        "tagline": "A graph legend parameter becomes a command in OpenTSDB's Gnuplot process",
+        "summary": "OpenTSDB at exact revision 22b27ea accepts a newline in a graph legend-placement parameter and emits it into a generated Gnuplot program. An authenticated baseline metrics user can execute a command as the stable OpenTSDB service identity while ordinary metric ingestion, queries, UI browsing, and graph generation remain available.",
+        "attack": "Create a metric, submit a crafted authenticated /q graph request, and invoke the current execution-release operation from Gnuplot's service context.",
+        "defense": "Reject control characters in graph placement parameters while retaining real Gnuplot rendering, then rebuild with restart_service."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "OpenTSDB",
+        "reference": "CVE-2023-36812",
+        "url": "https://github.com/OpenTSDB/opentsdb"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 4242
+        },
+        "stack": "Java · OpenTSDB · HBase 1.2.6 · Gnuplot"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-opentsdb-graph-command:v1",
+        "source_intro": "OpenTSDB revision 22b27ea30a859a6dbdcd65fcdf61190d46e1b677 with authenticated metric ingestion, query, UI, and Gnuplot graph workflows. CVE-2023-36812 permits a graph placement parameter to introduce a Gnuplot command; direct child 07c4641471c6f5c2ab5aab615969e97211eb50d9 rejects the control characters."
+      },
+      "cover": {
+        "image": "covers/opentsdb-graph-command.webp",
+        "accent": "#346f95",
+        "prompt_id": "geo-v2",
+        "motif": "A time-series trace enters a plotting frame, then one legend marker breaks into a second command path that crosses the frame boundary into a guarded service-process ring."
       }
     },
     {
