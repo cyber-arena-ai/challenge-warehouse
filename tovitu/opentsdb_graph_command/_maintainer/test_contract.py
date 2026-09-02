@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
+from pathlib import Path
 import re
+import tarfile
 
 from challenges.interface import Flag, ObservationStatus, OracleKind, VulboxTarget
 
 from challenges.opentsdb_graph_command import checker, config
 from challenges.opentsdb_graph_command.challenge import OpenTSDBGraphCommandChallenge
 from challenges.opentsdb_graph_command.flag_handler import OpenTSDBExecuteFlagHandler
+from challenges.opentsdb_graph_command._maintainer.final_controls import (
+    FIXED_SHA256,
+    apply_exact_repair,
+)
 
 
 class Recorder:
@@ -122,3 +129,13 @@ def test_missing_execute_proof_is_an_integrity_failure() -> None:
         target(MissingRecorder()), handle, expected="FLAG{missing}"
     )
     assert observation.status is ObservationStatus.NOT_FOUND
+
+
+def test_retained_control_reconstructs_exact_upstream_repair() -> None:
+    package = Path(__file__).resolve().parents[1]
+    archive = package / "image/opentsdb-22b27ea30a859a6dbdcd65fcdf61190d46e1b677.tar"
+    with tarfile.open(archive) as source_archive:
+        member = source_archive.extractfile("opentsdb/src/tsd/GraphHandler.java")
+        assert member is not None
+        fixed = apply_exact_repair(member.read())
+    assert hashlib.sha256(fixed).hexdigest() == FIXED_SHA256

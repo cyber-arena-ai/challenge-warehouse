@@ -43,3 +43,28 @@ feature and substituting a canned HTTP response are not valid defenses. Applying
 the exact `GraphHandler.java` repair preserves the checker workflow and blocks
 the PoV. A direct write of a fabricated value cannot forge the facility's
 current token and is rejected by submission.
+
+## Retained final controls
+
+Run the four Stage 4 controls against the exact locally tested orchestrator and
+image revision:
+
+```bash
+python tovitu/opentsdb_graph_command/_maintainer/final_controls.py \
+  --orche /absolute/path/to/cyber-arena-orche \
+  --expected-orche-commit 5952ef5d7a1924789da86640665e2cbd6500a8ec \
+  --expected-image-id sha256:309dde70cded172a9f71d6a548847f8cd21c0cbf17747ee679a34453cd4461a3
+```
+
+The command rejects the shallow-but-amputated service and a canned HTTP
+replacement, applies the exact production-file delta from repair `07c464` and
+checks both the real workflow and callback behavior, then exercises the
+execution oracle against attempted direct writes and reads. It prints one JSON
+record and exits nonzero unless every control passes. Rebuilds produce a new
+image ID, which must be supplied explicitly rather than silently testing a
+stale tag.
+
+The orchestrator commit above is published as
+`origin/feat/capability-oracles`; replace only the absolute checkout path. The
+later local verifier-target correction is not required by this standalone
+control because the entrypoint supplies the container's reachable IP directly.
