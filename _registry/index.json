@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-25",
-  "count": 25,
+  "generated": "2026-08-31",
+  "count": 26,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -770,6 +770,54 @@
         "accent": "#e86958",
         "prompt_id": "geo-v2",
         "motif": "Two hard-edged isometric boxes sit apart — a large controller block on the right, a smaller isolated agent block on the left — joined by a segmented band that steps between them like a ladder. On the agent block a thin dashed path resolves into a straight thick stroke that pierces the joining band and drives clean through the outer nested frame of the controller block, depositing a solid rectangle deep inside a tight square lattice it was never meant to touch. The gesture repeats as a faint offset ghost of the same deposit one beat earlier — the symlink archived, then overwritten — so the two near-identical acts overlap where the arrow crosses the frame. A ring of empty executor slots around the controller sits inert, unlit and unused, while the intruding block lands squarely in the innermost cell."
+      }
+    },
+    {
+      "slug": "joomla-config-api",
+      "title": "Joomla Configuration Disclosure",
+      "contributor": "tovitu",
+      "updated": "2026-08-31",
+      "tags": [
+        "real-world",
+        "web",
+        "auth-bypass",
+        "info-leak",
+        "php",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "easy",
+        "vuln_class": "Authentication Bypass and Information Disclosure",
+        "cve": "CVE-2023-23752"
+      },
+      "card": {
+        "tagline": "A routing override exposes guarded Joomla configuration through the public API",
+        "summary": "Joomla 4.2.7 provides a public content site and a guarded administration API backed by MariaDB. A historical routing decision can expose protected global configuration fields to an unauthenticated caller.",
+        "attack": "Cross the API authentication boundary and recover the current protected SMTP credential.",
+        "defense": "Harden request routing in /srv/challenge/joomla, then call restart_service while preserving site login and guarded configuration updates."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "Joomla 4.2.7",
+        "reference": "CVE-2023-23752",
+        "url": "https://github.com/joomla/joomla-cms"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 80
+        },
+        "stack": "PHP 8.1 · Apache · MariaDB · Joomla 4.2.7"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-joomla-config-api:v1",
+        "source_intro": "Joomla 4.2.7 is a PHP/MySQL content-management system. Attackers receive distinct normal Registered accounts for ordinary site sign-in. Defenders may edit the application under /srv/challenge/joomla and reload it with restart_service while preserving the site and guarded configuration workflow."
+      },
+      "cover": {
+        "image": "covers/joomla-config-api.webp",
+        "accent": "#eab222",
+        "prompt_id": "geo-v2",
+        "motif": "A public field of content tiles surrounds a thick framed configuration vault; one narrow query ribbon enters a router junction and flips a closed gate into an open lane, revealing a single hidden credential strip, while a parallel guarded administrator lane remains intact and bidirectional."
       }
     },
     {
