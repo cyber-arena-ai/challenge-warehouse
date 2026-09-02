@@ -1,0 +1,49 @@
+slug: dolibarr-website
+title: Dolibarr Website Command Execution
+contributor: tovitu
+updated: '2026-08-31'
+tags:
+- real-world
+- web
+- rce
+- php
+- command-injection
+- cve
+classification:
+  difficulty: hard
+  vuln_class: PHP Filter Bypass
+  cve:
+  - CVE-2023-30253
+card:
+  tagline: A restricted Website editor crosses into server-side command execution
+  summary: Dolibarr 16.0.5 exposes its normal ERP/CRM and Website workflows to distinct
+    non-administrator editors while reserving dynamic server code for a separate permission.
+  attack: Cross the Website source-filter boundary and recover the rotating service-command
+    witness through the public page renderer.
+  defense: Harden Website source handling under /srv/challenge/dolibarr, then restart the
+    service while preserving restricted-editor publication and public rendering.
+origin:
+  type: real-world
+  source: Dolibarr 16.0.5
+  reference:
+  - CVE-2023-30253
+  url: https://github.com/Dolibarr/dolibarr
+service:
+  protocol: web
+  ports:
+    service: 80
+  stack: PHP 8.1 · Apache · MariaDB · Dolibarr 16.0.5
+provenance:
+  image: cyberarena/chal-dolibarr-website:v1
+  source_intro: Dolibarr is an ERP/CRM application with an enabled Website module. Attackers
+    receive distinct restricted Website editor accounts. Defenders may edit the complete
+    pinned source under /srv/challenge/dolibarr and reload it with restart_service while
+    preserving ordinary Website publication and public rendering.
+cover:
+  image: covers/dolibarr-website.webp
+  accent: '#c77a35'
+  prompt_id: geo-v2
+  motif: A structured ERP dashboard grid feeds a framed Website canvas through a narrow
+    editor lane. One mixed-case code ribbon slips through a filter seam and reaches a
+    separate service-command block beyond the publication boundary, while a parallel
+    clean HTML lane remains intact and ends in a public page frame.
