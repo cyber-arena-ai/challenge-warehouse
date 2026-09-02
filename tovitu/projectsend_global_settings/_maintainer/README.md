@@ -31,5 +31,14 @@ MariaDB state, Client principals, and uploaded files.
 Run the focused tests from the orchestrator checkout with this warehouse selected,
 then run the canonical static, build, and game gates. Admission controls must also
 show that removing the settings workflow and returning canned responses fail the
-semantic checker, while the exact upstream repair preserves normal behavior and
-blocks the certified proof.
+semantic checker, while the upstream-derived narrow two-file repair preserves
+normal behavior and blocks the certified proof.
+
+Reproduce those controls with:
+
+```bash
+/absolute/path/to/cyber-arena-orche/.venv/bin/python \
+  tovitu/projectsend_global_settings/_maintainer/final_controls.py \
+  --orche /absolute/path/to/cyber-arena-orche \
+  --fixed-source /absolute/path/to/source-fixed.tar.gz
+```
