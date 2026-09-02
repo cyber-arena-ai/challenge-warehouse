@@ -118,6 +118,27 @@ Both repair commits pass this SLA: they reject the unauthenticated connector
 request and traversal-bearing names and complete the `php*` extension pattern,
 none of which an authenticated `.txt` upload into one's own project touches.
 
+## Reproduce the final controls
+
+Run the retained defense and execution-oracle controls against the locally
+built package image:
+
+```bash
+/absolute/path/to/cyber-arena-orche/.venv/bin/python \
+  jt/xerte_media_upload_rce/_maintainer/final_controls.py \
+  --orche /absolute/path/to/cyber-arena-orche \
+  --repair-dir /absolute/path/to/cyber-arena/artifacts/projects/THEXERTEPROJECT__XERTEONLINETOOLKITS/stage3/xerte-command-execution
+```
+
+The script takes the image reference from `XerteMediaUploadRceChallenge` unless
+`--image` overrides it. Before starting Docker it verifies the retained patches
+for repairs `02661be88cc369325ea01b508086bde7fbfec805` and
+`f063e942b4a9bf77a06829e844c2c70316bc45e8` against their recorded SHA-256
+digests. It rejects feature amputation and canned success, accepts both exact
+repairs with the ordinary project/media workflow intact, and rejects a direct
+write as an EXECUTE witness. The disposable control container is removed on
+success or failure.
+
 ## Not exercised
 
 The upstream interactive setup wizard (deliberately unreachable), the management
