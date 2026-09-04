@@ -9,7 +9,7 @@ one generated cover image.
 _registry/
 ├── schematic.md              ← this spec
 ├── challenges/<slug>.yaml    ← one metadata file per challenge (final)
-├── covers/<slug>.png         ← one generated cover per challenge (final)
+├── covers/<slug>.webp        ← one generated cover per challenge (final)
 └── avatar/<contributor>.png  ← contributor GitHub avatar, by handle
 ```
 
@@ -96,9 +96,11 @@ provenance:
     follow_symlinks=True and restart_service.
 
 cover:
-  image: covers/aiohttp-lfi.png# ⊹ path relative to _registry/
-  accent: "#c8472b"            # ⊹ dominant color sampled from the cover, for per-card theming
-  prompt_id: geo-v1            # ⊹ id of the prompt template that produced it (reproducibility)
+  image: covers/aiohttp-lfi.webp # ⊹ path relative to _registry/
+  accent: "#c8472b"            # ⊹ dominant INK sampled from the cover, for per-card theming
+  prompt_id: geo-v2            # ⊹ id of the prompt template that produced it (reproducibility)
+  motif: "Nested frames pierced by chevrons that escape the outer boundary toward a
+    block outside it."         # ⊹ the composition brief this cover depicts — see the cover pass
 ```
 
 The example above is **real-world** (a library CVE). The other world is **CTF**
@@ -166,9 +168,21 @@ binary) · `config-fix` (fix is config, not code) · `cve` (has a published CVE)
 1. **Metadata pass** — a standalone agentic workflow reads each challenge
    package, fills ⚙ deterministically, and runs one LLM pass for ✎, emitting
    `challenges/<slug>.yaml`.
-2. **Cover pass** — generate one cover per challenge via the image API
-   (`gen.api.json`, gpt-5.4-image-2), in a **uniform high-geometric style**
-   consistent with the Riso-Zine frontend (varied color, shared geometric
-   language), then sample `cover.accent` and write `covers/<slug>.png`.
+2. **Cover pass** — two steps per challenge, in a **uniform riso-geometric style**
+   consistent with the Riso-Zine frontend (fixed print style; varied color and
+   subject):
+   a. **Motif brief** — one small LLM pass (the text model) reads the challenge's
+      own `classification`, `tags`, `service` and `card` fields and writes a
+      concrete geometric composition brief: the structural gesture unique to that
+      bug (traversal escapes its nested frames; overflow crushes a grid's
+      neighbours; redaction leaks through its deepest covering layer), plus a
+      detail specific to that one challenge so two challenges sharing a tag never
+      render alike. Stored as `cover.motif`.
+   b. **Image** — the brief is dropped into the fixed style template and rendered
+      by the image API, then `cover.accent` is sampled from the result and
+      `covers/<slug>.webp` written.
+
+   `cover.motif` is hand-editable: rewrite it and re-run with `--keep-motif` to
+   redraw that cover from your brief instead of deriving a new one.
 
 Both generators live in a standalone dir; outputs are written back here.

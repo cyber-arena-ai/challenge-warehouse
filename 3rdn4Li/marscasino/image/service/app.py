@@ -10,7 +10,6 @@ from flask_sqlalchemy import SQLAlchemy
 import datetime
 import socket 
 import uuid
-import hashlib
 import base64
 import ed25519
 import json
@@ -72,6 +71,20 @@ class UserModel(db.Model):
     def __repr__(self):
         return f"<{self.username}>"
 
+class ReferralModel(db.Model):
+    """Reward history kept independently from disposable user accounts.
+
+    A referred user may delete their account, but that must not restore one of
+    the recruiter's three reward slots.
+    """
+    __tablename__ = 'referral'
+
+    referral_id = db.Column(db.INTEGER, primary_key=True, autoincrement=True)
+    recruiter_code = db.Column(db.VARCHAR(length=32), nullable=False, index=True)
+    recruited_username = db.Column(
+            db.VARCHAR(length=36), nullable=False, unique=True)
+    created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
 # ================================================
 # === UTILS ======================================
 # ================================================
@@ -128,7 +141,9 @@ def register_view():
         create_key()
         clean_inactive_user()
         username = request.form['username']
-        fcode = hashlib.md5(username.encode()).hexdigest()
+        # A friend code is an account capability, not a value that should be
+        # derivable from the public username.
+        fcode = uuid.uuid4().hex
         password = request.form['password']
         ip = request.form['ip']
 
@@ -166,12 +181,19 @@ def register_view():
             recruiter = UserModel.query.filter_by(fcode=rec_code).first()
             if recruiter:
                 user.coins = 50
-                # number of recruited minus current one 
-                number_of_rec = UserModel.query.filter_by(recruited_by=rec_code)\
-                        .filter(UserModel.username!=username).count()
-                # recruiter used all friend codes 
-                if number_of_rec < 3:
-                    add_coins(recruiter, 50)
+                # Count durable reward records, not currently existing users:
+                # deleting a recruited account must not reset this limit.
+                number_of_rec = ReferralModel.query.filter_by(
+                        recruiter_code=rec_code).count()
+                already_rewarded = ReferralModel.query.filter_by(
+                        recruited_username=username).first()
+                if number_of_rec < 3 and not already_rewarded:
+                    if recruiter.coins + 50 <= MAX_COINS:
+                        recruiter.coins += 50
+                        db.session.add(ReferralModel(
+                            recruiter_code=rec_code,
+                            recruited_username=username,
+                        ))
 
         db.session.commit()
 
@@ -231,10 +253,16 @@ def delete_view():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user = UserModel.query.filter_by(username=username).first()
-        if user.password != password:
+        # The authenticated account is the only account this request may
+        # delete; credentials in the POST body do not select another user.
+        if username != user.username or user.password != password:
             error = "Wrong password"
             return render_template('delete.html', title='Delete', error=error, user=user)
+        # Reward history for users recruited by this account can go away with
+        # the recruiter. Records where this user was the recruit deliberately
+        # remain, preserving the original recruiter's three-reward cap.
+        ReferralModel.query.filter_by(recruiter_code=user.fcode).delete(
+                synchronize_session=False)
         db.session.delete(user)
         db.session.commit()
         return redirect("/logout")
@@ -331,7 +359,7 @@ def game1_view():
     second = [2,5,8,11,14,17,20,23,26,29,32,35]
     third = [3,6,9,12,15,18,21,24,27,30,33,36]
     answers = ["red","black","first","second","third"]
-    answers += ["%d" % i for i in range(0,36)]
+    answers += ["%d" % i for i in range(0,37)]
 
     if request.method == 'POST':
         bet = request.form['bet']
@@ -356,11 +384,9 @@ def game1_view():
         elif field == "second" and number in second:
             win = bet * 2
         elif field == "third" and number in third:
-            win = stack * 2
-        elif field.isdigit() and int(field) == 0:
-            win = bet * 36
+            win = bet * 2
         elif field.isdigit() and int(field) == number:
-            win = bet * 35
+            win = bet * 36 if number == 0 else bet * 35
         else:
             win = 0
         error = add_coins(user, win)

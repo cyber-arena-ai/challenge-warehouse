@@ -40,5 +40,14 @@ provenance:
     protocol.'
 cover:
   image: covers/nautilus-ico.webp
-  accent: '#d82925'
-  prompt_id: geo-v1
+  accent: '#e76157'
+  prompt_id: geo-v2
+  motif: A regular grid of tightly stacked rectangular cells forms the compiled service block
+    on one side; from a single connecting node at the left a thick stroke steps rightward
+    as a line-based request/response ladder, each rung crossing a hard-edged container boundary.
+    Where the incoming path meets the grid, one deep cell — normally sealed under opaque overlapping
+    planes — swells and cracks, letting its buried layer show through and spill a segmented
+    band of blocks back out along a dashed return path toward the connecting node. Beneath,
+    a second faint duplicate of the grid sits slightly offset, its cells re-set and re-tiled,
+    the recompiled structure closing the seam the outgoing band escaped through. Concentric
+    arcs radiate from the breached cell to anchor the composition.

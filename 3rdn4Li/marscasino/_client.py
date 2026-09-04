@@ -66,6 +66,16 @@ def buy(session, baseurl, seller):
     return session.get(baseurl + "buy", params={"u": seller})
 
 
+def referral_code(session, baseurl):
+    response = session.get(baseurl + "recruite")
+    match = re.search(r"This is your code:\s*<b>([^<]{1,128})</b>", response.text)
+    return match.group(1).strip() if match else None
+
+
+def play_roulette(session, baseurl, bet, field):
+    return session.post(baseurl + "game1", data={"bet": bet, "field": field})
+
+
 def delete_account(session, baseurl, username, password):
     return session.post(
         baseurl + "delete-account",

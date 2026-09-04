@@ -44,5 +44,16 @@ provenance:
     then call restart_service.'
 cover:
   image: covers/craft-cms.webp
-  accent: '#f16289'
-  prompt_id: geo-v1
+  accent: '#ed5178'
+  prompt_id: geo-v2
+  motif: A neat lattice of identical isometric blocks (a dependency-injection container) sits
+    behind a hard-edged web boundary frame, each block wired to its neighbours by thin dashed
+    paths; one incoming request-band pierces the outer frame unchallenged and terminates at
+    a single block whose type-slot has been swapped for a foreign chevron, recolouring it
+    as an intruder among the uniform cells. From that hijacked block a thick stroke reaches
+    sideways to a separate flat rectangle — a planted session file lying outside the lattice
+    — and pulls it inward through an include-arc, the previously inert plane detonating into
+    a burst of radiating triangles that shatter the orderly grid around it. A stepped request/response
+    ladder climbs the left margin toward the pierced frame, its final rung overshooting the
+    boundary to mark the unauthenticated entry, while a faint halftone field pools beneath
+    the exploded cell where the smuggled payload spreads.

@@ -1,8 +1,8 @@
 """FunctionalityTest for faust-marscasino: tcp liveness only.
 
-The deep register/login/voucher round-trip (the CHECKER) moved to `checker.py`,
-a network probe the Health Poller runs outside prod's trust boundary. This keeps
-the shallow tcp reachability leaf.
+The deep register/login/voucher/referral/buy/roulette round-trip (the CHECKER)
+moved to `checker.py`, a network probe the Health Poller runs outside prod's
+trust boundary. This keeps the shallow tcp reachability leaf.
 """
 from __future__ import annotations
 

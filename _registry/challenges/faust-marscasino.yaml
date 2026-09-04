@@ -41,5 +41,14 @@ provenance:
     auth/signing to access another user''s account.'
 cover:
   image: covers/faust-marscasino.webp
-  accent: '#ec6098'
-  prompt_id: geo-v1
+  accent: '#f27190'
+  prompt_id: geo-v2
+  motif: A tall verification barrier of stacked horizontal bands guards a nested inner frame;
+    a dashed forged path approaches it carrying a small segmented token-block whose signature
+    portion is a modular wheel of concentric arcs that never quite closes, its broken seam
+    letting the path slip cleanly through the barrier at that gap. Inside, two near-identical
+    account frames sit side by side — one glowing frame is entered by the intruding path while
+    its rightful dashed approach lies severed and unused, the forged token binding to the
+    wrong frame. A faint halftone field of chips and small circles scatters across the guarded
+    interior, the deepest concealed block showing through the breached layer as the path crosses
+    the seam into it.
