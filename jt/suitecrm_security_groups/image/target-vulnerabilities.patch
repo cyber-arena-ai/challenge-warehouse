@@ -1,0 +1,133 @@
+--- a/Api/V8/Service/RelationshipService.php
++++ b/Api/V8/Service/RelationshipService.php
+@@ -16,7 +16,6 @@
+ use Slim\Http\Request;
+ use \SugarBean;
+ use \DomainException;
+-use SuiteCRM\Exception\AccessDeniedException;
+
+ #[\AllowDynamicProperties]
+ class RelationshipService
+@@ -58,10 +57,6 @@
+         $response = new DocumentResponse();
+         $sourceBean = $params->getSourceBean();
+
+-        if (!$sourceBean->ACLAccess('view') || !$sourceBean->ACLAccess('list')) {
+-            throw new AccessDeniedException();
+-        }
+-
+         $linkFieldName = $params->getLinkedFieldName();
+
+         $size = $params->getPage()->getSize();
+@@ -90,11 +85,6 @@
+             $data = [];
+             /** @var SugarBean $relatedBean */
+             foreach ($relatedBeans as $relatedBean) {
+-
+-                if (!$relatedBean->ACLAccess('view') || !$relatedBean->ACLAccess('list')) {
+-                    continue;
+-                }
+-
+                 $linkResponse = new LinksResponse();
+                 $linkResponse->setSelf(sprintf('V8/module/%s/%s', $relatedBean->getObjectName(), $relatedBean->id));
+
+@@ -132,17 +122,7 @@
+     public function createRelationship(CreateRelationshipParams $params)
+     {
+         $sourceBean = $params->getSourceBean();
+-
+-        if (!$sourceBean->ACLAccess('view') || !$sourceBean->ACLAccess('list')) {
+-            throw new AccessDeniedException();
+-        }
+-
+         $relatedBean = $params->getRelatedBean();
+-
+-        if (!$relatedBean->ACLAccess('view') || !$relatedBean->ACLAccess('list')) {
+-            throw new AccessDeniedException();
+-        }
+-
+         $linkFieldName = $this->beanManager->getLinkedFieldName($sourceBean, $relatedBean);
+
+         $this->beanManager->createRelationshipSafe($sourceBean, $relatedBean, $linkFieldName);
+@@ -172,16 +152,8 @@
+     {
+         $sourceBean = $params->getSourceBean();
+
+-        if (!$sourceBean->ACLAccess('view') || !$sourceBean->ACLAccess('list')) {
+-            throw new AccessDeniedException();
+-        }
+-
+         $relatedBean = $params->getRelatedBean();
+
+-        if (!$relatedBean->ACLAccess('view') || !$relatedBean->ACLAccess('list')) {
+-            throw new AccessDeniedException();
+-        }
+-
+         $sourceLabel = translate($sourceBean->module_dir);
+
+         $relatedLabel = translate($relatedBean->module_dir);
+@@ -226,21 +198,8 @@
+     public function deleteRelationship(DeleteRelationshipParams $params)
+     {
+         $sourceBean = $params->getSourceBean();
+-
+-        if (!$sourceBean->ACLAccess('view') || !$sourceBean->ACLAccess('edit') || !$sourceBean->ACLAccess('list')) {
+-            throw new AccessDeniedException();
+-        }
+-
+         $linkFieldName = $params->getLinkedFieldName();
+         $relatedBeans = $sourceBean->get_linked_beans($linkFieldName);
+-
+-        if (!empty($relatedBeans)) {
+-            $firstRelatedBean = reset($relatedBeans);
+-            if (!$firstRelatedBean->ACLAccess('view') || !$firstRelatedBean->ACLAccess('list')) {
+-                throw new AccessDeniedException();
+-            }
+-        }
+-
+         $relatedBeanId = $params->getRelatedBeanId();
+
+         $relatedBean = array_filter($relatedBeans, function ($bean) use ($relatedBeanId) {
+--- a/modules/AOR_Fields/AOR_Field.php
++++ b/modules/AOR_Fields/AOR_Field.php
+@@ -141,15 +141,6 @@
+                     }
+                 }
+
+-                if ($field->field_function !== null && $field->field_function !== '') {
+-                    if (!in_array(strtoupper($field->field_function), getAorAllowedFieldFunctions(), true)) {
+-                        LoggerManager::getLogger()->warn(
+-                            'AOR_Field: Invalid field_function value rejected: ' . $field->field_function
+-                        );
+-                        $field->field_function = null;
+-                    }
+-                }
+-
+                 if ($field->sort_by !== null && $field->sort_by !== '') {
+                     if (!in_array(strtoupper($field->sort_by), getAorAllowedSortDirections(), true)) {
+                         LoggerManager::getLogger()->warn(
+--- a/modules/AOR_Reports/AOR_Report.php
++++ b/modules/AOR_Reports/AOR_Report.php
+@@ -512,8 +512,8 @@
+                 );
+             }
+
+-            if ($field->field_function != null && in_array(strtoupper($field->field_function), getAorAllowedFieldFunctions(), true)) {
+-                $select_field = strtoupper($field->field_function) . '(' . $select_field . ')';
++            if ($field->field_function != null) {
++                $select_field = $field->field_function . '(' . $select_field . ')';
+             }
+
+             $query_array['group_by'][] = $select_field;
+@@ -1342,9 +1342,9 @@
+                     unset($query['id_select'][$table_alias]);
+                 }
+
+-                if ($field->field_function != null && in_array(strtoupper($field->field_function), getAorAllowedFieldFunctions(), true)) {
++                if ($field->field_function != null) {
+                     $unique = $field->group_by == 1 ? 'DISTINCT ' : '';
+-                    $select_field = strtoupper($field->field_function) . '(' . $unique . $select_field . ')';
++                    $select_field = $field->field_function . '(' . $unique . $select_field . ')';
+                 } elseif ($field->group_by == 1) {
+                     $query['group_by'][] = $select_field;
+                 } else {
