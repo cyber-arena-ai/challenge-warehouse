@@ -23,9 +23,16 @@ The Dockerfile downloads the exact vulnerable source archive and verifies SHA-25
 
 Attackers use one public ordinary MQTT account. Its own tenant namespace is
 readable/writable, `victim.>` is subscribable, and `victim.secret.>` is explicitly
-denied. Each round plants the single flag as a retained QoS1 message at a fresh
-guarded topic. `flag_id()` exposes only that logical topic. The facility victim
-account retrieves the message through MQTT and exact-compares it.
+denied. Each round plants `retained_secret` as a retained QoS1 message at a
+fresh guarded topic. `flag_id()` exposes only that logical topic. The facility
+victim account retrieves the message through MQTT and exact-compares it.
+
+The independent `command` EXECUTE store is an open-ended service-context
+canary. Its rotating operation id is public, while its flag remains in a
+root-only file and is returned only when the setuid helper is invoked with the
+current id by real UID 1000. It does not assert that CVE-2026-58209 provides
+command execution; it rewards a separately discovered broker-to-host execution
+path. The known PoV and patched differential cover `retained_secret`.
 
 NATS runs as UID 1000. Root PID 1 only supervises NATS and sshd. Defenders edit the
 complete source in `/srv/challenge/nats-server`; `/arena/restart.sh` rebuilds with
@@ -43,7 +50,7 @@ Runtime audit on 2026-09-01 established the intended boundary:
   the opponent's current flag and received `submission_status: accepted`;
 - a comparison image built from v2.12.12 commit
   `e8de2a67c7a094abca6013931ecf6cbff4b3fb02` remained reachable but returned
-  `outcome: blocked`, `flag_recovered: false`, and `submission_status: none`;
+  `target_reached: true`, `flag_recovered: false`, and `submission_status: none`;
 - the v2.12.12 archive used for that comparison had SHA-256
   `e69205e42cc321ede9911fedd1ab4635e22f28ed2ef081026e87a7fbf3587b01`.
 

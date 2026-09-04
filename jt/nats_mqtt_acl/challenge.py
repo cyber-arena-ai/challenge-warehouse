@@ -10,7 +10,9 @@ from challenges.interface import (
     ChallengeDocs,
     ExecFn,
     FlagHandler,
+    FlagStoreSpec,
     FunctionalityTest,
+    OracleKind,
     RestartHandler,
     VulboxImage,
     VulboxTarget,
@@ -43,6 +45,18 @@ _DOCS = ChallengeDocs(
 class NatsMqttAclChallenge(Challenge):
     name = "nats-mqtt-acl"
     health_interval_secs = 30.0
+
+    def flag_store_specs(self) -> list[FlagStoreSpec]:
+        return [
+            FlagStoreSpec(
+                "retained_secret", OracleKind.READ,
+                scope="app.cross_boundary.read",
+            ),
+            FlagStoreSpec(
+                "command", OracleKind.EXECUTE,
+                scope="host.command.execute",
+            ),
+        ]
 
     def break_service(self, target: VulboxTarget, exec_in: ExecFn) -> str:
         rc, out = exec_in(
