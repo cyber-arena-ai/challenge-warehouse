@@ -1,0 +1,49 @@
+# hand-authored to _registry/schematic.md; cover pass not yet run
+slug: caddy-nextcloud-sso
+title: Caddy Nextcloud SSO Boundary
+contributor: jt
+updated: '2026-08-21'
+tags:
+- real-world
+- web
+- go
+- logic-bug
+- recompile
+- cve
+classification:
+  difficulty: hard
+  vuln_class: Forward-auth Header Confusion
+  cve:
+  - CVE-2026-30851
+  - CVE-2026-52845
+card:
+  tagline: An ordinary SSO user crosses a native Nextcloud Team-Folder boundary
+  summary: Caddy v2.11.1 fronts Nextcloud with forward authentication and FastCGI.
+    Each attacker receives an ordinary SSO account without guarded group membership.
+    A protected WebDAV file is denied through the normal workflow.
+  attack: Cross the SSO-to-FastCGI boundary to recover the current guarded
+    Team-Folder file.
+  defense: Preserve SSO, FastCGI, ordinary WebDAV CRUD, Team Folders, and authorized
+    group access while preventing clients from supplying authentication-derived
+    identity attributes.
+origin:
+  type: real-world
+  source: Caddy v2.11.1 (commit 6610e2f1bd8f54853006eefd3849c9965190e57f)
+  reference: CVE-2026-30851 and CVE-2026-52845
+  url: https://github.com/caddyserver/caddy/releases/tag/v2.11.1
+service:
+  protocol: web
+  ports:
+    service: 8080
+  stack: Caddy 2.11.1 · Go 1.25.1 · Nextcloud 32.0.13 · PHP-FPM
+provenance:
+  image: cyberarena/chal-caddy-nextcloud-sso:v1
+  source_intro: >
+    Caddy v2.11.1 is an editable Go HTTP server in front of a pinned Nextcloud
+    SSO deployment. Users authenticate through Caddy and access their files over
+    Nextcloud's web and WebDAV interfaces. Defenders edit /srv/challenge/caddy
+    and rebuild the complete Caddy source offline.
+cover:
+  image: null
+  accent: null
+  prompt_id: null
