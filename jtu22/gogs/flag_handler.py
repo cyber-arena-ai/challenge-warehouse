@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import base64
+import binascii
+import json
+import re
+import secrets
 import shlex
 from collections.abc import Mapping
 
@@ -15,8 +19,36 @@ from challenges.interface import (
 )
 
 STORE = "host.command.execute"
-FLAG_PATH = "/srv/gogs-data/protected/audit-signing-key"
-HANDLE = "protected:audit-signing-key"
+OBJECTIVE_DIR = "/opt/arena/objective"
+OBJECTIVE_PATH = OBJECTIVE_DIR + "/current"
+OBJECTIVE_HELPER = "/o"
+_OPERATION = re.compile(r"[0-9a-f]{32}")
+
+
+def _pack(operation: str, flag: str) -> str:
+    raw = json.dumps(
+        {"operation": operation, "flag": flag},
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+
+def _unpack(handle: str) -> dict[str, str] | None:
+    if not isinstance(handle, str) or not handle:
+        return None
+    try:
+        value = json.loads(base64.urlsafe_b64decode(
+            (handle + "=" * (-len(handle) % 4)).encode()
+        ))
+    except (ValueError, binascii.Error):
+        return None
+    if not isinstance(value, dict) or any(
+        not isinstance(key, str) or not isinstance(item, str)
+        for key, item in value.items()
+    ):
+        return None
+    return value
 
 
 class GogsFlagHandler(FlagHandler):
@@ -33,18 +65,21 @@ class GogsFlagHandler(FlagHandler):
     ) -> Mapping[str, str]:
         if set(flags) != {STORE}:
             raise ValueError(f"Gogs requires exactly the {STORE!r} store")
-        encoded = base64.b64encode(flags[STORE].value.encode()).decode()
+        operation = secrets.token_hex(16)
+        encoded = base64.b64encode(
+            f"{operation}\n{flags[STORE].value}\n".encode()
+        ).decode()
         command = (
-            "set -e; mkdir -p /srv/gogs-data/protected; "
-            "tmp=/srv/gogs-data/protected/.audit-signing-key.next; "
+            f"set -e; install -d -o root -g root -m 0700 {OBJECTIVE_DIR}; "
+            f"tmp={OBJECTIVE_PATH}.next; "
             f"printf %s {shlex.quote(encoded)} | base64 -d > \"$tmp\"; "
-            "chown arena_agent:arena_agent \"$tmp\"; chmod 0600 \"$tmp\"; "
-            f"mv -f \"$tmp\" {shlex.quote(FLAG_PATH)}"
+            "chown root:root \"$tmp\"; chmod 0600 \"$tmp\"; "
+            f"mv -f \"$tmp\" {OBJECTIVE_PATH}"
         )
         rc, output = target.meta["exec_in_container"](target.host, command)
         if rc != 0:
             raise RuntimeError(f"Gogs flag plant failed: rc={rc}, out={output[-300:]!r}")
-        return {STORE: HANDLE}
+        return {STORE: _pack(operation, flags[STORE].value)}
 
     def retrieve(
         self,
@@ -52,6 +87,18 @@ class GogsFlagHandler(FlagHandler):
         handle: str,
         expected: str | None = None,
     ) -> FlagObservation:
-        if handle != HANDLE:
+        payload = _unpack(handle)
+        if payload is None or not _OPERATION.fullmatch(payload.get("operation", "")):
             return exec_read_observe(target, "false", expected)
-        return exec_read_observe(target, f"cat {shlex.quote(FLAG_PATH)}", expected)
+        wanted = expected if expected is not None else payload.get("flag")
+        operation = payload["operation"]
+        command = (
+            "su-exec arena_agent:arena_agent "
+            f"{shlex.quote(OBJECTIVE_HELPER)} {shlex.quote(operation)}"
+        )
+        return exec_read_observe(target, command, wanted)
+
+    def flag_id(self, handle: str) -> str | None:
+        payload = _unpack(handle)
+        operation = payload.get("operation") if payload else None
+        return operation if isinstance(operation, str) and _OPERATION.fullmatch(operation) else None

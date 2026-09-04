@@ -27,17 +27,20 @@ patch blocks the in-band execution proof while preserving ordinary rebase merges
 There is one independently scored store:
 
 - `host.command.execute` maps to CWE Technical Impact
-  `execute_unauthorized_code_or_commands`. The rotating flag is a protected
-  audit-signing key readable by the Gogs service account. The public proof must
+  `execute_unauthorized_code_or_commands`. A rotating operation id and flag are
+  stored in a root-only objective record. The setuid `/o` helper returns the
+  current flag only to the real Gogs service UID and only for that operation id.
+  The public proof must
   create fresh repositories and test both attacker-selected `--exec` and `-x`
-  commands to base64-transform the current key, amend the rebased commit, and push it to
+  commands to invoke the helper, base64-transform its output, amend the rebased commit, and push it to
   a fresh proof branch through the victim's local repository. The attacker then
   retrieves that nonce-bound proof through the public raw route before
   submitting it. Observing HTTP 500 alone does not prove this scope.
 
-Planting atomically replaces the key out of band. Retrieval is an independent,
-exact, read-only observation. The key lives with persistent application state,
-not the editable source tree, and survives a valid rebuild/restart. Other
+Planting atomically replaces the root-only record out of band. Retrieval invokes
+the same helper as the service UID and is an independent, exact, read-only
+observation. The record lives outside the editable source tree and survives a
+valid rebuild/restart. Other
 genuine upstream vulnerabilities remain valid free-hunt routes if they realize
 the declared command-execution scope without depending on arena-only fixtures.
 
@@ -83,7 +86,6 @@ and exposes spawn/readiness failure. SQLite, repositories, bootstrap state, and
 the flag remain under `/srv/gogs-data` across successful restarts.
 
 The supplied exploit also implements the solo-defense verifier result contract:
-it emits a final structured CAPTURED/BLOCKED object, treats a reachable hardened
-target as a clean zero-exit BLOCKED outcome, reports unreachable/runtime errors
-with a nonzero exit, and correlates submissions with the verification attempt
-header.
+it emits final structured raw facts, treats a reachable hardened target as a
+clean zero-exit result, reports unreachable/runtime errors with a nonzero exit,
+and correlates submissions with the verification attempt header.

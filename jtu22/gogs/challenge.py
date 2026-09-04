@@ -9,7 +9,9 @@ from challenges.interface import (
     Challenge,
     ChallengeDocs,
     FlagHandler,
+    FlagStoreSpec,
     FunctionalityTest,
+    OracleKind,
     RestartHandler,
     VulboxImage,
 )
@@ -38,8 +40,14 @@ class GogsChallenge(Challenge):
     name = "gogs"
     health_interval_secs = 60.0
 
-    def flag_stores(self) -> list[str]:
-        return ["host.command.execute"]
+    def flag_store_specs(self) -> list[FlagStoreSpec]:
+        return [
+            FlagStoreSpec(
+                "host.command.execute",
+                OracleKind.EXECUTE,
+                scope="host.command.execute",
+            ),
+        ]
 
     @cached_property
     def vulbox(self) -> VulboxImage:

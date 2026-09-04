@@ -72,6 +72,16 @@ COPY --from=binarybuilder /root/.cache/go-build/ /root/.cache/go-build/
 RUN chmod -R a+rX /opt/challenge_src/gogs \
     && chmod 0755 /opt/gogs-bin
 
+COPY gogs-objective.c /tmp/gogs-objective.c
+RUN cc -O2 -Wall -Wextra -Werror -static \
+      -o /o /tmp/gogs-objective.c \
+    && rm /tmp/gogs-objective.c \
+    && chown root:arena_agent /o \
+    && chmod 4750 /o \
+    && mkdir -p /opt/arena/objective \
+    && chown root:root /opt/arena/objective \
+    && chmod 0700 /opt/arena/objective
+
 COPY app.ini.template entrypoint.sh provision_admin.py restart.sh start.sh stop.sh /arena/
 RUN chmod 0555 /arena/entrypoint.sh \
       /arena/provision_admin.py /arena/restart.sh /arena/start.sh /arena/stop.sh \
