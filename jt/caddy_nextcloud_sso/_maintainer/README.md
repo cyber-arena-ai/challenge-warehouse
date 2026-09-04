@@ -43,11 +43,17 @@ normalization boundary.
 
 ## Objective
 
-The single `guarded_file` READ flag is created by a guarded application identity
+The `guarded_file` READ flag is created by a guarded application identity
 as a fresh `Guarded/<random>.txt` file through WebDAV. The public flag-id is
 only that relative application path. Retrieval uses an authorized WebDAV GET
-and exact comparison. There is no synthetic command-execution objective:
-neither advisory asserts an RCE primitive.
+and exact comparison.
+
+The independent `command` EXECUTE store is an open-ended service-context
+canary. A root-only current-round record holds its operation id and flag; the
+setuid helper returns the flag only to real UID 1000 with the current id.
+Neither advisory is claimed to provide RCE. The store instead rewards a
+separately discovered Caddy/Nextcloud-to-host execution path, while the known
+PoV and patched differential cover `guarded_file`.
 
 ## Runtime evidence
 

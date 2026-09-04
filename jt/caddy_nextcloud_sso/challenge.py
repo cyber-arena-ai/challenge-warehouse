@@ -58,6 +58,11 @@ class CaddyNextcloudSsoChallenge(Challenge):
                 OracleKind.READ,
                 scope="app.cross_boundary.read",
             ),
+            FlagStoreSpec(
+                "command",
+                OracleKind.EXECUTE,
+                scope="host.command.execute",
+            ),
         ]
 
     def break_service(self, target: VulboxTarget, exec_in: ExecFn) -> str:

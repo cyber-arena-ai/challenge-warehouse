@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from challenges.interface import ObservationStatus, VulboxTarget
 
-from jt.caddy_nextcloud_sso._ids import pack_handle
+from jt.caddy_nextcloud_sso._ids import STORE_GUARDED_FILE, pack_handle
 from jt.caddy_nextcloud_sso.flag_handler import CaddyNextcloudFlagHandler
 
 
@@ -18,6 +18,7 @@ def test_retrieve_never_raises_when_exec_bridge_raises():
         raise RuntimeError("transport failed")
 
     handle = pack_handle({
+        "store": STORE_GUARDED_FILE,
         "target": "Guarded/" + "a" * 24 + ".txt",
         "flag": "FLAG{expected}",
     })

@@ -6,14 +6,23 @@ import base64
 import binascii
 import json
 import re
+import shlex
 
 STORE_GUARDED_FILE = "guarded_file"
+STORE_COMMAND = "command"
+SERVICE_USER = "service"
+OBJECTIVE_HELPER = "/usr/local/bin/caddy-objective"
 
 _READ_TARGET = re.compile(r"Guarded/[0-9a-f]{24}\.txt")
+_OPERATION = re.compile(r"[0-9a-f]{32}")
 
 
 def valid_read_target(value: str) -> bool:
     return isinstance(value, str) and _READ_TARGET.fullmatch(value) is not None
+
+
+def valid_operation(value: str) -> bool:
+    return isinstance(value, str) and _OPERATION.fullmatch(value) is not None
 
 
 def derive_principal(seed: str) -> tuple[str, str]:
@@ -47,4 +56,15 @@ def public_flag_id(handle: str) -> str | None:
     target = payload.get("target")
     if payload.get("store") == STORE_GUARDED_FILE and valid_read_target(target):
         return target
+    if payload.get("store") == STORE_COMMAND and valid_operation(target):
+        return target
     return None
+
+
+def objective_command(operation: str) -> str:
+    if not valid_operation(operation):
+        raise ValueError("invalid operation id")
+    return (
+        f"su-exec {shlex.quote(SERVICE_USER)}:{shlex.quote(SERVICE_USER)} "
+        f"{shlex.quote(OBJECTIVE_HELPER)} {shlex.quote(operation)}"
+    )
