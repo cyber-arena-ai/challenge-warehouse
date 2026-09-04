@@ -11,7 +11,6 @@ facility = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(facility)
 
-
 def account(value: str) -> dict[str, str]:
     return {
         "username": "arena_" + value * 16,

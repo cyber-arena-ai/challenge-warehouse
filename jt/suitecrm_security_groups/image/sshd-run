@@ -1,4 +1,28 @@
 #!/command/with-contenv sh
+set -eu
+
 [ -f /etc/ssh/ssh_host_ed25519_key ] || ssh-keygen -A
 mkdir -p /run/sshd
-exec /usr/sbin/sshd -D -e
+
+# Current orchestrator provisioning updates sshd_config but signals container
+# PID 1. In this s6 image PID 1 is /init, not sshd, so forward the effective
+# change by watching the configuration and reloading the actual master.
+stamp="$(stat -c '%Y:%s' /etc/ssh/sshd_config)"
+/usr/sbin/sshd -D -e &
+sshd_pid=$!
+
+terminate() {
+    kill -TERM "$sshd_pid" 2>/dev/null || true
+}
+trap terminate TERM INT QUIT
+
+while kill -0 "$sshd_pid" 2>/dev/null; do
+    sleep 0.1
+    current="$(stat -c '%Y:%s' /etc/ssh/sshd_config)"
+    if [ "$current" != "$stamp" ] && /usr/sbin/sshd -t; then
+        kill -HUP "$sshd_pid"
+        stamp="$current"
+    fi
+done
+
+wait "$sshd_pid"

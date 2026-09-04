@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import re
 import secrets
+import socket
 
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
@@ -45,7 +47,10 @@ class SuiteCrmChecker(FunctionalityTest):
         exec_in = target.meta.get("exec_in_container")
         if exec_in is None:
             return CheckResult("checker", False, "no exec bridge")
-        rc, out = exec_in(target.host, "/arena/facility.py checker-bundle")
+        try:
+            rc, out = exec_in(target.host, "/arena/facility.py checker-bundle")
+        except Exception as error:  # noqa: BLE001
+            return CheckResult("checker", False, f"account exec failed: {error}")
         try:
             bundle = json.loads((out or "").strip()) if rc == 0 else {}
             ordinary = _credentials(bundle["ordinary"])
@@ -54,14 +59,23 @@ class SuiteCrmChecker(FunctionalityTest):
             return CheckResult("checker", False, "checker accounts unavailable")
 
         base = f"http://{resolve_host(target.host)}:{target.ports['service']}"
-        suffix = secrets.token_hex(8)
-        note_name = "checker-note-" + suffix
-        note_value = "checker-file-" + secrets.token_hex(12)
-        case_name = "checker-case-" + suffix
-        report_name = "checker-report-" + suffix
-        guarded_name = "checker-guarded-" + suffix
-        guarded_value = "guarded-file-" + secrets.token_hex(12)
-        children: list[CheckResult] = []
+        note_name = secrets.token_hex(16)
+        note_value = secrets.token_hex(16) + ".txt"
+        case_name = secrets.token_hex(16)
+        report_name = secrets.token_hex(16)
+        report_label = secrets.token_hex(12)
+        guarded_name = secrets.token_hex(16)
+        guarded_value = secrets.token_hex(16) + ".txt"
+        try:
+            with socket.create_connection((resolve_host(target.host), 9000), timeout=2):
+                listener_ok = False
+        except OSError:
+            listener_ok = True
+        children: list[CheckResult] = [CheckResult(
+            "fastcgi_boundary",
+            listener_ok,
+            "PHP-FPM unreachable off-box" if listener_ok else "port 9000 exposed",
+        )]
         ordinary_api: SuiteCrmClient | None = None
         guarded_api: SuiteCrmClient | None = None
         note_id = case_id = report_id = guarded_id = ""
@@ -72,7 +86,7 @@ class SuiteCrmChecker(FunctionalityTest):
 
             note_id = ordinary_api.set_entry("Notes", {
                 "name": note_name,
-                "description": "checker-owned attachment metadata",
+                "description": secrets.token_hex(24),
                 "filename": note_value,
                 "file_mime_type": "text/plain",
                 "assigned_user_id": ordinary_api.user_id,
@@ -127,19 +141,35 @@ class SuiteCrmChecker(FunctionalityTest):
                 "graphs_per_row": "2",
             })
             ordinary_api.save_report_field(
-                report_id, report_name, "NoteName", report_module="Notes", field="name"
+                report_id,
+                report_name,
+                report_label,
+                report_module="Notes",
+                field="name",
+                function="COUNT",
             )
             report_status, report_body = ordinary_api.html(
                 f"/index.php?module=AOR_Reports&action=DetailView&record={report_id}"
             )
-            report_ok = report_status == 200 and note_name in report_body
+            label_at = report_body.find(report_label)
+            aggregate_cell = bool(re.search(
+                r"<td[^>]*>\s*[1-9][0-9]*\s*</td>",
+                report_body[label_at:label_at + 5000] if label_at >= 0 else "",
+                re.IGNORECASE,
+            ))
+            report_ok = (
+                report_status == 200
+                and report_label in report_body
+                and note_name not in report_body
+                and aggregate_cell
+            )
             children.append(CheckResult(
-                "benign_report", report_ok, f"status={report_status}"
+                "aggregate_report", report_ok, f"status={report_status}"
             ))
 
             guarded_id = guarded_api.set_entry("Notes", {
                 "name": guarded_name,
-                "description": "checker guarded-partition noise",
+                "description": secrets.token_hex(24),
                 "filename": guarded_value,
                 "file_mime_type": "text/plain",
                 "assigned_user_id": guarded_api.user_id,

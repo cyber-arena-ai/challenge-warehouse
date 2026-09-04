@@ -27,7 +27,6 @@ int main(int argc, char **argv)
             return 1;
         }
     }
-
     int fd = open(OBJECTIVE, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
     if (fd < 0) {
         fputs("objective unavailable\n", stderr);

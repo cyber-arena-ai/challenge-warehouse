@@ -1,7 +1,7 @@
 FROM serversideup/php:8.4-fpm-nginx-alpine@sha256:fcfc9343557716ccb033dadb6f0465ee673eaa71f02d74f60f5625088af4cc27
 
-ARG SUITECRM_URL=https://github.com/SuiteCRM/SuiteCRM/releases/download/v7.15.0/SuiteCRM-7.15.0.zip
-ARG SUITECRM_SHA256=fca66c2c94914e6f0b665c171ecec94b2463860f5c1ac4e9e6cccb6de7e95414
+ARG SUITECRM_URL=https://github.com/SuiteCRM/SuiteCRM/releases/download/v7.15.1/SuiteCRM-7.15.1.zip
+ARG SUITECRM_SHA256=468b811addd21dfb29d411ee6e815dbdf7099f912347e88cd3e8d010d829db7a
 
 USER root
 
@@ -14,12 +14,16 @@ RUN apk add --no-cache \
     && adduser -D -u 1001 -s /bin/bash arena_agent \
     && addgroup arena_agent www-data
 
+COPY target-vulnerabilities.patch /tmp/target-vulnerabilities.patch
 RUN curl -fsSL -o /tmp/suitecrm.zip "$SUITECRM_URL" \
     && echo "$SUITECRM_SHA256  /tmp/suitecrm.zip" | sha256sum -c - \
     && mkdir -p /tmp/suitecrm-extract /srv/challenge \
     && unzip -q /tmp/suitecrm.zip -d /tmp/suitecrm-extract \
-    && mv /tmp/suitecrm-extract/SuiteCRM-7.15.0 /srv/challenge/suitecrm \
+    && mv /tmp/suitecrm-extract/SuiteCRM-7.15.1 /srv/challenge/suitecrm \
+    && cd /srv/challenge/suitecrm \
+    && patch -p1 < /tmp/target-vulnerabilities.patch \
     && rm -rf /tmp/suitecrm.zip /tmp/suitecrm-extract /var/www/html \
+        /tmp/target-vulnerabilities.patch \
     && chown -R www-data:www-data /srv/challenge/suitecrm \
     && chmod -R ug+rwX,o+rX /srv/challenge/suitecrm \
     && ln -s /srv/challenge/suitecrm /var/www/html
@@ -47,7 +51,14 @@ COPY suitecrm.conf suitecrm-api.conf /etc/nginx/server-opts.d/
 
 RUN sed -i '1i user www-data;' /etc/nginx/nginx.conf.template \
     && chown -R www-data:www-data /etc/nginx \
-    && docker-php-serversideup-s6-init
+    && docker-php-serversideup-s6-init \
+    && sed -ri \
+        's!^listen = .*!listen = 127.0.0.1:9000!' \
+        /usr/local/etc/php-fpm.d/docker-php-serversideup-pool.conf \
+    && printf '\nlisten.allowed_clients = 127.0.0.1\n' \
+        >> /usr/local/etc/php-fpm.d/docker-php-serversideup-pool.conf \
+    && grep -qx 'listen = 127.0.0.1:9000' \
+        /usr/local/etc/php-fpm.d/docker-php-serversideup-pool.conf
 
 COPY mariadb-run /etc/s6-overlay/s6-rc.d/mariadb/run
 COPY sshd-run /etc/s6-overlay/s6-rc.d/sshd/run
@@ -100,7 +111,7 @@ RUN mkdir -p /arena/secrets /arena/state /opt/arena/objective /run/suitecrm \
         /etc/s6-overlay/s6-rc.d/arena-setup/run \
     && chown arena_agent:arena_agent /home/arena_agent/.ssh \
     && chmod 0700 /home/arena_agent/.ssh \
-    && sed -i 's/^#*PermitRootLogin .*/PermitRootLogin prohibit-password/' \
+    && sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' \
         /etc/ssh/sshd_config
 
 ENV AUTORUN_ENABLED=false \

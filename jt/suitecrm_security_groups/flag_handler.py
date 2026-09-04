@@ -59,6 +59,7 @@ class SuiteCrmFlagHandler(FlagHandler):
         target: VulboxTarget,
         seeds: Mapping[str, str],
     ) -> Mapping[str, BaselinePrincipal]:
+        self._wait_ready(target)
         principals: dict[str, BaselinePrincipal] = {}
         users: list[dict[str, str]] = []
         for attacker, seed in sorted(seeds.items()):
@@ -107,6 +108,16 @@ class SuiteCrmFlagHandler(FlagHandler):
             )
         return issued
 
+    def _wait_ready(self, target: VulboxTarget) -> None:
+        rc, _ = self._exec(
+            target,
+            "for i in $(seq 1 1500); do "
+            "test -f /run/suitecrm/arena.ready && exit 0; "
+            "sleep .1; done; exit 1",
+        )
+        if rc != 0:
+            raise RuntimeError("SuiteCRM did not become ready for flag placement")
+
     def plant(
         self,
         target: VulboxTarget,
@@ -115,8 +126,11 @@ class SuiteCrmFlagHandler(FlagHandler):
         expected = {STORE_PRIVATE_NOTE, STORE_COMMAND}
         if set(flags) != expected:
             raise ValueError(f"expected stores {sorted(expected)}, got {sorted(flags)}")
+        self._wait_ready(target)
         return {
-            STORE_COMMAND: self._plant_command(target, flags[STORE_COMMAND].value),
+            STORE_COMMAND: self._plant_command(
+                target, flags[STORE_COMMAND].value
+            ),
             STORE_PRIVATE_NOTE: self._plant_note(
                 target, flags[STORE_PRIVATE_NOTE].value
             ),
@@ -213,10 +227,19 @@ class SuiteCrmFlagHandler(FlagHandler):
                 return FlagObservation(
                     ObservationStatus.ERROR, detail="invalid operation id"
                 )
-            return exec_read_observe(target, objective_command(target_id), wanted)
+            return exec_read_observe(
+                target, objective_command(target_id), wanted
+            )
         if payload.get("store") != STORE_PRIVATE_NOTE or not valid_uuid(target_id):
             return FlagObservation(ObservationStatus.ERROR, detail="unknown store")
-        rc, out = self._exec(target, f"/arena/facility.py read-note {target_id}")
+        try:
+            rc, out = self._exec(
+                target, f"/arena/facility.py read-note {target_id}"
+            )
+        except Exception:  # noqa: BLE001 — retrieve must never raise
+            return FlagObservation(
+                ObservationStatus.ERROR, detail="guarded read exec raised"
+            )
         if rc == 3:
             return FlagObservation(
                 ObservationStatus.AUTH_REJECTED,
