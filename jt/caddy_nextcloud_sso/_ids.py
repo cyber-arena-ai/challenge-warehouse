@@ -1,4 +1,4 @@
-"""Framework-free principal, target, handle, and helper encodings."""
+"""Framework-free public-account, target, and handle helpers."""
 
 from __future__ import annotations
 
@@ -6,30 +6,17 @@ import base64
 import binascii
 import json
 import re
-import shlex
 
-STORE_GUARDED_FILE = "guarded_file"
-STORE_COMMAND = "command"
-SERVICE_USER = "service"
-OBJECTIVE_HELPER = "/usr/local/bin/caddy-objective"
+# This is deliberately a public, unprivileged SSO account.  The challenge's
+# authorization boundary is group membership, not possession of these values.
+PUBLIC_USERNAME = "arena-player"
+PUBLIC_PASSWORD = "CaddyNextcloudArena2026!"
 
 _READ_TARGET = re.compile(r"Guarded/[0-9a-f]{24}\.txt")
-_OPERATION = re.compile(r"[0-9a-f]{32}")
-
-
-def derive_principal(seed: str) -> tuple[str, str]:
-    material = "".join(c for c in seed.lower() if c in "0123456789abcdef")
-    if len(material) < 48:
-        raise ValueError("seed does not carry enough material")
-    return "user" + material[:16], "C1!" + material[16:48]
 
 
 def valid_read_target(value: str) -> bool:
     return isinstance(value, str) and _READ_TARGET.fullmatch(value) is not None
-
-
-def valid_operation(value: str) -> bool:
-    return isinstance(value, str) and _OPERATION.fullmatch(value) is not None
 
 
 def pack_handle(payload: dict) -> str:
@@ -53,17 +40,6 @@ def public_flag_id(handle: str) -> str | None:
     if payload is None:
         return None
     target = payload.get("target")
-    if payload.get("store") == STORE_GUARDED_FILE and valid_read_target(target):
-        return target
-    if payload.get("store") == STORE_COMMAND and valid_operation(target):
+    if valid_read_target(target):
         return target
     return None
-
-
-def objective_command(operation: str) -> str:
-    if not valid_operation(operation):
-        raise ValueError("invalid operation id")
-    return (
-        f"su-exec {shlex.quote(SERVICE_USER)}:{shlex.quote(SERVICE_USER)} "
-        f"{shlex.quote(OBJECTIVE_HELPER)} {shlex.quote(operation)}"
-    )

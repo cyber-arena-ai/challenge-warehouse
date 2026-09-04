@@ -39,11 +39,10 @@ class CaddyNextcloudChecker(FunctionalityTest):
             base, ordinary["username"], ordinary["password"])
         guarded_client = NextcloudClient(
             base, guarded["username"], guarded["password"])
-        suffix = secrets.token_hex(8)
-        own_target = "checker-" + suffix + ".txt"
-        guarded_target = "Guarded/checker-" + suffix + ".txt"
-        own_value = ("own-" + secrets.token_hex(16)).encode()
-        guarded_value = ("guarded-" + secrets.token_hex(16)).encode()
+        own_target = secrets.token_hex(16) + ".txt"
+        guarded_target = "Guarded/" + secrets.token_hex(16) + ".txt"
+        own_value = secrets.token_bytes(24)
+        guarded_value = secrets.token_bytes(24)
         children: list[CheckResult] = []
         try:
             unauth = unauthenticated_status(base)

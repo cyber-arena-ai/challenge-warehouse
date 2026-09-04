@@ -20,11 +20,6 @@ RUN go mod download \
        -ldflags '-X github.com/caddyserver/caddy/v2.CustomVersion=v2.11.1' \
        -o /out/caddy ./cmd/caddy
 
-COPY caddy-objective.c /tmp/caddy-objective.c
-RUN cc -static -Os -Wall -Wextra -o /out/caddy-objective \
-        /tmp/caddy-objective.c \
-    && strip /out/caddy-objective
-
 FROM --platform=linux/amd64 nextcloud:32.0.13-fpm-alpine@sha256:f19381ecfdd8cce20118e851f4958b011649a85e07e52d96eb9358bb55696ec6
 
 ARG USER_SAML_URL=https://github.com/nextcloud-releases/user_saml/releases/download/v8.2.1/user_saml-v8.2.1.tar.gz
@@ -57,21 +52,18 @@ COPY --from=build /go/pkg/mod /go/pkg/mod
 COPY --from=build /go/cache /go/cache
 COPY --from=build /src /srv/challenge/caddy
 COPY --from=build /out/caddy /srv/runtime/caddy
-COPY --from=build /out/caddy-objective /usr/local/bin/caddy-objective
 COPY php-fpm-service.conf /usr/local/etc/php-fpm.d/zzzz-arena.conf
 COPY entrypoint.sh restart.sh facility.py /arena/
 
-RUN mkdir -p /arena/secrets /arena/state /etc/caddy /opt/arena/objective \
+RUN mkdir -p /arena/secrets /arena/state /etc/caddy \
         /run/caddy /run/sshd /srv/runtime /tmp/caddy-config /tmp/caddy-data \
         /home/arena_agent/.ssh \
     && chown -R arena_agent:arena_agent /srv/challenge/caddy \
     && chmod -R u+rwX,go+rX /srv/challenge/caddy \
     && chown root:root /srv/runtime/caddy \
     && chmod 0755 /srv/runtime/caddy \
-    && chown root:service /usr/local/bin/caddy-objective \
-    && chmod 4750 /usr/local/bin/caddy-objective \
     && chown -R service:service /run/caddy /tmp/caddy-config /tmp/caddy-data \
-    && chmod 0700 /arena/secrets /arena/state /opt/arena/objective \
+    && chmod 0700 /arena/secrets /arena/state \
     && chown root:root /arena/entrypoint.sh /arena/restart.sh /arena/facility.py \
        /usr/local/etc/php-fpm.d/zzzz-arena.conf \
     && chmod 0555 /arena/entrypoint.sh /arena/restart.sh /arena/facility.py \
