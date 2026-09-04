@@ -1,0 +1,45 @@
+# hand-authored to _registry/schematic.md; cover pass not yet run
+slug: geoserver-xpath
+title: GeoServer XPath
+contributor: jt
+updated: '2026-08-21'
+tags:
+- real-world
+- web
+- rce
+- recompile
+- cve
+classification:
+  difficulty: hard
+  vuln_class: XPath Expression Injection
+  cve: CVE-2024-36401
+card:
+  tagline: An ordinary WFS user crosses a guarded layer and reaches service execution
+  summary: GeoServer 2.25.1 exposes authenticated WFS and WMS workflows to distinct
+    ordinary accounts. A protected feature and the UID-1000 request context form
+    independent capability objectives.
+  attack: Reach the current guarded feature or execute the published service operation
+    through the public GeoServer interface.
+  defense: Harden GeoTools property evaluation while preserving WFS, WFS-T, WMS, and
+    native layer authorization.
+origin:
+  type: real-world
+  source: GeoServer 2.25.1 (commit 6193b5a1961a97261e07b2a501c483ba780bffae)
+  reference: CVE-2024-36401
+  url: https://github.com/geoserver/geoserver/releases/tag/2.25.1
+service:
+  protocol: web
+  ports:
+    service: 8080
+  stack: GeoServer 2.25.1 · GeoTools 31.1 · Java · Tomcat
+provenance:
+  image: cyberarena/chal-geoserver-xpath:v1
+  source_intro: >
+    GeoServer 2.25.1 serves authenticated WFS and WMS geospatial workflows.
+    Each attacker receives a distinct native ordinary account. READ protects
+    one feature behind a native layer-role boundary; EXECUTE protects a
+    UID-1000 service operation.
+cover:
+  image: null
+  accent: null
+  prompt_id: null
