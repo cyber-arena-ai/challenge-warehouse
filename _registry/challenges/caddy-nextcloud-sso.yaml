@@ -19,7 +19,7 @@ classification:
 card:
   tagline: An ordinary SSO user crosses a native Nextcloud Team-Folder boundary
   summary: Caddy v2.11.1 fronts Nextcloud with forward authentication and FastCGI.
-    Attackers use a public ordinary SSO account without guarded group membership.
+    Each attacker receives an ordinary SSO account without guarded group membership.
     A protected WebDAV file is denied through the normal workflow.
   attack: Cross the SSO-to-FastCGI boundary to recover the current guarded
     Team-Folder file.

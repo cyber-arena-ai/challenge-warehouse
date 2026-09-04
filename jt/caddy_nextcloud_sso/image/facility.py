@@ -23,10 +23,9 @@ PIDFILE = Path("/run/caddy/caddy.pid")
 BASE = "http://127.0.0.1:8080"
 CADDY = "/srv/runtime/caddy"
 OCC = "/var/www/html/occ"
+USERNAME = re.compile(r"user[0-9a-f]{16}")
 READ_TARGET = re.compile(r"Guarded/[0-9a-z-]{8,80}\.txt")
 REQUEST_TOKEN = re.compile(rb'data-requesttoken="([^"]+)"')
-PUBLIC_USERNAME = "arena-player"
-PUBLIC_PASSWORD = "CaddyNextcloudArena2026!"
 
 
 class AuthRejected(RuntimeError):
@@ -80,14 +79,6 @@ def random_account(prefix: str) -> dict[str, str]:
     }
 
 
-def public_account() -> dict[str, str]:
-    return {
-        "username": PUBLIC_USERNAME,
-        "password": PUBLIC_PASSWORD,
-        "hash": hash_password(PUBLIC_PASSWORD),
-    }
-
-
 def save_state(data: dict) -> None:
     STATE.parent.mkdir(parents=True, exist_ok=True)
     temporary = STATE.with_suffix(".new")
@@ -99,10 +90,9 @@ def save_state(data: dict) -> None:
 def load_state() -> dict:
     if not STATE.exists():
         data = {
-            # Only the authorized checker identity is private.  The checker's
-            # ordinary workflow uses the same public account as players.
-            "guarded": random_account("user"),
-            "public": public_account(),
+            "guarded": random_account("guard"),
+            "ordinary": random_account("check"),
+            "principals": [],
             "provider": None,
             "folder": None,
             "last_read_target": None,
@@ -114,8 +104,46 @@ def load_state() -> dict:
     return value
 
 
+def normalize_principals(
+    raw: object,
+    existing: list[dict],
+) -> list[dict[str, str]]:
+    if not isinstance(raw, list):
+        raise ValueError("principal batch must be a list")
+    prior = {
+        row.get("username"): row for row in existing if isinstance(row, dict)
+    }
+    normalized: list[dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            raise ValueError("principal must be an object")
+        username = item.get("username")
+        password = item.get("password")
+        if not isinstance(username, str) or not USERNAME.fullmatch(username):
+            raise ValueError("invalid principal username")
+        if not isinstance(password, str) or len(password) < 32:
+            raise ValueError("invalid principal password")
+        previous = prior.get(username)
+        password_hash = previous.get("hash") if previous else None
+        if not previous or previous.get("password") != password \
+                or not isinstance(password_hash, str):
+            password_hash = hash_password(password)
+        normalized.append({
+            "username": username,
+            "password": password,
+            "hash": password_hash,
+        })
+    if len({row["username"] for row in normalized}) != len(normalized):
+        raise ValueError("duplicate principal")
+    return sorted(normalized, key=lambda row: row["username"])
+
+
 def render_caddyfile(data: dict) -> str:
-    accounts = [data["guarded"], data["public"]]
+    accounts = [
+        data["guarded"],
+        data["ordinary"],
+        *data.get("principals", []),
+    ]
     auth_lines = "\n".join(
         f"\t\t\t{row['username']} {row['hash']}" for row in accounts)
     guarded = data["guarded"]["username"]
@@ -260,11 +288,11 @@ def configure_apps() -> None:
 def setup() -> None:
     data = load_state()
     guarded_info = user_info(data["guarded"])
-    public_info = user_info(data["public"])
+    ordinary_info = user_info(data["ordinary"])
     if "SAML_guarded" not in (guarded_info.get("groups") or []):
         raise RuntimeError("guarded SSO group missing")
-    if "SAML_guarded" in (public_info.get("groups") or []):
-        raise RuntimeError("public account is guarded")
+    if "SAML_guarded" in (ordinary_info.get("groups") or []):
+        raise RuntimeError("ordinary account is guarded")
     folder = data.get("folder")
     if folder is None:
         folder = occ("groupfolders:create", "Guarded").splitlines()[-1]
@@ -274,6 +302,20 @@ def setup() -> None:
         data["folder"] = folder
     save_state(data)
     print("OK")
+
+
+def principals(encoded: str) -> None:
+    data = load_state()
+    raw = json.loads(base64.b64decode(encoded, validate=True))
+    normalized = normalize_principals(raw, data.get("principals", []))
+    pending = {**data, "principals": normalized}
+    install_config(pending)
+    for account in normalized:
+        info = user_info(account)
+        if "SAML_guarded" in (info.get("groups") or []):
+            raise RuntimeError("baseline principal is guarded")
+    save_state(pending)
+    print(f"OK {len(normalized)}")
 
 
 def plant(target: str, encoded: str) -> None:
@@ -315,8 +357,8 @@ def checker_bundle() -> None:
     data = load_state()
     bundle = {
         "ordinary": {
-            "username": data["public"]["username"],
-            "password": data["public"]["password"],
+            "username": data["ordinary"]["username"],
+            "password": data["ordinary"]["password"],
         },
         "guarded": {
             "username": data["guarded"]["username"],
@@ -347,6 +389,8 @@ def main() -> int:
             configure_apps()
         elif command == "setup" and len(sys.argv) == 2:
             setup()
+        elif command == "principals" and len(sys.argv) == 3:
+            principals(sys.argv[2])
         elif command == "plant" and len(sys.argv) == 4:
             plant(sys.argv[2], sys.argv[3])
         elif command == "read" and len(sys.argv) == 3:

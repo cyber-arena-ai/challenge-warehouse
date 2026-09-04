@@ -1,4 +1,4 @@
-"""Framework-free public-account, target, and handle helpers."""
+"""Framework-free principal, target, and handle helpers."""
 
 from __future__ import annotations
 
@@ -7,16 +7,21 @@ import binascii
 import json
 import re
 
-# This is deliberately a public, unprivileged SSO account.  The challenge's
-# authorization boundary is group membership, not possession of these values.
-PUBLIC_USERNAME = "arena-player"
-PUBLIC_PASSWORD = "CaddyNextcloudArena2026!"
+STORE_GUARDED_FILE = "guarded_file"
 
 _READ_TARGET = re.compile(r"Guarded/[0-9a-f]{24}\.txt")
 
 
 def valid_read_target(value: str) -> bool:
     return isinstance(value, str) and _READ_TARGET.fullmatch(value) is not None
+
+
+def derive_principal(seed: str) -> tuple[str, str]:
+    material = "".join(char for char in seed.lower()
+                       if char in "0123456789abcdef")
+    if len(material) < 48:
+        raise ValueError("seed does not carry enough material")
+    return "user" + material[:16], "C1!" + material[16:48]
 
 
 def pack_handle(payload: dict) -> str:
@@ -40,6 +45,6 @@ def public_flag_id(handle: str) -> str | None:
     if payload is None:
         return None
     target = payload.get("target")
-    if valid_read_target(target):
+    if payload.get("store") == STORE_GUARDED_FILE and valid_read_target(target):
         return target
     return None

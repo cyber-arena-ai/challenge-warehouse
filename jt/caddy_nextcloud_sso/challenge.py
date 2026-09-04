@@ -10,7 +10,9 @@ from challenges.interface import (
     ChallengeDocs,
     ExecFn,
     FlagHandler,
+    FlagStoreSpec,
     FunctionalityTest,
+    OracleKind,
     RestartHandler,
     VulboxImage,
     VulboxTarget,
@@ -48,6 +50,15 @@ class CaddyNextcloudSsoChallenge(Challenge):
         )
         if rc != 0:
             raise RuntimeError("Caddy/Nextcloud setup did not become ready")
+
+    def flag_store_specs(self) -> list[FlagStoreSpec]:
+        return [
+            FlagStoreSpec(
+                "guarded_file",
+                OracleKind.READ,
+                scope="app.cross_boundary.read",
+            ),
+        ]
 
     def break_service(self, target: VulboxTarget, exec_in: ExecFn) -> str:
         rc, out = exec_in(

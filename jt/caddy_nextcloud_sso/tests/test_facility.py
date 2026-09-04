@@ -17,8 +17,10 @@ def state() -> dict:
     return {
         "guarded": {"username": "guard0000000000000000", "password": "secret1",
                     "hash": "$2a$14$guarded"},
-        "public": {"username": "arena-player", "password": "public-secret",
-                   "hash": "$2a$14$public"},
+        "ordinary": {"username": "check0000000000000000", "password": "secret2",
+                     "hash": "$2a$14$ordinary"},
+        "principals": [{"username": "user" + "a" * 16, "password": "secret3",
+                        "hash": "$2a$14$principal"}],
     }
 
 
@@ -31,13 +33,25 @@ def test_rendered_caddyfile_has_only_loopback_internal_listeners():
     assert "\n:8080 {" in rendered
     assert "Remote-User {http.auth.user.id}" in rendered
     assert "Remote-Groups guarded" in rendered
-    assert all(secret not in rendered for secret in ("secret1", "public-secret"))
-    assert "arena-player $2a$14$public" in rendered
+    assert all(secret not in rendered for secret in ("secret1", "secret2", "secret3"))
 
 
-def test_public_account_constants_match_the_briefed_values():
-    assert facility.PUBLIC_USERNAME == "arena-player"
-    assert facility.PUBLIC_PASSWORD == "CaddyNextcloudArena2026!"
+def test_principal_normalization_is_stable(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(facility, "hash_password", lambda value: "hash:" + value)
+    raw = [{"username": "user" + "b" * 16, "password": "C1!" + "2" * 32}]
+    first = facility.normalize_principals(raw, [])
+    second = facility.normalize_principals(raw, first)
+    assert first == second
+    assert first[0]["hash"].startswith("hash:")
+
+
+def test_principal_normalization_rejects_duplicates(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(facility, "hash_password", lambda value: "hash:" + value)
+    row = {"username": "user" + "c" * 16, "password": "C1!" + "3" * 32}
+    with pytest.raises(ValueError):
+        facility.normalize_principals([row, row], [])
 
 
 def test_occ_json_ignores_leading_php_warning(monkeypatch: pytest.MonkeyPatch):
@@ -46,11 +60,11 @@ def test_occ_json_ignores_leading_php_warning(monkeypatch: pytest.MonkeyPatch):
     assert facility.occ_json("status", "--output=json") == {"installed": True}
 
 
-def test_checker_uses_the_same_ordinary_account_as_players(
+def test_checker_uses_separate_internal_accounts(
         monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]):
     monkeypatch.setattr(facility, "load_state", state)
     facility.checker_bundle()
     bundle = json.loads(capsys.readouterr().out)
     assert bundle["ordinary"] == {
-        "username": "arena-player", "password": "public-secret",
+        "username": "check0000000000000000", "password": "secret2",
     }

@@ -12,15 +12,24 @@ _SPEC.loader.exec_module(ids)
 def test_public_target_is_validated_and_does_not_publish_proof():
     proof = "FLAG{never-public}"
     path = "Guarded/" + "a" * 24 + ".txt"
-    read = ids.pack_handle({"target": path, "flag": proof})
+    read = ids.pack_handle({
+        "store": ids.STORE_GUARDED_FILE,
+        "target": path,
+        "flag": proof,
+    })
     assert ids.public_flag_id(read) == path
     assert ids.valid_read_target("Guarded/../../secret.txt") is False
     assert proof not in ids.public_flag_id(read)
 
 
-def test_public_account_is_explicitly_unprivileged_connection_data():
-    assert ids.PUBLIC_USERNAME == "arena-player"
-    assert len(ids.PUBLIC_PASSWORD) >= 20
+def test_principal_derivation_is_deterministic_and_distinct():
+    seed_a = "01" * 32
+    seed_b = "02" * 32
+    assert ids.derive_principal(seed_a) == ids.derive_principal(seed_a)
+    assert ids.derive_principal(seed_a) != ids.derive_principal(seed_b)
+    username, password = ids.derive_principal(seed_a)
+    assert username == "user" + "01" * 8
+    assert password.startswith("C1!") and len(password) == 35
 
 
 def test_handle_decoder_is_total():
