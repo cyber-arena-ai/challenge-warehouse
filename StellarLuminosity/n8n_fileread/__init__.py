@@ -1,4 +1,4 @@
-"""n8n 1.65.0 unauthenticated file-read challenge (CVE-2026-21858)."""
+"""n8n 1.65.0 document workflow challenge."""
 
 from .challenge import N8nFileReadChallenge
 

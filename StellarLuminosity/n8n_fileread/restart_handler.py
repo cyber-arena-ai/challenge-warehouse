@@ -1,14 +1,29 @@
 """Restart handler for n8n-fileread.
 
-Kills n8n, wipes its database, and restarts with the (possibly edited)
-workflow.json via /arena/restart.sh. Takes ~20-30 seconds.
+Runs /arena/restart.sh, which restarts n8n without resetting the admin
+credential, replaces the active workflow with the defender's edited
+workflow.json, and reactivates it.
 """
 
 from __future__ import annotations
 
+import shlex
+
 from challenges.interface import CheckResult, RestartHandler, VulboxTarget
 
 RESTART_COMMAND = "/arena/restart.sh"
+NORMAL_SUBMIT_SMOKE = (
+    "marker=n8n-restart-smoke-$(date +%s%N); "
+    "tmp=$(mktemp); "
+    "printf '%s' \"$marker\" > \"$tmp\"; "
+    "body=$(curl -sf --max-time 20 "
+    "-F 'Full Name=Restart Check' "
+    "-F 'Email=restart-check@arena.local' "
+    "-F \"document=@${tmp};type=text/plain\" "
+    "http://127.0.0.1:5678/form/document-upload); "
+    "rm -f \"$tmp\"; "
+    "printf '%s' \"$body\" | grep -F \"$marker\""
+)
 
 
 class N8nRestartHandler(RestartHandler):
@@ -22,32 +37,33 @@ class N8nRestartHandler(RestartHandler):
 
     def run(self, target: VulboxTarget) -> CheckResult:
         exec_in = target.meta["exec_in_container"]
-        port = target.ports["service"]
-
         rc, out = exec_in(target.host, RESTART_COMMAND)
         script_ok = (rc == 0)
-        spawn = CheckResult(
-            name="spawn",
+        restart = CheckResult(
+            name="restart",
             passed=script_ok,
             detail=(out.strip() or f"rc={rc}")[-400:],
         )
 
         if script_ok:
-            tcp_probe = (
-                f"python3 -c \"import socket; s=socket.socket(); s.settimeout(3); "
-                f"s.connect(('127.0.0.1', {port})); s.close()\""
+            srv_rc, srv_out = exec_in(
+                target.host,
+                f"sh -c {shlex.quote(NORMAL_SUBMIT_SMOKE)}",
             )
-            srv_rc, _ = exec_in(target.host, tcp_probe)
             smoke = CheckResult(
                 name="smoke",
                 passed=(srv_rc == 0),
-                detail=f"socket-connect rc={srv_rc}",
+                detail=(
+                    "normal document submission returned uploaded bytes"
+                    if srv_rc == 0
+                    else (srv_out.strip() or f"rc={srv_rc}")[-300:]
+                ),
             )
         else:
             smoke = CheckResult(name="smoke", passed=False, detail="skipped; restart.sh failed")
 
         return CheckResult(
             name="n8n-fileread-restart",
-            passed=all(c.passed for c in (spawn, smoke)),
-            children=[spawn, smoke],
+            passed=all(c.passed for c in (restart, smoke)),
+            children=[restart, smoke],
         )

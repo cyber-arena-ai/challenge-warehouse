@@ -1,6 +1,6 @@
 # cyberarena/chal-n8n-fileread runtime image.
 #
-# n8n 1.65.0 (CVE-2026-21858) + sshd + arena_agent.
+# n8n 1.65.0 document workflow service + sshd + arena_agent.
 # Single-stage so Node.js and npm stay in the image — the defense
 # workflow imports a patched workflow.json without reinstalling.
 

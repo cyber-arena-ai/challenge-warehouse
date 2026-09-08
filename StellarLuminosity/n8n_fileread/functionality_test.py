@@ -1,8 +1,7 @@
 """Liveness probe for n8n-fileread: process + tcp.
 
-n8n has no separable line protocol; PROTOCOL only ever aliased the CHECKER, so
-it is dropped too. The CHECKER is the framework-run `image/checker.sh` (shipped
-over stdin), no longer invoked here.
+The deep gameplay-correctness probe lives in `checker.py`. It runs as a network
+probe from the health poller and verifies the document-upload workflow itself.
 """
 
 from __future__ import annotations
