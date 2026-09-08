@@ -6,8 +6,9 @@ clears Craft's compiled caches, and gracefully reloads Apache. PHP is
 interpreted, so "compile" here is `php -l` on the edited file — a syntax
 error makes restart.sh fail and surfaces in the `lint` leaf.
 
-Smoke runs the real checker (genuine Craft HTML), not just a port probe,
-so a defense edit that bootstraps Apache but breaks Craft still fails.
+The deep behavior checker is the top-level network `checker.py`, run by the
+health-poller after restart. This handler only does a fast local smoke check so
+the restart job can report obvious deployment failures immediately.
 """
 
 from __future__ import annotations
@@ -15,7 +16,10 @@ from __future__ import annotations
 from challenges.interface import CheckResult, RestartHandler, VulboxTarget
 
 RESTART_COMMAND = "/arena/restart.sh"
-CHECKER_COMMAND = "/arena/checker.sh"
+SMOKE_COMMAND = (
+    "curl -sf -o /dev/null --max-time 8 "
+    "'http://127.0.0.1/index.php?p=admin/login'"
+)
 
 
 class CraftCmsRestartHandler(RestartHandler):
@@ -46,7 +50,7 @@ class CraftCmsRestartHandler(RestartHandler):
         )
 
         if script_ok:
-            srv_rc, srv_out = exec_in(target.host, CHECKER_COMMAND)
+            srv_rc, srv_out = exec_in(target.host, SMOKE_COMMAND)
             smoke = CheckResult(
                 name="smoke",
                 passed=(srv_rc == 0),
