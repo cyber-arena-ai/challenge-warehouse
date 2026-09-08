@@ -186,18 +186,23 @@ single point of failure, not the overall construction.
   the homepage renders real WordPress markup. None of these depend on the
   vulnerability staying open.
 
-## Wiring (maintainer applies — kept out of the challenge dir per SOP §6)
+## Wiring
 
-Registry discovery is now automatic — nothing to add to `challenges/
-registry.py`. The one remaining manual step:
+Current orchestration discovers both the challenge package and its prompt module
+automatically. Nothing needs to be added to `challenges/registry.py` or
+`agents/prompts/__init__.py`.
 
-`agents/prompts/__init__.py`
-- `_PROMPT_MODULES["wp2shell"] = "challenges.wp2shell.prompts"`
+When testing this PR from a separate orchestration checkout, point the framework
+at this warehouse checkout before Python starts:
 
-`httpx` is already a framework dependency (used by `checker.py` and
-`_exploit.py`); no `requirements.txt` change needed. `flag_handler.py` and
-`functionality_test.py` are docker-exec-only (stdlib), so no
-`flag_facility_setup.sh` / `health_facility_setup.sh` either.
+```bash
+CYBERARENA_CHALLENGE_WAREHOUSE=/absolute/path/to/challenge-warehouse \
+  python3 -m challenges.check wp2shell --json
+```
+
+`checker.py`, `flag_handler.py`, and `functionality_test.py` are stdlib-only, so
+no `flag_facility_setup.sh` / `health_facility_setup.sh` is needed. The PoC
+exploit imports `httpx`, which is available in the baked agent image.
 
 ## Before merging
 
