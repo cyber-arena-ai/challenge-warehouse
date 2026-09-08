@@ -1,11 +1,9 @@
-# cyberarena/chal-nginx-backup — nginx-ui v2.3.2 (CVE-2026-27944).
+# cyberarena/chal-nginx-backup — nginx-ui v2.3.2 behind an editable proxy.
 #
 # nginx-ui binds on internal 127.0.0.1:9001.
 # A standalone nginx reverse proxy (isolated config, /arena/nginx-proxy.conf)
 # listens on external port 9000 and includes the defender's writable
-# /srv/challenge/nginx_backup/proxy.conf. Adding
-#   location /api/backup { return 403; }
-# to that file and calling restart_service patches the vulnerability.
+# /srv/challenge/nginx_backup/proxy.conf.
 
 FROM --platform=linux/amd64 uozi/nginx-ui:v2.3.2
 
