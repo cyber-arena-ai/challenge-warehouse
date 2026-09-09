@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-25",
-  "count": 25,
+  "generated": "2026-09-08",
+  "count": 24,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -243,54 +243,6 @@
         "accent": "#d62c67",
         "prompt_id": "geo-v2",
         "motif": "A tall Merkle triangle built from stacked rows of small circles resolving upward to a single crowning semicircle — the signed tree head — with a dashed proof-path threading diagonally from one leaf node up to that apex. Where the apex meets its verifying seam, the concentric verification arcs are drawn incomplete, one arc left open so a slim forged chevron slips through the gap and re-attaches to the crown, letting an unauthorized path claim the summit. To the side, two hard-edged rectangular daemon blocks connected by a thin segmented band feed a stack of overlapping translucent planes, the deepest of which — a private inner rectangle — shows through the layers above it once the forged head unlocks the seam."
-      }
-    },
-    {
-      "slug": "craft-cms",
-      "title": "Craft CMS Transform RCE",
-      "contributor": "StellarLuminosity",
-      "updated": "2026-07-20",
-      "tags": [
-        "real-world",
-        "web",
-        "rce",
-        "php",
-        "cve",
-        "patch-source"
-      ],
-      "classification": {
-        "difficulty": "hard",
-        "vuln_class": "Unauthenticated Remote Code Execution",
-        "cve": "CVE-2025-32432"
-      },
-      "card": {
-        "tagline": "Abuse Yii's DI container via __class to smuggle a PHP payload as www-data",
-        "summary": "Craft CMS 5.6.16 on PHP 8.3/Apache exposes an unauthenticated RCE in the image-transform endpoint /index.php?p=actions/assets/generate-transform. A crafted __class parameter abuses Yii's dependency-injection container to make yii\\rbac\\PhpManager include() an attacker-controlled PHP session file, executing arbitrary commands.",
-        "attack": "POST the generate-transform endpoint with a __class DI-injection payload pointing PhpManager at a session file, then read /flag as www-data.",
-        "defense": "Edit web/index.php (/srv/challenge/craft_cms/index.php) to reject the DI-injection payload and call restart_service."
-      },
-      "origin": {
-        "type": "real-world",
-        "source": "Craft CMS 5.6.16 (Yii framework)",
-        "reference": "CVE-2025-32432",
-        "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32432"
-      },
-      "service": {
-        "protocol": "web",
-        "ports": {
-          "service": 80
-        },
-        "stack": "PHP 8.3 · Craft CMS 5.6.16 · Apache · MariaDB"
-      },
-      "provenance": {
-        "image": "cyberarena/chal-craft-cms:v1",
-        "source_intro": "Craft CMS 5.6.16 (PHP 8.3 / Apache) with CVE-2025-32432: an unauthenticated RCE in the image-transform endpoint /index.php?p=actions/assets/generate-transform. A malicious __class parameter abuses Yii's DI container (yii\\rbac\\PhpManager) to include a PHP payload smuggled into the session file, executing arbitrary commands as www-data. Flag is at /flag. Defense: edit /srv/challenge/craft_cms/index.php to reject the injection, then call restart_service."
-      },
-      "cover": {
-        "image": "covers/craft-cms.webp",
-        "accent": "#ed5178",
-        "prompt_id": "geo-v2",
-        "motif": "A neat lattice of identical isometric blocks (a dependency-injection container) sits behind a hard-edged web boundary frame, each block wired to its neighbours by thin dashed paths; one incoming request-band pierces the outer frame unchallenged and terminates at a single block whose type-slot has been swapped for a foreign chevron, recolouring it as an intruder among the uniform cells. From that hijacked block a thick stroke reaches sideways to a separate flat rectangle — a planted session file lying outside the lattice — and pulls it inward through an include-arc, the previously inert plane detonating into a burst of radiating triangles that shatter the orderly grid around it. A stepped request/response ladder climbs the left margin toward the pierced frame, its final rung overshooting the boundary to mark the unauthenticated entry, while a faint halftone field pools beneath the exploded cell where the smuggled payload spreads."
       }
     },
     {

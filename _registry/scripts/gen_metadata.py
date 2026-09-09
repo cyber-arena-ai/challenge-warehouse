@@ -8,7 +8,7 @@ schematic, and emit YAML in the canonical field order.
 
   python3 gen_metadata.py                 # all, skip existing
   python3 gen_metadata.py --force         # rebuild all
-  python3 gen_metadata.py --only aiohttp-lfi,craft-cms
+  python3 gen_metadata.py --only aiohttp-lfi
   python3 gen_metadata.py --limit 3       # first N (smoke test)
 """
 from __future__ import annotations
