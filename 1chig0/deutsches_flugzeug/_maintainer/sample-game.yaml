@@ -23,7 +23,7 @@ teams:
 
 nodes:
   - id: df_team1_dev
-    image: cyberarena/dev-base
+    image: cyberarena/agent-claude
     networks: [df_team1_net, df_attack_net_team1]
     install_list: []
     extra_hosts: {host.docker.internal: host-gateway}
@@ -33,7 +33,7 @@ nodes:
     ports: ["127.0.0.1:8451:5000"]
     install_list: []
   - id: df_team2_dev
-    image: cyberarena/dev-base
+    image: cyberarena/agent-claude
     networks: [df_team2_net, df_attack_net_team2]
     install_list: []
     extra_hosts: {host.docker.internal: host-gateway}
