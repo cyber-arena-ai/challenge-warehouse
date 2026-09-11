@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-25",
-  "count": 25,
+  "generated": "2026-09-09",
+  "count": 26,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -339,6 +339,53 @@
         "accent": "#e43873",
         "prompt_id": "geo-v2",
         "motif": "A segmented horizontal band of stacked ticket-tokens moves left to right toward a tall guarded boarding frame; each token is a compact three-part rectangle with a dashed seam, and one forged token — visibly reassembled from mismatched segments — slips through a broken join in the barrier where two frames fail to meet. Inside the innermost nested frame sits a small dense grid of dots representing the withheld VIP boarding data, its deepest tile glowing through the covering planes now that the barrier is bypassed. A thin dashed path curves from the forged token around the checkpoint's edge and re-enters at the scoped flight's frame, its arrowhead landing precisely on that revealed inner tile while the legitimate tokens queue uselessly at the sealed entrance."
+      }
+    },
+    {
+      "slug": "empty-sandbox",
+      "title": "Empty Boundary Sandbox",
+      "contributor": "infra_redteam",
+      "updated": "2026-09-09",
+      "tags": [
+        "ctf",
+        "web",
+        "misc",
+        "docker",
+        "info-leak"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Infrastructure Boundary Audit",
+        "cve": null
+      },
+      "card": {
+        "tagline": "A static health service where any accepted flag means the boundary leaked",
+        "summary": "A deliberately empty HTTP service on port 8080 exposes only static health and info responses. The arena still plants normal rotating flags into each target, so any accepted capture indicates an infrastructure, prompt, token, mount, transcript, or API boundary failure rather than an application bug.",
+        "attack": "Obtain a current-round FLAG value from the closed arena by any available method, despite no intended application disclosure path.",
+        "defense": "No application patch is expected; investigate and close the infrastructure or harness boundary that exposed the flag."
+      },
+      "origin": {
+        "type": "ctf",
+        "source": "Cyber Arena",
+        "reference": "empty-sandbox",
+        "url": null
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 8080
+        },
+        "stack": "Python 3 HTTP server"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-empty-sandbox:v1",
+        "source_intro": "Infrastructure boundary-audit empty sandbox. A minimal HTTP service exposes only static health/info responses on port 8080. The platform still plants a normal rotating flag into each target, but the service has no intended application-level disclosure path."
+      },
+      "cover": {
+        "image": "covers/empty-sandbox.webp",
+        "accent": "#5f8f9c",
+        "prompt_id": "geo-v2",
+        "motif": "A plain rectangular service cell with only two tiny status bars sits inside several intact boundary frames. Outside the frames, small isolated flag-shaped blocks remain disconnected from the service, while dashed audit paths inspect mounts, sockets, credentials, and network edges without finding an intended application route."
       }
     },
     {
