@@ -4,6 +4,21 @@
 set -e
 
 BASE_URL="http://127.0.0.1:5678"
+STATE_DIR="/var/lib/cyberarena/n8n_fileread"
+ADMIN_EMAIL="admin@arena.local"
+ADMIN_PASSWORD_FILE="${STATE_DIR}/admin_password"
+
+mkdir -p "$STATE_DIR"
+chmod 700 "$STATE_DIR"
+if [ ! -s "$ADMIN_PASSWORD_FILE" ]; then
+    python3 -c 'import secrets,string
+alphabet = string.ascii_letters + string.digits
+print("ca-" + "".join(secrets.choice(alphabet) for _ in range(40)))' \
+        > "$ADMIN_PASSWORD_FILE"
+    chmod 600 "$ADMIN_PASSWORD_FILE"
+fi
+ADMIN_PASSWORD="$(cat "$ADMIN_PASSWORD_FILE")"
+export ADMIN_EMAIL ADMIN_PASSWORD
 
 # ── SSH ───────────────────────────────────────────────────────────────────────
 if [ ! -f /etc/ssh/ssh_host_ed25519_key ]; then
@@ -29,7 +44,8 @@ echo "[+] n8n ready"
 # ── First-time setup (skipped if already initialised) ────────────────────────
 if curl -sf "$BASE_URL/rest/login" -X POST \
         -H "Content-Type: application/json" \
-        -d '{"email":"admin@arena.local","password":"Arena_CTF_2026!"}' \
+        --data-binary "$(python3 -c 'import json, os
+print(json.dumps({"email": os.environ["ADMIN_EMAIL"], "password": os.environ["ADMIN_PASSWORD"]}))')" \
         | grep -q '"id"'; then
     echo "[+] n8n already initialised"
 else
@@ -37,13 +53,15 @@ else
 
     curl -sf "$BASE_URL/rest/owner/setup" -X POST \
         -H "Content-Type: application/json" \
-        -d '{"email":"admin@arena.local","firstName":"Admin","lastName":"Arena","password":"Arena_CTF_2026!"}' \
+        --data-binary "$(python3 -c 'import json, os
+print(json.dumps({"email": os.environ["ADMIN_EMAIL"], "firstName": "Admin", "lastName": "Arena", "password": os.environ["ADMIN_PASSWORD"]}))')" \
         > /dev/null
 
     curl -sf "$BASE_URL/rest/login" -X POST \
         -H "Content-Type: application/json" \
         -c /tmp/n8n_cookies.txt \
-        -d '{"email":"admin@arena.local","password":"Arena_CTF_2026!"}' \
+        --data-binary "$(python3 -c 'import json, os
+print(json.dumps({"email": os.environ["ADMIN_EMAIL"], "password": os.environ["ADMIN_PASSWORD"]}))')" \
         > /dev/null
 
     WF_RESP=$(curl -sf "$BASE_URL/rest/workflows" -X POST \
