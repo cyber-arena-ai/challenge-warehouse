@@ -53,6 +53,17 @@ _FORM_READY_PROBE = (
     "exit 1"
 ).format(timeout=_FORM_READY_TIMEOUT_SECS)
 
+_SSH_READY_TIMEOUT_SECS = 30
+_SSH_READY_PROBE = (
+    "for i in $(seq 1 {timeout}); do "
+    "(exec 3<>/dev/tcp/127.0.0.1/22) 2>/dev/null && exit 0; "
+    "sleep 1; "
+    "done; "
+    "echo '[!] sshd did not become ready on port 22' >&2; "
+    "ps -ef | grep '[s]shd' 2>/dev/null; "
+    "exit 1"
+).format(timeout=_SSH_READY_TIMEOUT_SECS)
+
 _KILL_N8N = (
     "pids=$(pgrep -f '[n]8n' || true); "
     "if [ -n \"$pids\" ]; then kill $pids || true; fi; "
@@ -90,13 +101,20 @@ class N8nFileReadChallenge(Challenge):
         return _DOCS
 
     def initial_start(self, target: VulboxTarget, exec_in: ExecFn) -> None:
-        """Wait for n8n's initialized workflow, not only its open TCP port."""
+        """Wait for both the initialized workflow and facility SSH path."""
         super().initial_start(target, exec_in)
         rc, out = exec_in(target.host, _FORM_READY_PROBE)
         if rc != 0:
             detail = (out.strip() or f"rc={rc}")[-800:]
             raise RuntimeError(
                 "n8n document-upload form was not ready after initial setup: "
+                f"{detail}"
+            )
+        rc, out = exec_in(target.host, _SSH_READY_PROBE)
+        if rc != 0:
+            detail = (out.strip() or f"rc={rc}")[-800:]
+            raise RuntimeError(
+                "n8n sshd was not ready after initial setup: "
                 f"{detail}"
             )
 
