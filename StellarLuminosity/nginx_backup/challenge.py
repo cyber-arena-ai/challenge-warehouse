@@ -13,10 +13,12 @@ from pathlib import Path
 from challenges.interface import (
     Challenge,
     ChallengeDocs,
+    ExecFn,
     FlagHandler,
     FunctionalityTest,
     RestartHandler,
     VulboxImage,
+    VulboxTarget,
 )
 
 
@@ -25,6 +27,17 @@ _VULBOX_IMAGE = VulboxImage(
     exposed_ports={"service": 9000},
     build_context=str(Path(__file__).resolve().parent / "image"),
 )
+
+_SSH_READY_TIMEOUT_SECS = 30
+_SSH_READY_PROBE = (
+    "for i in $(seq 1 {timeout}); do "
+    "(exec 3<>/dev/tcp/127.0.0.1/22) 2>/dev/null && exit 0; "
+    "sleep 1; "
+    "done; "
+    "echo '[!] sshd did not become ready on port 22' >&2; "
+    "ps -ef | grep '[s]shd' 2>/dev/null; "
+    "exit 1"
+).format(timeout=_SSH_READY_TIMEOUT_SECS)
 
 _DOCS = ChallengeDocs(
     intro=(
@@ -47,6 +60,17 @@ _DOCS = ChallengeDocs(
 
 class NginxBackupChallenge(Challenge):
     name = "nginx-backup"
+
+    def initial_start(self, target: VulboxTarget, exec_in: ExecFn) -> None:
+        """Wait for both the proxied service and the facility SSH path."""
+        super().initial_start(target, exec_in)
+        rc, out = exec_in(target.host, _SSH_READY_PROBE)
+        if rc != 0:
+            detail = (out.strip() or f"rc={rc}")[-800:]
+            raise RuntimeError(
+                "nginx-backup sshd was not ready after initial setup: "
+                f"{detail}"
+            )
 
     @cached_property
     def vulbox(self) -> VulboxImage:
