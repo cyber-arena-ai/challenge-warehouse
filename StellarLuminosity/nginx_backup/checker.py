@@ -10,9 +10,7 @@ proxy rule.
 from __future__ import annotations
 
 import html
-import ipaddress
 import re
-import subprocess
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -25,33 +23,6 @@ _ASSET_RE = re.compile(
     re.IGNORECASE,
 )
 
-
-def _resolve_host(target: VulboxTarget) -> str:
-    host = target.host
-    try:
-        ipaddress.ip_address(host)
-        return host
-    except ValueError:
-        pass
-    try:
-        out = subprocess.run(
-            [
-                "docker",
-                "inspect",
-                "-f",
-                "{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}",
-                host,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            check=False,
-        ).stdout.split()
-        if out:
-            return out[0]
-    except Exception:
-        pass
-    return host
 
 
 def _open(url: str) -> tuple[int, bytes, str]:
@@ -73,6 +44,11 @@ def _asset_urls(base: str, body: bytes) -> list[str]:
     return urls
 
 
+def _looks_like_proxy_block(body: bytes) -> bool:
+    text = body[:4096].lower()
+    return b"<html" in text and b"nginx" in text and b"forbidden" in text
+
+
 class NginxBackupChecker(FunctionalityTest):
     @property
     def name(self) -> str:
@@ -83,7 +59,7 @@ class NginxBackupChecker(FunctionalityTest):
         return ("service",)
 
     def run(self, target: VulboxTarget) -> CheckResult:
-        base = f"http://{_resolve_host(target)}:{target.ports['service']}"
+        base = f"http://{target.host}:{target.ports['service']}"
 
         home_status, home_body, home_url = _open(base + "/")
         if home_status < 200 or home_status >= 400:
@@ -114,8 +90,10 @@ class NginxBackupChecker(FunctionalityTest):
                 detail=f"asset {asset_url} returned HTTP {asset_status}",
             )
 
-        api_status, _, _ = _open(base + "/api/settings")
-        if api_status in (401, 405):
+        api_status, api_body, _ = _open(base + "/api/settings")
+        if api_status in (401, 405) or (
+            api_status == 403 and not _looks_like_proxy_block(api_body)
+        ):
             return CheckResult(
                 name="checker",
                 passed=True,
