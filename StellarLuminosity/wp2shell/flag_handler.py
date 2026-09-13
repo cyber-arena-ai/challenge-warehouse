@@ -1,6 +1,6 @@
 """FlagHandler for wp2shell.
 
-The chained exploit's primitive is a UNION-based read out of `wp_options`
+The chained exploit's primitive is a blind SQL read out of `wp_options`
 (see `_maintainer/README.md`), so the flag is planted there directly — as a
 normal WordPress option, the exact record shape the SQLi primitive reaches,
 no side channel. Plant/retrieve run over privileged docker-exec straight

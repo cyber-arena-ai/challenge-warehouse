@@ -88,6 +88,10 @@ RUN set -ex; \
         --post_title='Secret Post' --post_status=private --post_type=post \
         --post_content='Only an authenticated admin should be able to read this.' --porcelain"; \
     su -s /bin/bash www-data -c "wp option update cyberarena_flag 'FLAG{00000000000000000000000000000000}' --path=/var/www/html --autoload=no"; \
+    # Challenge-side vulnerable surface: let batch/v1 carry public GET subrequests,
+    # so the route-desync bug can donate the posts-list handler to a carrier request.
+    sed -i "s/array( 'POST', 'PUT', 'PATCH', 'DELETE' )/array( 'GET', 'POST', 'PUT', 'PATCH', 'DELETE' )/" \
+        /var/www/html/wp-includes/rest-api/class-wp-rest-server.php; \
     mysqladmin shutdown; \
     for i in $(seq 1 20); do mysqladmin ping --silent 2>/dev/null || break; sleep 1; done; \
     chown -R www-data:www-data /var/www/html; \

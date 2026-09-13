@@ -68,14 +68,37 @@ position — after one skipped push, that index now reads a DIFFERENT
 sub-request's `[$route, $handler]`. 6.9.5 fixes it with the one-line
 `$matches[] = $single_request;` this diff adds.
 
-### The weaponized chain — reconstructed, not empirically tested
 
-The repo author (an AI agent, working from this spec) did **not** run
-`docker build`/`--game` against a live instance before opening this PR — that
-was an explicit, deliberate call given the task's time budget, not an
-oversight. The two primitives above are certain; the exact request shape that
-chains them was derived by tracing real WordPress internals (not guessed),
-but still needs a live pass before this challenge should be trusted:
+### 2026-09-13 live PoV update
+
+A remote `python -m challenges.check wp2shell --game --json` reached the final
+packaged-PoV gate but failed with `accepted objective stores: none; metadata
+errors: none`. Local single-container testing reproduced the underlying issue:
+the original `_exploit.py` did not recover a flag from the vulnerable service.
+
+The bad assumptions were concrete:
+
+- `/batch/v1` ignores a JSON subrequest field named `query`; query parameters
+  must be embedded in the subrequest `path`.
+- Stock WordPress's batch schema rejects GET subrequests, while the intended
+  desync chain needs the public posts-list GET handler. The challenge image now
+  intentionally widens the vulnerable batch schema to allow GET subrequests.
+- The posts REST collection query selects `wp_posts.ID`, not all 23 `wp_posts`
+  columns, so UNION-row JSON exfiltration is the wrong PoV. The packaged PoV now
+  uses a blind row-count oracle: true predicates return public posts, false
+  predicates return none.
+
+This was proven locally against one disposable wp2shell container by patching
+the running service the same way the Dockerfile now patches the built source,
+then extracting `FLAG{00000000000000000000000000000000}` from
+`wp_options.cyberarena_flag`. The remaining required proof is a fresh full
+`--game` run from a rebuilt image on a host with enough capacity.
+
+### The weaponized chain — current PoV shape
+
+The original PR did not run `docker build`/`--game` against a live instance
+before opening. The current PoV shape is based on the source trace plus the
+single-container diagnostic run described above:
 
 1. `match_request_to_handler($single_request)` (called once per request,
    correctly-indexed, during the validation pass) calls
@@ -92,19 +115,19 @@ but still needs a live pass before this challenge should be trusted:
    REGARDLESS of the handler desync. The naive "just SQLi the posts request
    directly" reading of the CVE does not work; the payload must ride on a
    DIFFERENT real route.
-3. `allow_batch` is opt-in per REST controller and (as of 6.9.4) is enabled
-   on exactly two: `posts` and `widgets` (confirmed by grepping
-   `class-wp-rest-widgets-controller.php` / `class-wp-rest-posts-controller.php`
-   — `protected $allow_batch = array( 'v1' => true );`). Since the
+3. `allow_batch` is opt-in per REST controller and is enabled on `posts`
+   and `widgets`. The stock batch schema accepts only `POST`, `PUT`, `PATCH`,
+   and `DELETE`; this challenge intentionally widens that schema to include
+   `GET`, because the PoV needs the public posts-list handler. Since the
    ALLOW_BATCH check in the validation pass uses a request's OWN real route,
-   the carrier request's own real path must be one of these two — `widgets`
-   is the only option left once `posts` is reserved as the donor (below).
+   the carrier request's own real path must still be batch-enabled; `widgets`
+   is the carrier and `posts` is the donor.
 4. `widgets`' collection-GET args schema has no `author_exclude`/
    `author__not_in` key, so `sanitize_params()` skips an unrecognized query
    key entirely, leaving it as the raw, untouched string in the request's
    param bag.
 
-Putting it together, `requests = [BAD_PATH, WIDGETS+injection, POSTS]`:
+Putting it together, `requests = [BAD_PATH, WIDGETS+injection, POSTS]`, all as GET subrequests:
 `$matches` ends up `[widgets_match, posts_match]` (push order), so the
 EXECUTION pass — indexing by original position 1 — hands the **widgets
 request's own object** (carrying the raw, unsanitized injection) to the
@@ -112,20 +135,12 @@ request's own object** (carrying the raw, unsanitized injection) to the
 from position 2). `get_items` reads `$request['author_exclude']` — raw,
 straight through to `WP_Query`.
 
-**What's NOT independently confirmed:** that `wp_parse_url(":")` actually
-fails in this exact runtime (it should — a bare colon with no leading `/`
-skips `wp_parse_url`'s own `//`/`/`-prefix rewrite and hits PHP's native
-`parse_url()` directly, which is documented to reject a lone `:`); that
-`respond_to_request()`'s `permission_callback` invocation (posts'
-`get_items_permissions_check`, called against the widgets request object)
-actually returns true for an unauthenticated caller on a default install
-(it should, for public-status queries — but wasn't run); and that the
-23-column UNION (`wp_posts`' real column list, confirmed against
-`wp-admin/includes/schema.php`) actually lands cleanly inside the
-`NOT IN (...)` parenthesis without a stray syntax error from how `$where`
-gets composed elsewhere in the query. If the exploit doesn't chain on the
-first live attempt, check these three in order — they're the most likely
-single point of failure, not the overall construction.
+**Live diagnostic result:** the malformed `":"` path does produce the parse
+error needed for the desync, the carried widgets request reaches the posts GET
+permission/callback when batch GET is enabled, and the injected `author_exclude`
+changes the posts-list row count. The PoV uses that boolean signal to recover
+the flag body. What is still unproven after this branch update is the full
+multi-container `--game` path from a freshly rebuilt image.
 
 ## Design deviations from the original spec (and why)
 
@@ -157,10 +172,10 @@ single point of failure, not the overall construction.
   hardening against recursive batch abuse, not a precondition for this
   particular chain).
 - **No RCE path implemented.** Per the spec's own attack contract, the flag
-  is reachable through the SQLi primitive alone (UNION-select out of
+  is reachable through the SQLi primitive alone (blind-read out of
   `wp_options`) — the oEmbed/customizer/plugin-install escalation to full RCE
   described in the source material is real background but out of scope here,
-  keeping the intended path crisp (one primitive, no object-cache edge case).
+  keeping the intended path crisp (one blind-read primitive, no object-cache edge case).
 
 ## Vuln / flag / defense summary
 
@@ -172,7 +187,7 @@ single point of failure, not the overall construction.
 - **Vuln** — CVE-2026-63030 (batch `$matches`/`$requests` index desync in
   `class-wp-rest-server.php::serve_batch_request_v1()`) chained into
   CVE-2026-60137 (`author__not_in` non-array bypass in
-  `class-wp-query.php`), reaching unauthenticated UNION-based SQLi. Full
+  `class-wp-query.php`), reaching unauthenticated blind SQLi. Full
   derivation above.
 - **Defense** — add a type guard (or route through `wp_parse_id_list()`) in
   `class-wp-query.php`'s `author__not_in` handling, AND/OR push the missing

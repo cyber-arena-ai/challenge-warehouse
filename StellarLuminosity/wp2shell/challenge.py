@@ -17,10 +17,10 @@ chained pair:
 
 Chained: a 3-entry batch (one deliberately-unparseable path, then `/wp/v2/
 widgets` carrying an `author_exclude` query param the widgets schema doesn't
-recognize, then `/wp/v2/posts` to donate its handler) lets the SQLi reach
-`WP_Query` unauthenticated. See `_maintainer/README.md` for the verified
-source diff against 6.9.5 and the honest uncertainty around the exact
-weaponized request shape (reconstructed from source, not empirically tested).
+recognize, then `/wp/v2/posts` to donate its GET handler) lets the SQLi reach
+`WP_Query` unauthenticated. The REST posts query only returns IDs, so the PoV
+uses a blind row-count oracle to recover the flag from `wp_options`. See
+`_maintainer/README.md` for the source evidence and live-test notes.
 
 Single-container packaging (framework deploys exactly one VulboxImage per
 team): Apache + PHP 8.2 + WordPress + a co-resident MariaDB all run in one
@@ -60,8 +60,8 @@ _DOCS = ChallengeDocs(
         "parallel-array desync in serve_batch_request_v1()) + CVE-2026-60137 "
         "(unauthenticated SQL injection via WP_Query's author__not_in when "
         "given a non-array value). A crafted 3-entry batch to /wp-json/"
-        "batch/v1 lets an unauthenticated attacker reach the SQLi and UNION-"
-        "select the flag out of wp_options (option_name=cyberarena_flag) — no "
+        "batch/v1 lets an unauthenticated attacker reach the SQLi and blind-"
+        "read the flag out of wp_options (option_name=cyberarena_flag) — no "
         "RCE required. Defense: edit wp-includes/class-wp-query.php and/or "
         "wp-includes/rest-api/class-wp-rest-server.php under /srv/challenge/"
         "wp2shell/, then call restart_service. Either fix alone breaks the "

