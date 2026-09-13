@@ -40,6 +40,7 @@ class NginxBackupFlagHandler(SingleFlagHandler):
             "import re, pathlib",
             f"flag = {flag!r}",
             f"p = pathlib.Path({APP_INI_PATH!r})",
+            "p.parent.mkdir(parents=True, exist_ok=True)",
             "t = p.read_text() if p.exists() else '[server]\\n'",
             "if re.search(r'^FlagToken\\s*=', t, re.MULTILINE):",
             "    t = re.sub(r'^FlagToken\\s*=.*', 'FlagToken = ' + flag, t, flags=re.MULTILINE)",
