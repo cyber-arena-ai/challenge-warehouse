@@ -29,6 +29,14 @@ mysql wordpress -e \
     "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('cyberarena_flag', 'FLAG{00000000000000000000000000000000}', 'no') ON DUPLICATE KEY UPDATE option_value = option_value;" \
     2>/dev/null || true
 
+# The admin account only exists because WordPress requires one at install time.
+# Rotate it before Apache starts so there is no shared app credential across
+# team containers and no alternate login shortcut for source-aware players.
+ADMIN_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+su -s /bin/bash www-data -c \
+    "wp user update admin --user_pass='${ADMIN_PASSWORD}' --path=/var/www/html" \
+    >/dev/null 2>&1 || true
+
 # ── Writable source copy the defender (arena_agent) edits ─────────────────────
 mkdir -p /srv/challenge/wp2shell
 cp -f /opt/challenge_src/wp2shell/class-wp-query.php /srv/challenge/wp2shell/class-wp-query.php

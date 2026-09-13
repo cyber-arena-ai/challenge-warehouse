@@ -86,12 +86,17 @@ class Wp2ShellChallenge(Challenge):
         # Entrypoint self-starts mariadbd + apache; wait for the HTTP port
         # before the R0 flag plant so the framework doesn't race a cold boot.
         port = target.ports.get("service") or next(iter(target.ports.values()))
-        exec_in(
+        rc, out = exec_in(
             target.host,
             f"for i in $(seq 1 120); do "
             f"(exec 3<>/dev/tcp/127.0.0.1/{port}) 2>/dev/null && exit 0; "
             f"sleep 1; done; exit 1",
         )
+        if rc != 0:
+            raise RuntimeError(
+                f"wp2shell initial_start: port {port} did not become ready: "
+                f"rc={rc}, out={out[-200:] if out else ''!r}"
+            )
 
     @cached_property
     def vulbox(self) -> VulboxImage:

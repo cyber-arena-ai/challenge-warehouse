@@ -70,9 +70,10 @@ RUN set -ex; \
         --path=/var/www/html --skip-check"; \
     su -s /bin/bash www-data -c "wp config set WP_AUTO_UPDATE_CORE false --raw --type=constant --path=/var/www/html"; \
     su -s /bin/bash www-data -c "wp config set AUTOMATIC_UPDATER_DISABLED true --raw --type=constant --path=/var/www/html"; \
+    ADMIN_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"; \
     su -s /bin/bash www-data -c "wp core install --path=/var/www/html \
         --url=http://localhost --title='Arena' \
-        --admin_user=admin --admin_password='Arena_CTF_2026!' \
+        --admin_user=admin --admin_password="${ADMIN_PASSWORD}" \
         --admin_email=admin@arena.local --skip-email"; \
     # Pretty permalinks — WITHOUT this, permalink_structure is empty ("plain")
     # and WordPress serves the REST API only at /?rest_route=…; the pretty
