@@ -1,0 +1,44 @@
+# maintained with the challenge package; see _registry/schematic.md
+slug: pyload-download-manager
+title: pyLoad Download Manager
+contributor: LEAFERx
+updated: '2026-09-11'
+tags:
+- real-world
+- web
+- python
+- patch-source
+classification:
+  difficulty: medium
+  vuln_class: Application Service Boundary
+  cve: null
+card:
+  tagline: Operate and harden a pinned pyLoad download service without breaking native workflows
+  summary: 'A pinned pyLoad deployment exposes its browser interface, authenticated JSON API,
+    and Click''N''Load companion-client protocol. A rotating service operation is scored while
+    defenders retain the complete upstream Python source.'
+  attack: Recover the flag released by the current operation identity through the public pyLoad service.
+  defense: Audit and harden the editable pyLoad source while preserving its web, API, and Click'N'Load workflows.
+origin:
+  type: real-world
+  source: pyLoad
+  reference: e8e315e2e5148b49ab9de768e4642aba522a34ea
+  url: https://github.com/pyload/pyload
+service:
+  protocol: web
+  ports:
+    web: 8000
+  stack: Python 3.11 · pyLoad e8e315e
+provenance:
+  image: cyberarena/chal-pyload-download-manager:v1
+  source_intro: 'pyLoad at commit e8e315e2e5148b49ab9de768e4642aba522a34ea provides
+    its web interface, Click''N''Load companion-client protocol, persistent download state,
+    and restricted application users. One rotating service operation is scored.'
+cover:
+  image: covers/pyload-download-manager.webp
+  accent: '#ed6685'
+  prompt_id: geo-v2
+  motif: 'A compact browser-like control panel connects to a staggered queue of download cards,
+    while a paired companion-client connector feeds one encrypted package into the same orderly
+    pipeline. Layered storage planes beneath the queue suggest persistent state, and a separate
+    narrow operations rail marks the rotating scored identity without depicting its contents.'
