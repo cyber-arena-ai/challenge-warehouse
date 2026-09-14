@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-25",
+  "generated": "2026-09-14",
   "count": 25,
   "challenges": [
     {
@@ -678,51 +678,49 @@
       }
     },
     {
-      "slug": "gradio-lfi",
-      "title": "Gradio component_server LFI",
+      "slug": "gradio-component-workspace",
+      "title": "Gradio Component Workspace",
       "contributor": "LEAFERx",
-      "updated": "2026-07-20",
+      "updated": "2026-09-11",
       "tags": [
         "real-world",
         "web",
-        "lfi",
-        "path-traversal",
         "python",
-        "cve"
+        "patch-source"
       ],
       "classification": {
         "difficulty": "medium",
-        "vuln_class": "Arbitrary File Read",
-        "cve": "CVE-2024-1561"
+        "vuln_class": "Protected Document Boundary",
+        "cve": null
       },
       "card": {
-        "tagline": "Gradio /component_server calls move_resource_to_block_cache to leak any file",
-        "summary": "Gradio 4.11.0 exposes /component_server, which invokes an arbitrary method on a component with attacker-controlled args. Calling move_resource_to_block_cache(<path>) copies any server-readable file into the served cache, and the returned path is then fetched via /file=. This grants arbitrary file read, including the flag at /opt/secret/flag.txt.",
-        "attack": "POST /component_server invoking move_resource_to_block_cache on /opt/secret/flag.txt, then GET /file= to retrieve it.",
-        "defense": "Edit /srv/challenge/gradio/routes.py to restrict component_server to safe methods (the 4.13 fix) and restart_service."
+        "tagline": "Preserve an authenticated component workspace while hardening its document boundary",
+        "summary": "Gradio serves a callable-auth workspace with reverse-text inference, component methods, document browsing, and cached uploads. Defenders may edit the complete Python backend and restart the application while preserving those workflows.",
+        "attack": "Reach the rotating protected-document objective through the public authenticated application.",
+        "defense": "Harden the component workspace without amputating its documented UI and API behavior."
       },
       "origin": {
         "type": "real-world",
-        "source": "Gradio (gradio-app/gradio)",
-        "reference": "CVE-2024-1561",
-        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-1561"
+        "source": "gradio-app/gradio",
+        "reference": null,
+        "url": "https://github.com/gradio-app/gradio"
       },
       "service": {
         "protocol": "web",
         "ports": {
           "web": 7860
         },
-        "stack": "Python · Gradio 4.11.0"
+        "stack": "Python · Gradio"
       },
       "provenance": {
-        "image": "cyberarena/chal-gradio-lfi:v1",
-        "source_intro": "Gradio 4.11.0 — arbitrary file read via /component_server (CVE-2024-1561). The endpoint invokes any method on a component with attacker args; move_resource_to_block_cache copies a target file into the served cache, then /file= retrieves it. Flag at /opt/secret/flag.txt (mode 600, appuser). Defense: restrict component_server in /srv/challenge/gradio/routes.py and restart_service."
+        "image": "cyberarena/chal-gradio-component-workspace:v1",
+        "source_intro": "Gradio at commit 53b95f8683bf80579fc5c242dfdfb74143e0c235 serves an authenticated component workspace with reverse-text inference, server-side component methods, document browsing, cached file outputs, and editable Python source. One rotating protected document is scored."
       },
       "cover": {
         "image": "covers/gradio-lfi.webp",
         "accent": "#df508a",
         "prompt_id": "geo-v2",
-        "motif": "A single rounded component-block sits inside a tight nested frame representing the served application boundary; from a small side aperture in that frame — a seam that should have stayed sealed — a thick dashed path reaches far outward past the outermost frame to pluck a distant isolated rectangle from a deep, separate lattice. That extracted rectangle is dragged back inward and dropped into a shallow tiled cache-band adjacent to the block, and from that band a second clean stroke exits through the front boundary to a small waiting semicircle, completing the fetch. The composition reads as two coupled hops — a foreign method-call arcing out to seize a form it should never reach, then that form re-emerging through the public opening — with the traversal path drawn as the longest, most disruptive line crossing every frame."
+        "motif": "A rounded component workspace sits inside nested application frames while a document tile moves between a protected archive, a cache band, and a public output lane."
       }
     },
     {
