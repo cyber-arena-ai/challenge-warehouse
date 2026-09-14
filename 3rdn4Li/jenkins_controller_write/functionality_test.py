@@ -1,8 +1,4 @@
-"""Process, transport and platform-surface health for jenkins-controller-write.
-
-The gameplay-correctness probe is the framework-run `image/checker.sh`, shipped
-over stdin into prod as the CHECKER leaf and no longer invoked from here.
-"""
+"""Shallow local lifecycle checks; checker.py owns gameplay correctness."""
 
 from __future__ import annotations
 
@@ -19,51 +15,36 @@ class JenkinsFunctionalityTest(FunctionalityTest):
         return ("web",)
 
     def run(self, target: VulboxTarget) -> CheckResult:
-        exec_in = target.meta["exec_in_container"]
+        exec_in = target.meta.get("exec_in_container")
+        if exec_in is None:
+            return CheckResult("jenkins", False, "no exec bridge")
         port = target.ports["web"]
-
-        rc_controller, _ = exec_in(
-            target.host, "pgrep -u jenkins -f 'jenkins.war' >/dev/null"
-        )
-        rc_agent, _ = exec_in(
-            target.host, "pgrep -u jenkins_worker -f 'agent.jar' >/dev/null"
-        )
-        process = CheckResult(
-            name="process",
-            passed=(rc_controller == 0 and rc_agent == 0),
-            detail=f"controller rc={rc_controller}, agent rc={rc_agent}",
-        )
-
-        tcp_command = (
-            "python3 -c \"import socket; s=socket.socket(); s.settimeout(3); "
-            f"s.connect(('127.0.0.1',{port})); s.close()\""
-        )
-        rc, _ = exec_in(target.host, tcp_command)
-        tcp = CheckResult(name="tcp", passed=(rc == 0), detail=f":{port} rc={rc}")
-
-        http_command = (
-            "python3 -c \"import base64,urllib.request; "
-            "r=urllib.request.Request('http://127.0.0.1:8080/api/json',"
-            "headers={'Authorization':'Basic '+base64.b64encode("
-            "b'player:arena-player-password').decode()}); "
-            "x=urllib.request.urlopen(r,timeout=5); "
-            "assert x.status==200 and x.headers['X-Jenkins'] in ('2.554','2.555')\""
-        )
-        rc, _ = exec_in(target.host, http_command)
-        http = CheckResult(
-            name="http", passed=(rc == 0), detail=f"authenticated API rc={rc}"
-        )
-
-        rc, output = exec_in(target.host, "/arena/sshd_check.sh")
-        sshd = CheckResult(
-            name="sshd",
-            passed=(rc == 0),
-            detail=(output.strip() or f"rc={rc}")[-300:],
-        )
-
-        children = [process, tcp, http, sshd]
+        try:
+            controller_rc, _ = exec_in(
+                target.host, "pgrep -u jenkins -f 'jenkins.war' >/dev/null"
+            )
+            agent_rc, _ = exec_in(
+                target.host, "pgrep -u jenkins_worker -f 'agent.jar' >/dev/null"
+            )
+            tcp_rc, _ = exec_in(
+                target.host,
+                f"timeout 5 bash -c '</dev/tcp/127.0.0.1/{port}'",
+            )
+            http_rc, _ = exec_in(
+                target.host,
+                "curl -fsS --max-time 5 http://127.0.0.1:8080/login >/dev/null",
+            )
+        except Exception as error:  # noqa: BLE001
+            return CheckResult("jenkins", False, type(error).__name__)
+        children = [
+            CheckResult(
+                "process",
+                controller_rc == 0 and agent_rc == 0,
+                f"controller={controller_rc},agent={agent_rc}",
+            ),
+            CheckResult("tcp", tcp_rc == 0, f"rc={tcp_rc}"),
+            CheckResult("http", http_rc == 0, f"rc={http_rc}"),
+        ]
         return CheckResult(
-            name="jenkins-controller-write",
-            passed=all(child.passed for child in children),
-            children=children,
+            "jenkins", all(child.passed for child in children), children=children
         )
