@@ -1,82 +1,56 @@
-"""Build the `cyberarena/chal-marimo-rce` image from `image/`.
-
-Default builds the CVE-pinned (vulnerable) marimo 0.20.4 snapshot. Pass
---version latest to build the patched upstream release, for benchmarking
-exploits against patched code:
-    python -m challenges.marimo_rce.build                  # vulnerable pin
-    python -m challenges.marimo_rce.build --version latest  # patched upstream
-"""
+"""Build the exact pinned marimo notebook image."""
 
 from __future__ import annotations
 
+import hashlib
 import logging
-import os
 import subprocess
 from pathlib import Path
 
-import docker
+from .challenge import IMAGE_TAG, MarimoNotebookChallenge
 
-from .challenge import MarimoRceChallenge
 
 log = logging.getLogger(__name__)
-
-_CONTEXT_DIR = Path(__file__).resolve().parent / "image"
-_VERSION_ARG = "MARIMO_VERSION"
-_VERSION_ENV = "CYBERARENA_MARIMO_VERSION"
+_CONTEXT = Path(__file__).resolve().parent / "image"
 
 
-def _resolve_tag(base_tag: str, version: str | None) -> str:
-    if not version:
-        return base_tag
-    return f"{base_tag.rsplit(':', 1)[0]}:{version}"
+def _context_tag() -> str:
+    digest = hashlib.sha256()
+    for path in sorted(_CONTEXT.rglob("*")):
+        relative = path.relative_to(_CONTEXT)
+        if (
+            not path.is_file()
+            or "__pycache__" in relative.parts
+            or path.suffix == ".pyc"
+        ):
+            continue
+        digest.update(relative.as_posix().encode())
+        digest.update(b"\0")
+        with path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+        digest.update(b"\0")
+    return "ctx-" + digest.hexdigest()
 
 
-def build_image(client: docker.DockerClient | None = None, *, version: str | None = None) -> str:
-    """Build (or cache-hit) the image. version=None -> CVE pin at the canonical
-    tag; a version string (e.g. 'latest') -> that pip version at a suffixed tag."""
-    challenge = MarimoRceChallenge()
-    base_tag = challenge.vulbox.reference
-    version = version if version is not None else os.environ.get(_VERSION_ENV)
-    tag = _resolve_tag(base_tag, version)
-
-    client = client or docker.from_env()
-    if version is None:
-        try:
-            client.images.get(tag)
-            log.info("marimo-rce: image %s already present; skipping build", tag)
-            return tag
-        except docker.errors.ImageNotFound:
-            pass
-
-    if not _CONTEXT_DIR.is_dir():
-        raise FileNotFoundError(f"missing build context: {_CONTEXT_DIR}")
-
-    cmd = ["docker", "build", "--platform=linux/amd64", "-t", tag]
-    if version:
-        cmd += ["--build-arg", f"{_VERSION_ARG}={version}"]
-    cmd.append(str(_CONTEXT_DIR))
-
-    log.info("marimo-rce: building %s (version=%s)", tag, version or "0.20.4")
-    try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as e:
+def build_image(client: object | None = None) -> str:
+    del client
+    actual_tag = _context_tag()
+    if actual_tag != IMAGE_TAG:
         raise RuntimeError(
-            f"docker build failed for {tag}\nstdout:\n{e.stdout}\nstderr:\n{e.stderr}"
-        ) from e
-    log.info("marimo-rce: built %s", tag)
+            f"build context tag drifted: declared {IMAGE_TAG}, actual {actual_tag}"
+        )
+    tag = MarimoNotebookChallenge().vulbox.reference
+    command = ["docker", "build", "--platform=linux/amd64", "-t", tag, str(_CONTEXT)]
+    try:
+        subprocess.run(command, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(
+            f"docker build failed for {tag}\nstdout:\n{error.stdout}\nstderr:\n{error.stderr}"
+        ) from error
     return tag
 
 
 if __name__ == "__main__":
-    import argparse
-
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    ap = argparse.ArgumentParser(description="Build the marimo-rce challenge image.")
-    ap.add_argument(
-        "--version",
-        default=None,
-        help="pip version to install (e.g. 'latest' for patched upstream); "
-             "default builds the CVE-pinned vulnerable snapshot.",
-    )
-    args = ap.parse_args()
-    print(build_image(version=args.version))
+    print(build_image())
