@@ -1,0 +1,34 @@
+"""Build the pinned changedetection.io image."""
+
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+
+from .challenge import ChangedetectionIoChallenge
+
+_BUILD_CONTEXT = Path(__file__).resolve().parent / "image"
+
+
+def build_image() -> str:
+    tag = ChangedetectionIoChallenge().vulbox.reference
+    try:
+        subprocess.run(
+            [
+                "docker",
+                "build",
+                "--platform=linux/amd64",
+                "-t",
+                tag,
+                str(_BUILD_CONTEXT),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(
+            f"docker build failed for {tag}\n"
+            f"stdout:\n{error.stdout}\nstderr:\n{error.stderr}"
+        ) from error
+    return tag
