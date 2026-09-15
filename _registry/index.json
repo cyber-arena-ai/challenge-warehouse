@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-14",
-  "count": 25,
+  "generated": "2026-09-15",
+  "count": 26,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -1207,6 +1207,57 @@
         "accent": "#e57052",
         "prompt_id": "geo-v2",
         "motif": "A dense obfuscated slab built from tightly interlocked isometric blocks stands as the C service, its interior riddled with dashed control paths that fold back on themselves. Along its guarded edge a segmented band of session gates admits neat stepped ladders of legitimate request-response traffic, each terminating at its own small enclosed cell. One gate belongs to a deep, distinct locked cell at center; from the array-plugin region a foreign chevron-tipped path threads sideways through an unintended seam in the barrier, curving around the checkpoint to arrive inside that central cell, where its covering planes peel back to reveal the concentric arcs of the impersonated vault chamber beneath."
+      }
+    },
+    {
+      "slug": "wordpress-site-management",
+      "title": "WordPress Site Management",
+      "contributor": "StellarLuminosity",
+      "updated": "2026-09-11",
+      "tags": [
+        "real-world",
+        "web",
+        "sqli",
+        "logic-bug",
+        "php",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Nested REST interpretation and SQL injection chain",
+        "cve": [
+          "CVE-2026-63030",
+          "CVE-2026-60137"
+        ]
+      },
+      "card": {
+        "tagline": "Cross a protected site-setting boundary through nested REST requests",
+        "summary": "A pinned WordPress site retains native public content, filtered queries, and batch requests while a fresh protected setting forms the READ objective. The repair must preserve those public workflows while closing the anonymous cross-boundary chain.",
+        "attack": "Combine nested batch request interpretation with an injected author exclusion query to recover the protected setting through public post identifiers.",
+        "defense": "Apply the grouped upstream request-index and query-normalization repair while preserving public filtered post reads and benign batch requests."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "WordPress Core",
+        "reference": "CVE-2026-63030 / CVE-2026-60137",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-63030"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 80
+        },
+        "stack": "PHP · WordPress Core"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-wordpress-site-management:v1",
+        "source_intro": "A pinned WordPress site serves public content and its native REST batch interface. A fresh protected site setting forms one cross-boundary READ objective for anonymous network participants."
+      },
+      "cover": {
+        "image": "covers/wordpress-site-management.webp",
+        "accent": "#e94728",
+        "prompt_id": "geo-v2",
+        "motif": "Three nested segmented request frames are stacked slightly out of register. A broken notch shifts a thinner inner band sideways so it carries a sharp wedge into an orderly square data grid below, while a dashed return path rises from one isolated hidden tile back through all three frames."
       }
     }
   ]
