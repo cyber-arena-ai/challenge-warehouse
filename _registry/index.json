@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-14",
-  "count": 25,
+  "generated": "2026-09-15",
+  "count": 26,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -772,6 +772,53 @@
         "accent": "#e86958",
         "prompt_id": "geo-v2",
         "motif": "Two hard-edged isometric boxes sit apart — a large controller block on the right, a smaller isolated agent block on the left — joined by a segmented band that steps between them like a ladder. On the agent block a thin dashed path resolves into a straight thick stroke that pierces the joining band and drives clean through the outer nested frame of the controller block, depositing a solid rectangle deep inside a tight square lattice it was never meant to touch. The gesture repeats as a faint offset ghost of the same deposit one beat earlier — the symlink archived, then overwritten — so the two near-identical acts overlap where the arrow crosses the frame. A ring of empty executor slots around the controller sits inert, unlit and unused, while the intruding block lands squarely in the innermost cell."
+      }
+    },
+    {
+      "slug": "listmonk",
+      "title": "Listmonk Subscriber Query",
+      "contributor": "jtu22",
+      "updated": "2026-09-10",
+      "tags": [
+        "real-world",
+        "web",
+        "sqli",
+        "info-leak",
+        "go",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "SQL Query Validation Bypass",
+        "cve": "CVE-2026-62361"
+      },
+      "card": {
+        "tagline": "Cross a subscriber-query boundary to recover a protected API credential",
+        "summary": "A restricted Listmonk analyst can query and export subscriber data with SQL expressions. At the exact pinned revision, distinct validation gaps allow protected API-user credentials to be reflected through the public subscriber endpoints while ordinary analyst workflows remain available.",
+        "attack": "Recover the rotating protected API user's credential through subscriber query behavior, authenticate as that user, and read its protected delivery proof.",
+        "defense": "Harden protected-relation validation across query execution paths while preserving legitimate filtered subscriber queries and CSV exports."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "listmonk",
+        "reference": "CVE-2026-62361",
+        "url": "https://github.com/knadh/listmonk"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 9000
+        },
+        "stack": "Go · Listmonk · PostgreSQL 17"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-listmonk:v2",
+        "source_intro": "Exact Listmonk commit e3499cf with full HTTP application behavior and a restricted subscriber-query analyst baseline.\n"
+      },
+      "cover": {
+        "image": "covers/listmonk.webp",
+        "accent": "#f04a19",
+        "prompt_id": "geo-v1"
       }
     },
     {
