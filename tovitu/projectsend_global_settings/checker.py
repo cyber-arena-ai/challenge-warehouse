@@ -15,6 +15,7 @@ from ._client import (
     login,
     upload,
 )
+from ._net import resolve
 from .checker_identity import checker_identities
 
 
@@ -29,7 +30,7 @@ class ProjectSendGlobalSettingsChecker(FunctionalityTest):
 
     def run(self, target: VulboxTarget) -> CheckResult:
         nonce = secrets.token_hex(6)
-        base_url = f"http://{target.host}:{target.ports['service']}"
+        base_url = f"http://{resolve(target)}:{target.ports['service']}"
         try:
             identities = checker_identities(str(target.meta["team_id"]))
             admin = login(base_url, *identities["administrator"])

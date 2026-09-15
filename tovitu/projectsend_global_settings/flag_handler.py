@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+import hmac
+import json
 import shlex
 from collections.abc import Mapping
 
@@ -25,9 +26,9 @@ from ._client import (
     login,
     public_title,
 )
+from ._net import resolve
 from .challenge import OPTIONS_REGION
 from .checker_identity import checker_identities
-
 
 STORE = "global_setting"
 PUBLIC_TARGET = "this_install_title"
@@ -47,12 +48,21 @@ def _admin_password(target: VulboxTarget) -> str:
 
 
 def _base_url(target: VulboxTarget) -> str:
-    return f"http://{target.host}:{target.ports['service']}"
+    return f"http://{resolve(target)}:{target.ports['service']}"
 
 
-def _round_suffix(target: VulboxTarget, token: str) -> str:
-    coordinates = f"{target.meta['team_id']}:{token}".encode()
-    return hashlib.sha256(coordinates).hexdigest()[:16]
+def _round_suffix(target: VulboxTarget) -> str:
+    seed = target.meta.get("round_context_seed")
+    if not isinstance(seed, str) or len(seed) != 64:
+        raise ValueError("round_context_seed must be 64 hexadecimal characters")
+    try:
+        key = bytes.fromhex(seed)
+    except ValueError as error:
+        raise ValueError(
+            "round_context_seed must be 64 hexadecimal characters"
+        ) from error
+    label = b"projectsend-global-settings\0global_setting\0title"
+    return hmac.new(key, label, hashlib.sha256).hexdigest()[:16]
 
 
 def _unpack(handle: str) -> dict[str, str] | None:
@@ -86,7 +96,7 @@ class ProjectSendSettingsFlagHandler(FlagHandler):
         if set(flags) != {STORE}:
             raise ValueError(f"expected only store {STORE!r}")
         token = flags[STORE].value
-        suffix = _round_suffix(target, token)
+        suffix = _round_suffix(target)
         base_url = _base_url(target)
         admin = login(base_url, ADMIN_USER, _admin_password(target))
         round_title = ROUND_TITLE_PREFIX + suffix

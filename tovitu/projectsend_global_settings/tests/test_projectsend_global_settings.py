@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 
 from challenges.interface import Flag, ObservationStatus, OracleKind, VulboxTarget
-from challenges.projectsend_global_settings import ProjectSendGlobalSettingsChallenge
-from challenges.projectsend_global_settings import _client
-from challenges.projectsend_global_settings import checker
-from challenges.projectsend_global_settings import checker_identity
-from challenges.projectsend_global_settings import build
-from challenges.projectsend_global_settings import _exploit
+from challenges.projectsend_global_settings import (
+    ProjectSendGlobalSettingsChallenge,
+    _client,
+    _exploit,
+    _net,
+    build,
+    checker,
+    checker_identity,
+)
 from challenges.projectsend_global_settings import flag_handler as handler_module
 from challenges.projectsend_global_settings.flag_handler import STORE
 
@@ -18,7 +22,11 @@ def target(exec_in):
     return VulboxTarget(
         host="team1_prod",
         ports={"service": 80},
-        meta={"exec_in_container": exec_in, "team_id": "team1"},
+        meta={
+            "exec_in_container": exec_in,
+            "team_id": "team1",
+            "round_context_seed": "ab" * 32,
+        },
     )
 
 
@@ -75,7 +83,7 @@ def test_build_always_uses_the_current_package_context(monkeypatch):
     assert calls[0][0][-1] == str(build._CONTEXT)
 
 
-def test_plant_converges_real_round_context_and_rotates_with_token(monkeypatch):
+def test_plant_converges_on_round_context_independent_of_proof(monkeypatch):
     calls = []
     titles = []
 
@@ -98,24 +106,83 @@ def test_plant_converges_real_round_context_and_rotates_with_token(monkeypatch):
     repeated = json.loads(
         handler.plant(target(execute), {STORE: Flag("FLAG{unit_value}")})[STORE]
     )
-    rotated = json.loads(
+    changed_proof = json.loads(
         handler.plant(target(execute), {STORE: Flag("FLAG{next_value}")})[STORE]
     )
     assert first["token"] == "FLAG{unit_value}"
     assert first["target_id"] == repeated["target_id"]
-    assert first["target_id"] != rotated["target_id"]
+    assert first["target_id"] == changed_proof["target_id"]
     suffix = first["target_id"].removeprefix("this_install_title/")
     assert titles[:2] == [
         handler_module.ROUND_TITLE_PREFIX + suffix,
         handler_module.ROUND_TITLE_PREFIX + suffix,
     ]
-    assert titles[2] != titles[1]
+    assert titles[2] == titles[1]
     assert len(calls) == 3
     assert all(
         "/var/lib/cyberarena/projectsend-write/integrity" in command
         and "tbl_options" not in command
         for _host, command in calls
     )
+
+
+def test_round_context_changes_the_public_target() -> None:
+    first = target(lambda *_args: (0, ""))
+    second = target(lambda *_args: (0, ""))
+    second.meta["round_context_seed"] = "cd" * 32
+    assert handler_module._round_suffix(first) != handler_module._round_suffix(second)
+
+
+def test_round_context_rejects_a_missing_or_malformed_seed() -> None:
+    current = target(lambda *_args: (0, ""))
+    for seed in (None, "", "not-hex", "ab" * 31):
+        current.meta["round_context_seed"] = seed
+        try:
+            handler_module._round_suffix(current)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"invalid seed accepted: {seed!r}")
+
+
+def test_base_url_resolves_a_container_name(monkeypatch):
+    class Completed:
+        stdout = "172.30.0.9 \n"
+
+    monkeypatch.setattr(_net.subprocess, "run", lambda *_args, **_kwargs: Completed())
+    assert handler_module._base_url(target(lambda *_args: (0, ""))) == (
+        "http://172.30.0.9:80"
+    )
+
+
+def test_bootstrap_reconciles_a_timed_out_install_post(monkeypatch):
+    package = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "projectsend_bootstrap", package / "image" / "bootstrap.py",
+    )
+    bootstrap = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(bootstrap)
+    calls = []
+
+    def request(path, data=None, *, timeout=20):
+        calls.append((path, data, timeout))
+        if path == "install/index.php":
+            raise TimeoutError("slow install")
+        if len(calls) >= 4:
+            return 200, b'<form id="login_form">'
+        return 200, b"installation required"
+
+    monkeypatch.setenv("PROJECTSEND_ADMIN_PASSWORD", "secret")
+    monkeypatch.setattr(bootstrap, "request", request)
+    monkeypatch.setattr(bootstrap.time, "sleep", lambda _seconds: None)
+    bootstrap.main()
+    assert [path for path, _data, _timeout in calls] == [
+        "index.php",
+        "index.php",
+        "install/index.php",
+        "index.php",
+    ]
 
 
 def test_retrieve_uses_anchor_for_the_exact_planted_token():
