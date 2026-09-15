@@ -1,66 +1,52 @@
-"""Liveness probe for nginx-backup: process + tcp + protocol.
-
-PROCESS  — nginx-ui binary alive.
-TCP      — port 9000 accepts a connection.
-PROTOCOL — HTTP GET / through the nginx proxy returns 2xx or 3xx.
-
-All run via exec_in_container (privileged docker exec). The CHECKER is the
-framework-run `image/checker.sh` (shipped over stdin), no longer invoked here.
-"""
+"""Shallow Nginx UI process, TCP, and public-HTTP liveness."""
 
 from __future__ import annotations
 
+import http.client
+import socket
+
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
 
-PROCESS_PATTERN = "nginx-ui"
 
-
-class NginxBackupFunctionalityTest(FunctionalityTest):
+class NginxUiFunctionalityTest(FunctionalityTest):
     @property
     def name(self) -> str:
-        return "nginx-backup-functionality"
+        return "nginx-ui-liveness"
 
     @property
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
     def run(self, target: VulboxTarget) -> CheckResult:
-        exec_in = target.meta["exec_in_container"]
+        exec_in = target.meta.get("exec_in_container")
+        if exec_in is None:
+            process = CheckResult("process", False, "no process observer")
+        else:
+            rc, _ = exec_in(target.host, "pgrep -x nginx-ui")
+            process = CheckResult("process", rc == 0, f"pgrep rc={rc}")
+
         port = target.ports["service"]
+        try:
+            with socket.create_connection((target.host, port), timeout=3):
+                pass
+            tcp = CheckResult("tcp", True)
+        except OSError as error:
+            tcp = CheckResult("tcp", False, type(error).__name__)
 
-        rc, _ = exec_in(target.host, f"pgrep -f {PROCESS_PATTERN!r}")
-        process = CheckResult(
-            name="process",
-            passed=(rc == 0),
-            detail=f"pgrep rc={rc}",
-        )
+        try:
+            connection = http.client.HTTPConnection(target.host, port, timeout=5)
+            try:
+                connection.request("GET", "/")
+                response = connection.getresponse()
+                response.read()
+                status = response.status
+            finally:
+                connection.close()
+            protocol = CheckResult("protocol", 200 <= status < 400, f"HTTP {status}")
+        except OSError as error:
+            protocol = CheckResult("protocol", False, type(error).__name__)
 
-        tcp_probe = (
-            f"python3 -c \"import socket; s=socket.socket(); s.settimeout(2); "
-            f"s.connect(('127.0.0.1', {port})); s.close()\""
-        )
-        rc, _ = exec_in(target.host, tcp_probe)
-        tcp = CheckResult(
-            name="tcp",
-            passed=(rc == 0),
-            detail=f"socket-connect rc={rc}",
-        )
-
-        rc, out = exec_in(
-            target.host,
-            f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 5 "
-            f"http://127.0.0.1:{port}/",
-        )
-        code = out.strip() if out else ""
-        proto_ok = rc == 0 and bool(code) and code[0] in ("2", "3")
-        protocol = CheckResult(
-            name="protocol",
-            passed=proto_ok,
-            detail=f"HTTP {code}" if code else f"rc={rc}",
-        )
-
+        children = [process, tcp, protocol]
         return CheckResult(
-            name="nginx-backup",
-            passed=all(c.passed for c in (process, tcp, protocol)),
-            children=[process, tcp, protocol],
+            "nginx-ui", all(child.passed for child in children), children=children
         )

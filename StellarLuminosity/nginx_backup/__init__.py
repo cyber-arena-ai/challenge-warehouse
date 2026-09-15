@@ -1,3 +1,3 @@
-from .challenge import NginxBackupChallenge
+from .challenge import NginxUiManagementChallenge
 
-__all__ = ["NginxBackupChallenge"]
+__all__ = ["NginxUiManagementChallenge"]
