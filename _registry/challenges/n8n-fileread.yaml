@@ -3,6 +3,8 @@ slug: n8n-fileread
 title: n8n Unauthenticated File Read
 contributor: StellarLuminosity
 updated: '2026-07-20'
+show_in_gallery: false          # no usable upstream license — withheld from the public Games view
+random_pool: false              # withheld from the gallery, so never commissioned either
 tags:
 - real-world
 - web
