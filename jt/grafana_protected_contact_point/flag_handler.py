@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import base64
-import hashlib
 import json
-import secrets
 from collections.abc import Mapping
 
 from challenges.interface import (
@@ -25,6 +23,7 @@ from ._ids import (
     STORE_COMMAND,
     STORE_PROTECTED_RECEIVER,
     derive_principal,
+    derive_round_identity,
     objective_command,
     pack_handle,
     public_flag_id,
@@ -36,11 +35,16 @@ from ._state import protected_url, service_account_name
 
 OBJECTIVE_DIR = "/opt/arena/objective"
 OBJECTIVE_PATH = OBJECTIVE_DIR + "/current"
-CACHE_DIR = "/arena/state/plants"
 
 
 def _b64(raw: str) -> str:
     return base64.b64encode(raw.encode()).decode()
+
+
+def _round_identity(target: VulboxTarget, store: str, length: int) -> str:
+    return derive_round_identity(
+        target.meta.get("round_context_seed"), store, length,
+    )
 
 
 class GrafanaFlagHandler(FlagHandler):
@@ -94,41 +98,10 @@ class GrafanaFlagHandler(FlagHandler):
             STORE_COMMAND: self._plant_command(target, flags[STORE_COMMAND].value),
         }
 
-    @staticmethod
-    def _cache_key(store: str, value: str) -> str:
-        return hashlib.sha256(f"{store}\0{value}".encode()).hexdigest()
-
-    def _cached(self, target: VulboxTarget, store: str, value: str) -> str | None:
-        key = self._cache_key(store, value)
-        rc, out = self._exec(
-            target, f"test -s {CACHE_DIR}/{key} && cat {CACHE_DIR}/{key}"
-        )
-        handle = (out or "").strip() if rc == 0 else ""
-        payload = unpack_handle(handle)
-        if payload and payload.get("store") == store and payload.get("token") == value:
-            return handle
-        return None
-
-    def _cache(
-        self, target: VulboxTarget, store: str, value: str, handle: str,
-    ) -> None:
-        key = self._cache_key(store, value)
-        encoded = _b64(handle)
-        command = (
-            f"install -d -o root -g root -m 0700 {CACHE_DIR}; "
-            f"printf %s {encoded} | base64 -d > {CACHE_DIR}/{key}.new; "
-            f"chmod 0600 {CACHE_DIR}/{key}.new; "
-            f"mv -f {CACHE_DIR}/{key}.new {CACHE_DIR}/{key}"
-        )
-        rc, _ = self._exec(target, command)
-        if rc != 0:
-            raise RuntimeError(f"could not persist {store} plant state")
-
     def _plant_receiver(self, target: VulboxTarget, token: str) -> str:
-        cached = self._cached(target, STORE_PROTECTED_RECEIVER, token)
-        if cached:
-            return cached
-        uid = "arena-cp-" + secrets.token_hex(12)
+        uid = "arena-cp-" + _round_identity(
+            target, STORE_PROTECTED_RECEIVER, 24,
+        )
         request = {"uid": uid, "anchor_name": token}
         rc, out = self._exec(
             target,
@@ -143,21 +116,16 @@ class GrafanaFlagHandler(FlagHandler):
                 raise ValueError
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
             raise RuntimeError("protected receiver placement failed") from error
-        handle = pack_handle({
+        return pack_handle({
             "store": STORE_PROTECTED_RECEIVER,
             "target": uid,
             "token": token,
             "org_id": org_id,
             "anchor_id": anchor_id,
         })
-        self._cache(target, STORE_PROTECTED_RECEIVER, token, handle)
-        return handle
 
     def _plant_command(self, target: VulboxTarget, token: str) -> str:
-        cached = self._cached(target, STORE_COMMAND, token)
-        if cached:
-            return cached
-        operation = secrets.token_hex(16)
+        operation = _round_identity(target, STORE_COMMAND, 32)
         encoded = _b64(f"{operation}\n{token}\n")
         command = (
             f"install -d -o root -g root -m 0700 {OBJECTIVE_DIR}; "
@@ -169,11 +137,9 @@ class GrafanaFlagHandler(FlagHandler):
         rc, _ = self._exec(target, command)
         if rc != 0:
             raise RuntimeError("command objective placement failed")
-        handle = pack_handle({
+        return pack_handle({
             "store": STORE_COMMAND, "target": operation, "token": token,
         })
-        self._cache(target, STORE_COMMAND, token, handle)
-        return handle
 
     @staticmethod
     def _snapshot(target: VulboxTarget) -> tuple[bytes | None, str | None]:

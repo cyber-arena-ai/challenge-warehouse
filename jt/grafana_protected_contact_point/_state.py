@@ -4,12 +4,26 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
+from pathlib import Path
 
 
-def _database(raw: bytes) -> sqlite3.Connection:
-    connection = sqlite3.connect(":memory:")
-    connection.deserialize(raw)
-    return connection
+@contextmanager
+def _database(raw: bytes) -> Iterator[sqlite3.Connection]:
+    # Ubuntu's Python build does not expose sqlite3_deserialize(). Keep the
+    # facility snapshot in a private temporary file and force an immutable,
+    # read-only connection so observation cannot mutate authoritative state.
+    with tempfile.NamedTemporaryFile(prefix="grafana-state-", suffix=".db") as file:
+        file.write(raw)
+        file.flush()
+        uri = Path(file.name).as_uri() + "?mode=ro&immutable=1"
+        connection = sqlite3.connect(uri, uri=True)
+        try:
+            yield connection
+        finally:
+            connection.close()
 
 
 def protected_url(raw: bytes, org_id: int, contact_uid: str) -> str | None:

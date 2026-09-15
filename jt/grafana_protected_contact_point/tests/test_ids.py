@@ -53,3 +53,30 @@ def test_service_operation_is_strictly_uid_472() -> None:
         pass
     else:
         raise AssertionError("invalid operation accepted")
+
+
+def test_round_identities_are_seeded_labeled_and_proof_independent() -> None:
+    seed_a = "ab" * 32
+    seed_b = "cd" * 32
+    receiver = ids.derive_round_identity(
+        seed_a, ids.STORE_PROTECTED_RECEIVER, 24,
+    )
+    command = ids.derive_round_identity(seed_a, ids.STORE_COMMAND, 32)
+    assert receiver == ids.derive_round_identity(
+        seed_a, ids.STORE_PROTECTED_RECEIVER, 24,
+    )
+    assert command == ids.derive_round_identity(seed_a, ids.STORE_COMMAND, 32)
+    assert receiver != command[:24]
+    assert receiver != ids.derive_round_identity(
+        seed_b, ids.STORE_PROTECTED_RECEIVER, 24,
+    )
+
+
+def test_round_identity_rejects_missing_or_malformed_context() -> None:
+    for seed in (None, "", "not-hex", "ab" * 31):
+        try:
+            ids.derive_round_identity(seed, ids.STORE_COMMAND, 32)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"invalid seed accepted: {seed!r}")

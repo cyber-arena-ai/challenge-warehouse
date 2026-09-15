@@ -41,6 +41,16 @@ def test_helper_and_ssh_contracts_are_explicit() -> None:
     assert "rm -f /run/grafana/arena.ready" in entrypoint
 
 
+def test_startup_has_a_cold_migration_deadline_and_child_diagnostics() -> None:
+    entrypoint = (ROOT / "image" / "entrypoint.sh").read_text(encoding="utf-8")
+    challenge = (ROOT / "challenge.py").read_text(encoding="utf-8")
+    assert "startup_deadline=$((SECONDS + 600))" in entrypoint
+    assert "kill -0 \"$pid\"" in entrypoint
+    assert "startup stalled for 180 seconds" in entrypoint
+    assert "tail -n 80 /var/log/grafana/arena.log" in entrypoint
+    assert "SECONDS + 630" in challenge
+
+
 def test_runtime_hydrates_archived_source_and_module_cache() -> None:
     entrypoint = (ROOT / "image" / "entrypoint.sh").read_text(encoding="utf-8")
     restart = (ROOT / "image" / "restart.sh").read_text(encoding="utf-8")

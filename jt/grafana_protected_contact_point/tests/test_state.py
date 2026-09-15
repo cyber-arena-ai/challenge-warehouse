@@ -90,3 +90,14 @@ def test_anchor_parser_requires_exact_enabled_service_account(tmp_path: Path) ->
     assert state.service_account_name(raw, 1, 7) == "FLAG{anchor}"
     assert state.service_account_name(raw, 1, 8) is None
     assert state.service_account_name(raw, 2, 7) is None
+
+
+def test_snapshot_reader_does_not_require_sqlite_deserialize(tmp_path: Path) -> None:
+    raw = snapshot(
+        tmp_path,
+        target_url="http://target.invalid/hook",
+        other_name="ordinary",
+    )
+    assert state.protected_url(raw, 1, "arena-cp-" + "22" * 12) == (
+        "http://target.invalid/hook"
+    )

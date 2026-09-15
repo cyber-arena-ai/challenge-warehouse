@@ -6,13 +6,13 @@ from functools import cached_property
 from pathlib import Path
 
 from challenges.interface import (
+    MAX_STATE_REGION_BYTES,
     Challenge,
     ChallengeDocs,
     ExecFn,
     FlagHandler,
     FlagStoreSpec,
     FunctionalityTest,
-    MAX_STATE_REGION_BYTES,
     OracleKind,
     RestartHandler,
     StateRegionSpec,
@@ -48,12 +48,18 @@ class GrafanaProtectedContactPointChallenge(Challenge):
     def initial_start(self, target: VulboxTarget, exec_in: ExecFn) -> None:
         rc, _ = exec_in(
             target.host,
-            "for i in $(seq 1 1500); do "
+            "deadline=$((SECONDS + 630)); while (( SECONDS < deadline )); do "
             "test -f /run/grafana/arena.ready && exit 0; "
-            "sleep .1; done; exit 1",
+            "if test -s /run/grafana/grafana.pid; then "
+            "pid=$(cat /run/grafana/grafana.pid); "
+            "kill -0 \"$pid\" 2>/dev/null || exit 2; fi; "
+            "sleep 1; done; exit 1",
         )
         if rc != 0:
-            raise RuntimeError("Grafana setup did not become ready")
+            detail = "Grafana exited during setup" if rc == 2 else (
+                "Grafana setup did not become ready before its deadline"
+            )
+            raise RuntimeError(detail)
 
     def flag_store_specs(self) -> list[FlagStoreSpec]:
         return [

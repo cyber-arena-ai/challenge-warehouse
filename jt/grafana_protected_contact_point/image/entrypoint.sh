@@ -19,15 +19,37 @@ passwd -d root >/dev/null
 /usr/sbin/sshd
 /arena/service-control.sh start
 
-for _ in $(seq 1 1200); do
+startup_deadline=$((SECONDS + 600))
+last_log_size=0
+last_progress=$SECONDS
+while (( SECONDS < startup_deadline )); do
+  pid=$(cat /run/grafana/grafana.pid 2>/dev/null || true)
+  if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
+    echo "Grafana exited before becoming healthy" >&2
+    tail -n 80 /var/log/grafana/arena.log >&2 || true
+    exit 1
+  fi
   if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
     /arena/facility.py bootstrap
     touch /run/grafana/arena.ready
     break
   fi
-  sleep .1
+  log_size=$(stat -c %s /var/log/grafana/arena.log 2>/dev/null || echo 0)
+  if (( log_size > last_log_size )); then
+    last_log_size=$log_size
+    last_progress=$SECONDS
+  elif (( SECONDS - last_progress >= 180 )); then
+    echo "Grafana startup stalled for 180 seconds" >&2
+    tail -n 80 /var/log/grafana/arena.log >&2 || true
+    exit 1
+  fi
+  sleep 1
 done
-test -f /run/grafana/arena.ready
+if ! test -f /run/grafana/arena.ready; then
+  echo "Grafana did not become healthy within 600 seconds" >&2
+  tail -n 80 /var/log/grafana/arena.log >&2 || true
+  exit 1
+fi
 
 while kill -0 "$(cat /run/grafana/grafana.pid)" 2>/dev/null; do
   sleep 5 & wait $!

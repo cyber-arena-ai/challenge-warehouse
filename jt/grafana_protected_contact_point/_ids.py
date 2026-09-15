@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import base64
 import binascii
+import hashlib
+import hmac
 import json
 import re
 import shlex
@@ -26,6 +28,17 @@ def derive_principal(seed: str) -> tuple[str, str]:
         raise ValueError("principal seed must be 64 hexadecimal characters")
     material = seed.lower()
     return "arena_" + material[:20], "Gr!" + material[20:60]
+
+
+def derive_round_identity(seed: object, store: str, length: int) -> str:
+    if not isinstance(seed, str) or _SEED.fullmatch(seed) is None:
+        raise ValueError("round_context_seed must be 64 hexadecimal characters")
+    if store not in {STORE_PROTECTED_RECEIVER, STORE_COMMAND}:
+        raise ValueError("unknown flag store")
+    if length < 1 or length > 64:
+        raise ValueError("invalid identity length")
+    label = f"grafana-protected-contact-point\0{store}\0target".encode()
+    return hmac.new(bytes.fromhex(seed), label, hashlib.sha256).hexdigest()[:length]
 
 
 def valid_contact_uid(value: object) -> bool:

@@ -287,13 +287,15 @@ def plant_receiver(encoded: str) -> None:
     print(json.dumps({"org_id": 1, "anchor_id": anchor_id}, separators=(",", ":")))
 
 
-def checker_arm(nonce: str) -> None:
+def checker_arm(nonce: str, encoded_url: str) -> None:
     if not nonce.isalnum() or len(nonce) > 64:
         raise RuntimeError("invalid checker nonce")
+    url = decode_text(encoded_url)
+    if url != "http://checker.invalid/hook/" + nonce:
+        raise RuntimeError("invalid checker URL")
     checker = accounts()["checker"]
     uid = "arena-check-" + nonce
     name = "checker-original-" + nonce
-    url = "http://checker.invalid/hook/" + nonce
     delete_contact(uid)
     create_contact(uid, name, url)
     print(json.dumps({
@@ -309,23 +311,6 @@ def decode_text(value: str) -> str:
     return base64.b64decode(value).decode()
 
 
-def checker_finish(uid: str, encoded_name: str, encoded_url: str) -> None:
-    expected_name = decode_text(encoded_name)
-    expected_url = decode_text(encoded_url)
-    try:
-        value = get_contact(uid)
-        settings = value.get("settings") if isinstance(value, dict) else None
-        if (
-            value is None
-            or value.get("name") != expected_name
-            or not isinstance(settings, dict)
-            or settings.get("url") != expected_url
-        ):
-            raise RuntimeError("checker contact mismatch")
-    finally:
-        delete_contact(uid)
-
-
 def main() -> None:
     action = sys.argv[1] if len(sys.argv) > 1 else ""
     if action == "init-secrets" and len(sys.argv) == 2:
@@ -336,10 +321,8 @@ def main() -> None:
         provision_principals(sys.argv[2])
     elif action == "plant-receiver" and len(sys.argv) == 3:
         plant_receiver(sys.argv[2])
-    elif action == "checker-arm" and len(sys.argv) == 3:
-        checker_arm(sys.argv[2])
-    elif action == "checker-finish" and len(sys.argv) == 5:
-        checker_finish(sys.argv[2], sys.argv[3], sys.argv[4])
+    elif action == "checker-arm" and len(sys.argv) == 4:
+        checker_arm(sys.argv[2], sys.argv[3])
     elif action == "delete-contact" and len(sys.argv) == 3:
         delete_contact(sys.argv[2])
     else:
