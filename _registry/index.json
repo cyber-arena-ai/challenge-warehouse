@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-14",
-  "count": 25,
+  "generated": "2026-09-15",
+  "count": 26,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -677,6 +677,54 @@
         "accent": "#2354bc",
         "prompt_id": "geo-v2",
         "motif": "A tall column of stacked identical rectangular cells — a regular vault lattice — stands connected to a left-edge socket by a segmented request band that climbs it like a stepped ladder, one rung per menu exchange. Midway up, a single cell swells and ruptures its clean borders, its overspill shoving into the adjacent stack so that a lower opaque covering plane slides aside and the deepest sealed cell shows through where it never should. Thin dashed paths thread from that breached interior back down the ladder and out through the socket, carrying flat blocks lifted from a neighbouring column of the lattice. Concentric arcs radiate from the ruptured cell to mark the corruption's blast, while an unbroken parallel column at the right stands as the intact structure the break was meant to respect."
+      }
+    },
+    {
+      "slug": "gogs-code-collaboration",
+      "title": "Gogs Code Collaboration",
+      "contributor": "jtu22",
+      "updated": "2026-09-11",
+      "tags": [
+        "real-world",
+        "web",
+        "rce",
+        "command-injection",
+        "go",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Git argument injection",
+        "cve": "CVE-2026-52806"
+      },
+      "card": {
+        "tagline": "Cross a repository integration boundary through attacker-controlled refs",
+        "summary": "Gogs preserves native signup, repository, Git HTTP, pull-request, and merge workflows while a fresh service-context execution operation forms one objective. Ordinary repository owners retain both rebase and merge-commit integration routes.",
+        "attack": "Use a stored option-like base ref in either native merge route to reach service-context execution.",
+        "defense": "Separate untrusted Git refs from command options while preserving both merge workflows."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "Gogs",
+        "reference": "CVE-2026-52806",
+        "url": "https://github.com/gogs/gogs/commit/a9dbafbfd8e1020bacc626420238c01d75d03364"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 3000
+        },
+        "stack": "Go · SQLite · Git"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-gogs-code-collaboration:v1",
+        "source_intro": "A pinned Gogs service provides self-registration, repositories, Git HTTP, pull requests, and native rebase and merge-commit workflows. One rotating service-context execution operation forms the sole objective."
+      },
+      "cover": {
+        "image": "covers/gogs-code-collaboration.webp",
+        "accent": "#4f7f4a",
+        "prompt_id": "geo-v2",
+        "motif": "Two branching repository tracks converge through a segmented integration gate toward one guarded execution node."
       }
     },
     {
