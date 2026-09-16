@@ -1,0 +1,9 @@
+#!/command/with-contenv sh
+exec mariadbd \
+  --user=www-data \
+  --datadir=/var/lib/mysql \
+  --socket=/run/mysqld/mysqld.sock \
+  --pid-file=/run/mysqld/mysqld.pid \
+  --skip-networking=0 \
+  --bind-address=127.0.0.1 \
+  --port=3306
