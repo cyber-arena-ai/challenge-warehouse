@@ -966,9 +966,9 @@
       },
       "cover": {
         "image": "covers/gogs-code-collaboration.webp",
-        "accent": "#4f7f4a",
+        "accent": "#cc4b78",
         "prompt_id": "geo-v2",
-        "motif": "Two branching repository tracks converge through a segmented integration gate toward one guarded execution node."
+        "motif": "A tidy horizontal segmented band of repository operations runs left to right through a hard-edged boundary frame, its cells uniform chevrons feeding into a merge junction where two parallel dashed paths — one a smooth rebase arc, one a stepped merge-commit ladder — converge into a single node. From the pool of stored refs beneath, one segment is malformed: instead of a plain rectangular token it carries a protruding leading chevron that, at the junction, is read not as data but as a control notch, splitting the band and driving a foreign wedge sideways out of the ordered pipeline into an unlit service-context block it was never meant to touch. That escaping wedge detonates a small tight grid of isometric cubes on the far side of the boundary, their orderly stacking knocked askew, while the two intact merge routes continue past, unchanged, underscoring that the breach rode in on ordinary traffic."
       }
     },
     {
