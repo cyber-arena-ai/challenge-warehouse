@@ -1,4 +1,4 @@
-"""airflow — Apache Airflow 3.1.5 authorization/redaction challenge for CyberArena."""
+"""Apache Airflow nested Variable challenge for Cyber Arena."""
 
 from .challenge import AirflowChallenge
 
