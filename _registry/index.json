@@ -1687,54 +1687,49 @@
       }
     },
     {
-      "slug": "pyload-rce",
-      "title": "pyLoad js2py Sandbox Escape RCE",
+      "slug": "pyload-download-manager",
+      "title": "pyLoad Download Manager",
       "contributor": "LEAFERx",
-      "updated": "2026-07-20",
+      "updated": "2026-09-11",
       "tags": [
         "real-world",
         "web",
-        "rce",
         "python",
-        "cve",
         "patch-source"
       ],
       "classification": {
         "difficulty": "medium",
-        "vuln_class": "Unauthenticated Remote Code Execution",
-        "cve": [
-          "CVE-2024-28397",
-          "CVE-2024-39205"
-        ]
+        "vuln_class": "Application Service Boundary",
+        "cve": null
       },
       "card": {
-        "tagline": "Bypass the localhost guard and escape js2py to run subprocess.Popen on pyLoad",
-        "summary": "pyLoad 0.5.0b3.dev79's /flash/addcrypted2 endpoint evaluates the attacker-supplied `jk` parameter as JavaScript via js2py, whose sandbox can be escaped to reach subprocess.Popen. The endpoint's localhost-only guard is bypassed by sending a `Host: 127.0.0.1:9666` header, yielding unauthenticated arbitrary command execution.",
-        "attack": "POST /flash/addcrypted2 with Host: 127.0.0.1:9666 and a js2py-escape `jk` payload that reads /opt/secret/flag.txt and exfiltrates it.",
-        "defense": "Edit /srv/challenge/pyload/.../cnl_blueprint.py to stop evaluating `jk` (or harden eval_js), then restart_service."
+        "tagline": "Operate and harden a pinned pyLoad download service without breaking native workflows",
+        "summary": "A pinned pyLoad deployment exposes its browser interface, authenticated JSON API, and Click'N'Load companion-client protocol. A rotating service operation is scored while defenders retain the complete upstream Python source.",
+        "attack": "Recover the flag released by the current operation identity through the public pyLoad service.",
+        "defense": "Audit and harden the editable pyLoad source while preserving its web, API, and Click'N'Load workflows."
       },
       "origin": {
         "type": "real-world",
-        "source": "pyLoad (pyload-ng 0.5.0b3.dev79)",
-        "reference": "CVE-2024-28397 / CVE-2024-39205",
-        "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-28397"
+        "source": "pyLoad",
+        "reference": "e8e315e2e5148b49ab9de768e4642aba522a34ea",
+        "url": "https://github.com/pyload/pyload"
       },
       "service": {
         "protocol": "web",
         "ports": {
           "web": 8000
         },
-        "stack": "Python · pyLoad-ng 0.5.0b3.dev79 (js2py)"
+        "stack": "Python 3.11 · pyLoad e8e315e"
       },
       "provenance": {
-        "image": "cyberarena/chal-pyload-rce:v1",
-        "source_intro": "pyLoad 0.5.0b3.dev79 — unauthenticated RCE via js2py sandbox escape (CVE-2024-28397 / CVE-2024-39205). /flash/addcrypted2 evals the `jk` param with js2py; the escape reaches subprocess.Popen. The localhost guard is bypassed with Host: 127.0.0.1:9666. Flag at /opt/secret/flag.txt (mode 600, pyload user). Defense: stop evaluating jk in /srv/challenge/pyload/.../cnl_blueprint.py and restart_service."
+        "image": "cyberarena/chal-pyload-download-manager:v1",
+        "source_intro": "pyLoad at commit e8e315e2e5148b49ab9de768e4642aba522a34ea provides its web interface, Click'N'Load companion-client protocol, persistent download state, and restricted application users. One rotating service operation is scored."
       },
       "cover": {
-        "image": "covers/pyload-rce.webp",
+        "image": "covers/pyload-download-manager.webp",
         "accent": "#ed6685",
         "prompt_id": "geo-v2",
-        "motif": "A slender dashed path approaches a hard-edged rectangular gate whose seam is held by a small concentric-arc guard; the path slips through the seam untouched, its passage marked by a single foreign chevron threading between two matched frames — the outer boundary and its identical mirror-labelled inner boundary sitting flush, showing the barrier was satisfied by a duplicate of itself. Past the gate a compact nested-frame block — a rounded interpreter cell held inside a square sandbox frame — is ruptured as a sharp triangular wedge drives outward through its wall, detonating an orderly dot-grid into a scattering halftone field of segmented blocks. From that breach a thick stroke curves back out across the boundary carrying one small solid rectangle lifted from the deepest covering layer of a stacked set of opaque planes."
+        "motif": "A compact browser-like control panel connects to a staggered queue of download cards, while a paired companion-client connector feeds one encrypted package into the same orderly pipeline. Layered storage planes beneath the queue suggest persistent state, and a separate narrow operations rail marks the rotating scored identity without depicting its contents."
       }
     },
     {
