@@ -1,0 +1,13 @@
+#!/command/with-contenv sh
+rm -f /run/suitecrm/arena.ready
+for _ in $(seq 1 1500); do
+    status=$(curl -sS --max-time 2 -o /dev/null -w '%{http_code}' \
+        'http://127.0.0.1:8080/index.php?action=Login&module=Users' 2>/dev/null || true)
+    if [ "$status" = 200 ] && /arena/facility.py initialize >/dev/null; then
+        : > /run/suitecrm/arena.ready
+        while :; do sleep 3600; done
+    fi
+    sleep .1
+done
+echo "SuiteCRM facility setup did not become ready" >&2
+exit 1
