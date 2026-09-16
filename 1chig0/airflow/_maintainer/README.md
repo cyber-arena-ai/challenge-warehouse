@@ -1,163 +1,107 @@
-# airflow — maintainer notes
+# Apache Airflow nested Variable redaction
 
-Apache Airflow 3.1.5 authorization + secret-redaction challenge. Two
-independently-scored capability flags on one low-privilege identity.
+This package reconstructs the accepted `nested-variable-redaction` Stage 3
+candidate as one current-protocol READ challenge. It runs Apache Airflow 3.2.0
+from exact upstream commit `06b74e0c48d8fc5bfa6b99626370512fc4460c88`.
+The downloaded archive is pinned by SHA-256
+`b21523568e101faf6d9c2c6ef7d24eb54d23628202e4bc290376e8a6672da70d`.
+The build uses Dockerfile frontend digest `sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32`
+and `python:3.12.13-slim-bookworm` digest
+`sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2`.
+Debian packages come from the base image's recorded `20260803T000000Z`
+snapshot; the four direct packages are version-pinned in the Dockerfile.
+All 152 Python dependencies are exact Python 3.12/Linux AMD64 wheels selected
+from PyPI on 2026-09-13, with SHA-256 hashes in `requirements.lock`, whose
+SHA-256 is `01d579171ed13dbc0e3b85fc13cdadc39527375257e133bc0622094e463507b4`.
 
-> Status: **both flags PROVEN in-band on the pinned image.** Provisioning recipe,
-> protected DAG, and V0 chain all validated. Remaining: package the proven pieces
-> into the image build (Dockerfile/entrypoint) + functionality_test — see
-> "Build checklist".
+## Objective and principal
 
-## Provenance
+The only store is `nested_variable_password` with scope
+`secret.credential.read`. Every attacker receives a distinct native Airflow
+user in the ordinary `Op` role. All match-long principals use the same native
+generator, shape, and role; only the assigned principal is disclosed.
 
-- Upstream: [apache/airflow](https://github.com/apache/airflow), Apache-2.0.
-- Pinned: **3.1.5** @ `a42f2fba5051645adfe56526d38db4e8155f5157`
-  (base image `apache/airflow:3.1.5`,
-  digest `sha256:129e6538bbf7e786dce6a8475422aef8c51914cff2011fb8ea3db5433142fa76`).
-  Confirmed live: `/api/v2/version` → `git_version` ends `a42f2fba...`.
-- FAB provider pin: `apache-airflow-providers-fab` 3.0.3 (bundled in base image).
+The public flag identifier is the native Variable key. All concrete context,
+including the key and nonsensitive cover fields, is deterministically derived
+from the validated `round_context_seed` under independent cryptographic
+domains. The proof is used only as the nested `config.password` value.
 
-## Flags → scopes
+## Attack chain
 
-| Store | Scope (tier) | flag_id (public) | Vulnerability | Advisory / fix |
-|---|---|---|---|---|
-| `nested_variable_secret` | `secret.credential.read` (2) | Variable key | Variable API redacts JSON only to depth 1 — nested sensitive value leaks | CVE-2026-32690, GHSA-w9r4-94fj-xp69, fix PR #63480 |
-| `protected_run_receipt` | `app.privileged.control` (2) | asset URI/id | `POST /assets/{id}/materialize` lacks the per-DAG auth check, triggering a forbidden DAG | CVE-2026-32228, GHSA-h97w-pm3w-mwmc, fix PR #63338 |
+An Op principal authenticates through `/auth/token`, then uses an ordinary
+Variable response through the `/api/v2/variables` API. At the pinned revision,
+the response model limits sensitive-value redaction to depth one, so a password
+nested below that depth is returned unmasked. The accepted direct repair is
+upstream commit `74b0fd98f9876374c52a2d4acd891497c3b93774`, which removes that depth
+limit. The packaged PoV uses the single-record read route; Stage 3 also proved
+the same application behavior through filtered collection and update responses.
 
-Each flag proves a capability, not a CVE. `flag_id` discloses only the target
-locator; never the flag, credentials, or planting state.
+## Placement and recovery
 
-## Confirmed vulnerable source (pinned image)
+The flag handler provisions principals through Airflow's native FAB
+administration API and places Variables through the native public API. A random
+startup administrator exists only during pre-match provisioning. Retirement
+deletes that native account, rotates the JWT signing secret, synchronously
+restarts the API, removes the bootstrap file, and verifies that both the old
+bearer and password are rejected before setup returns. A facility-held native
+administrator remains available only through guarded Airflow traffic so the
+external checker can obtain an authenticated assignment record. The record is
+a native Variable containing only facility-sealed context; tampering cannot
+produce accepted credentials. Later placement uses an actual arena-provisioned
+`Op` principal, which has exactly the same Variable authority as every attacker
+and no administrative authority. A root-only, versioned
+current/previous/pending journal makes placement convergent
+under retries and interruptions. The previously published generation remains
+available until a distinct later generation is placed. A root-only issuance
+marker and an independently durable native issuance sentinel distinguish first
+boot from missing or malformed post-issuance state, which fails closed. Trusted
+raw retrieval uses the immutable pinned Airflow model against the native
+metadata store and is unavailable to the defender.
+The container starts Airflow initialization in the background and execs SSH as
+PID 1 before public Airflow readiness. A failed mandatory migration, bootstrap,
+or initial restart terminates PID 1 and therefore fails container startup. This
+preserves the orchestrator's configuration-reload contract while removing the
+post-readiness SSH race.
+SSH-backed facility operations also retry transport-level startup failures;
+deterministic command failures remain fail-fast, and exhausted retries retain a
+distinct error type.
 
-- **V1** `airflow/api_fastapi/core_api/datamodels/variables.py`,
-  `VariableResponse.redact_val`: `redact(val_dict, max_depth=1)`. Depth cap ⇒
-  nested sensitive keys unmasked. Fix = full-depth redaction.
-- **V0** `airflow/api_fastapi/core_api/routes/public/assets.py`,
-  `materialize_asset`: dependencies are only
-  `requires_access_asset(POST)` + `action_logging`; `requires_access_dag` is
-  imported but not applied on this path. Fix = add per-DAG authorization before
-  `dag.create_dagrun(...)`.
+## Health and lifecycle
 
-## In-band verification log
+The shallow test probes the public health route. The external checker reads the
+authenticated assignment record through Airflow's guarded API, opens it only
+outside prod with the facility secret, and exercises every real match-long `Op`
+identity in randomized order. Selectively denying any assigned participant
+therefore fails health; there is no health-only ordinary principal.
+Checker and attacker clients also draw a fresh fingerprint from the same
+ordinary browser-shaped user-agent strategy for every new session.
+It uses fresh keys across the complete declared native-safe range of lengths
+and characters, shared with objective placement, plus fresh values on every
+run. Principal provisioning also creates one non-scoring, objective-equivalent
+nested Variable per assigned identity through that identity's native API.
+Those Variables survive the bootstrap-retirement restart and every participant
+restart; each checker run mutates and reads them alongside its newly created
+records so a worker-start snapshot cannot distinguish the objective from all
+health traffic.
+Every run includes
+one checker-owned document with the objective's exact nested `config.password`
+shape, standard `FLAG{...}` value family, cover-field shapes, and description
+shape, plus sampled sensitive field names and string/mapping/list values at
+other depths. It exercises native Variable create, single read, update, exact
+filtered collection read, structured masking under both pinned and recursively
+hardened response behavior, one consistent redaction mode across the complete
+run, delete, and post-delete absence. The
+external checker keeps one bounded pending generation of noise keys in poller
+memory, outside the defender-controlled container. A process-local target lock
+serializes probes; every run reconciles interrupted native noise through
+guarded Airflow operations and verifies cleanup. Health never invokes an
+in-container facility command.
 
-- **V1 PROVEN.** JWT via `POST /auth/token`; set Variable
-  `{"service":..,"db":{"password":"<flag>"}}`; `GET /api/v2/variables/<key>` →
-  nested `db.password` returned **unmasked**, while a control top-level
-  `{"password":..}` returned `"***"`. So masking runs; only the depth cap fails.
-- **V0 auth model — decisive.** `SimpleAuthManager` (standalone default) is a
-  linear role hierarchy (VIEWER<USER<OP<ADMIN) that ignores per-object `details`;
-  asset-POST needs OP, DAG-trigger needs USER, OP≥USER ⇒ V0 is **inexpressible**
-  there. Must ship **`FabAuthManager`** (present, per-DAG authz via
-  `is_authorized_dag`→`DAG:<id>`). FAB CLI verified: `db migrate`, `roles create`,
-  `roles add-perms`, `users create -r <role>`; constants `DAGs`/`Assets`/
-  `can_create`/`can_edit`.
-
-## Resource + restart (feasibility spike)
-
-- Image 2.18 GB; idle ~920–930 MB RAM / ~50 PIDs; cold start ~22–32 s. Heaviest
-  challenge; 2 teams ≈ 2 GB RAM.
-- Editable-source model VALIDATED: the airflow package is 40 MB; copy to
-  `/srv/challenge/airflow-svc/airflow` and prepend
-  `PYTHONPATH=/srv/challenge/airflow-svc` to shadow the installed package. Edits
-  in the copy are served; deps still resolve.
-- restart.sh VALIDATED: syntax gate (`compileall`) → `setsid` launch + whole
-  process-GROUP teardown + verify `:8080` down → respawn as `airflow` user →
-  health-probe. A naive `pkill -f airflow` was observed to leave the old
-  api-server serving old code — do NOT use it. SQLite state survives restart.
-
-## Build checklist
-
-DONE (validated in-band):
-- ✅ **Provisioning** recipe — `image/provision.py` (roles/user/DAG/unpause), from
-  the proven commands. Withholds DAG-run perms so a direct trigger is 403.
-- ✅ **Protected DAG** — `image/dags/quarterly_close.py`: outlet Asset +
-  `yield Metadata(asset, extra={"receipt": seed})`; ships unpaused.
-- ✅ **flag_handler** — both stores; V1 nested-Variable, V0 receipt seed.
-- ✅ **restart.sh** — validated process-group teardown.
-
-REMAINING (engineering, no unknowns):
-1. **Dockerfile** — `FROM apache/airflow:3.1.5`; add `arena_agent` + sshd
-   (`PermitRootLogin no`); `AIRFLOW__CORE__AUTH_MANAGER=...FabAuthManager`; COPY
-   dags/ + provision.py + restart.sh; keep the toolchain.
-2. **entrypoint.sh** — ssh keys; build the `/srv/challenge/airflow-svc` overlay
-   (arena_agent-owned, PYTHONPATH-shadowed); `python provision.py` once
-   (idempotent), injecting the per-team attacker password; launch via the
-   restart.sh spawn path (api-server + scheduler + dag-processor under one
-   session). Pre-create state dirs deterministically.
-3. **functionality_test.py** — four CHECKER assertions (in `flag_stores` order):
-   non-sensitive Variable returns intact; top-level sensitive key masks; an
-   authorized user materializes an asset OK; the attacker's DIRECT trigger of the
-   protected DAG is denied (403). (Uses the attacker token + an authorized token.)
-4. Run `/review-challenge airflow` (all stages) and record residual risks.
-
-## Gotchas (found the hard way)
-
-- `Variable.get(key, default=...)` in the 3.x task SDK — NOT `default_var=`.
-- New DAGs are **paused** by default; a materialized run sits `queued` until
-  `airflow dags unpause`. Ship unpaused.
-- Run the components explicitly (`api-server` + `scheduler` + `dag-processor`)
-  under FabAuthManager — `airflow standalone` forces SimpleAuthManager (coarse
-  roles) and can't express V0.
-- Attacker can't read XCom/logs with `can_read` on DAGs alone (403) — that's why
-  the receipt rides the Asset **event** `extra`, which their asset-read reaches.
-- The overlay is copied from the image's `site-packages/airflow`, whose
-  `__pycache__` dirs are root-owned. The restart.sh syntax gate runs as the
-  non-root `airflow` user and must not need write access anywhere. Solution: the
-  gate parses each file with the builtin `compile(src, name, "exec")` — a pure
-  in-memory parse that writes NO bytecode (tried `compileall` and
-  `PYTHONPYCACHEPREFIX`/`py_compile` first; both still try to write .pyc and hit
-  PermissionError). Entrypoint also strips `__pycache__` from the copy and chowns
-  the tree `arena_agent:root` (the airflow user's gid is 0, so the root group is
-  the shared group; arena_agent is added to it in the Dockerfile).
-- Bring-up is slow (~2-3 min): each `airflow` CLI call in provision.py is a fresh
-  Python cold start, plus db migrate + service start. It's a one-time cost; the
-  health poller should tolerate it (challenge sets `health_interval_secs=30`).
-
-## Unintended-path audit (adversarial, on the built image)
-
-Found and FIXED two trivial V0 cheats (the attacker holds `variable:read` for V1):
-
-- **Seed-in-Variable (critical).** The receipt seed was a plain Variable, so the
-  attacker just `GET /api/v2/variables/<seed>` — the flag with no exploit. FIX:
-  the seed is planted into a root-written file `/opt/airflow/receipt_seed`
-  (mode 0640, airflow-readable) the DAG reads at run time; the attacker is
-  API-only and cannot read it. Never a Variable, never logged.
-- **Health-check leaks the receipt.** The CHECKER's authorized-materialize probe
-  triggered the *flag* DAG every poll, writing the current receipt into a
-  readable asset event. FIX: the CHECKER materializes a separate BENIGN asset
-  (`daily_ping` / `s3://ops/ping`); the flag DAG (`quarterly_close`) is only ever
-  triggered by an actual attacker.
-
-Second audit round (after the review fixes) found and FIXED a shared-secret cheat:
-
-- **Default admin credential + shared JWT secret (critical).** provision created
-  `admin` with a fixed `adminpass`, and the Dockerfile baked one JWT signing
-  secret image-wide. Either lets an attacker become admin on the OPPONENT — log in
-  with `admin`/`adminpass`, or (root on its own box) read the baked JWT secret and
-  forge an admin token — then trigger the protected DAG directly and read the
-  Variable, taking both flags for free. FIX: entrypoint generates a PER-BOX random
-  admin password (`/opt/airflow/admin_pass`, root 600) and JWT secret
-  (`/opt/airflow/jwt_secret`, root:root 640; restart.sh exports it). The health
-  poller reads the admin password out-of-band via `exec_in_container`; the
-  attacker (API-only) cannot. The `attacker`/`attackerpass` credential stays fixed
-  and public — it is the intended low-priv entry, stated in the prompt, and the
-  health check's protected-DAG-denial probe uses it, so a defender who changes it
-  fails their own CHECKER.
-
-Confirmed clean (no unintended path found):
-- V1: the Variable get AND list endpoints both apply `VariableResponse` redaction
-  consistently — no unredacted export/bulk path. The flag is gated purely by the
-  redaction-depth bug.
-- V0 alt-triggers: attacker's `POST /backfills`, `PATCH /dags/{id}` (unpause),
-  direct `POST /dagRuns`, and DAG-source read are all **403**. Only `materialize`
-  (200, the intended gap) reaches the DAG.
-- The seed file is unreachable via the API (no FS access; DAG source read is 403
-  and would only reveal the path, not the value).
-
-> No finite audit proves every unintended path absent — re-run `/review-challenge`.
-
-## Rotation
-
-Per round rotate: the Variable key + nested path + cover fields + flag value
-(V1); the DAG id + asset id + run id + receipt value (V0). Expose only the
-Variable key / asset id via `flag_id`.
+Editable upstream source is copied to
+`/srv/challenge/airflow/source`. `/arena/restart.sh` stops every Airflow-owned
+process and verifies the public TCP port is down without trusting mutable
+process-group state or the editable health route, then syntax-checks the Python
+trees. It starts a new API server with those trees first on `PYTHONPATH` and
+waits for public health. A failed syntax check leaves the old service stopped.
+A replacement that exhausts readiness is terminated, and restart verifies that
+its raw TCP listener is closed before returning failure.

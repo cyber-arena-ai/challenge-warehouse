@@ -165,9 +165,13 @@ async def one(sem, client, cfg, chal, today, force):
                 return {"slug": doc["slug"], "skipped": True}
             # a cover already drawn survives a metadata rebuild — accent and motif
             # are cover-pass outputs and would be expensive to regenerate
-            prev = (yaml.safe_load(existing.read_text()) or {}).get("cover") or {}
-            if prev.get("accent"):
-                doc["cover"] = prev
+            prev = yaml.safe_load(existing.read_text()) or {}
+            if (prev.get("cover") or {}).get("accent"):
+                doc["cover"] = prev["cover"]
+            # editorial gates are hand-set, not LLM output — never lose them
+            for gate in ("show_in_gallery", "random_pool"):
+                if prev.get(gate) is False:
+                    doc[gate] = False
         path = write_yaml(doc)
         return {"slug": doc["slug"], "path": str(path.relative_to(WAREHOUSE)), "warn": warn,
                 "new_tags": d.get("new_tags") or []}

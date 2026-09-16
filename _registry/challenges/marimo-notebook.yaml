@@ -1,0 +1,42 @@
+slug: marimo-notebook
+title: marimo Notebook Workspace
+contributor: LEAFERx
+updated: '2026-09-11'
+tags:
+- real-world
+- web
+- python
+- patch-source
+classification:
+  difficulty: medium
+  vuln_class: Application Terminal Boundary
+  cve: CVE-2026-39987
+card:
+  tagline: Operate and harden a pinned reactive notebook workspace
+  summary: A pinned marimo deployment preserves its browser editor, authenticated terminal,
+    persistent notebook state, and editable Python source. One rotating service-context
+    command operation is scored while ordinary notebook workflows remain required.
+  attack: Recover the current operation proof through the public marimo service.
+  defense: Harden the editable request-handling source while preserving editor and terminal workflows.
+origin:
+  type: real-world
+  source: marimo
+  reference: 78489d4621dc4358dc5974af0c727feb0b7331cb
+  url: https://github.com/marimo-team/marimo
+service:
+  protocol: web
+  ports:
+    service: 2718
+  stack: Python 3.11 · marimo 78489d4
+provenance:
+  image: cyberarena/chal-marimo-notebook:ctx-a85978e76fc7479fe19c7b78c8738796fcb13483f3046c8e6d82f26a7cb40e90
+  source_intro: marimo at commit 78489d4621dc4358dc5974af0c727feb0b7331cb provides
+    a browser notebook editor, authenticated editor and terminal sessions, persistent
+    notebook state, and editable Python source. One rotating service-context command
+    operation is scored.
+cover:
+  image: covers/marimo-notebook.webp
+  accent: '#d4aa5b'
+  prompt_id: geo-v2
+  motif: Parallel notebook channels cross a segmented access gate toward one guarded
+    service operation, above layered planes representing persistent notebook state.
