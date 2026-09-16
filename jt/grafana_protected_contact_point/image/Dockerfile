@@ -5,7 +5,7 @@ FROM --platform=linux/amd64 golang:1.25.8-alpine@sha256:8e02eb337d9e0ea459e041f1
 ARG GRAFANA_COMMIT=6b96ceff49a8b6a5cb85773061d2ee8b1bef8f56
 
 RUN apk add --no-cache \
-       bash=5.3.3-r1 build-base=0.5-r3 git=2.52.0-r0
+       bash build-base git
 
 RUN mkdir -p /out /srv/challenge/grafana \
     && git -C /srv/challenge/grafana init \
@@ -28,10 +28,10 @@ RUN mkdir -p /out /srv/challenge/grafana \
 FROM --platform=linux/amd64 golang:1.25.8-alpine@sha256:8e02eb337d9e0ea459e041f1ee5eece41cbb61f1d83e7d883a3e2fb4862063fa
 
 RUN apk add --no-cache \
-       bash=5.3.3-r1 build-base=0.5-r3 ca-certificates=20260611-r0 \
-       curl=8.20.0-r0 git=2.52.0-r0 openssh=10.2_p1-r0 \
-       procps-ng=4.0.5-r0 python3=3.12.14-r0 shadow=4.18.0-r0 \
-       sqlite=3.53.4-r0 util-linux=2.41.4-r0 \
+       bash build-base ca-certificates \
+       curl git openssh \
+       procps-ng python3 shadow \
+       sqlite util-linux \
     && useradd --uid 472 --gid 0 --home-dir /var/lib/grafana \
        --no-create-home --shell /usr/sbin/nologin grafana \
     && useradd --uid 1000 --create-home --shell /bin/bash arena_agent
