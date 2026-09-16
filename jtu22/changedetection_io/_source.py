@@ -35,6 +35,14 @@ def _slug(length: int) -> str:
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
+def _fresh_notice() -> str:
+    return (
+        f"{secrets.choice(('North', 'Central', 'Regional', 'Evening'))} "
+        f"{secrets.choice(('service', 'delivery', 'operations', 'platform'))} "
+        f"update {secrets.randbelow(90000) + 10000}-{_slug(secrets.randbelow(5) + 7)}"
+    )
+
+
 def _fresh_page(marker: str) -> tuple[str, str, str]:
     section = secrets.choice(_TOPICS)
     section_tag = secrets.choice(_SECTION_TAGS)
@@ -49,11 +57,39 @@ def _fresh_page(marker: str) -> tuple[str, str, str]:
         f"{step}{field_tag}[@{field_attribute}='{field_value}']"
     )
     selector = f"xpath:{secrets.choice(('string', 'normalize-space'))}({selected})"
-    layout = (
-        f'<{section_tag} {section_attribute}="{section_value}">'
+    selected_field = (
         f'<{field_tag} {field_attribute}="{field_value}">{html.escape(marker)}</{field_tag}>'
-        f"</{section_tag}>"
     )
+    neighboring_field_attribute = secrets.choice(
+        tuple(value for value in _FIELD_ATTRIBUTES if value != field_attribute)
+    )
+    neighboring_field = (
+        f'<{field_tag} {neighboring_field_attribute}="'
+        f"{secrets.choice(('summary', 'message', 'body', 'entry'))}-{_slug(9)}"
+        f'">{html.escape(_fresh_notice())}</{field_tag}>'
+    )
+    fields = [selected_field, neighboring_field]
+    if secrets.randbelow(2):
+        fields.reverse()
+
+    selected_section = (
+        f'<{section_tag} {section_attribute}="{section_value}">'
+        f"{''.join(fields)}</{section_tag}>"
+    )
+    neighboring_section_attribute = secrets.choice(
+        tuple(value for value in _SECTION_ATTRIBUTES if value != section_attribute)
+    )
+    neighboring_section = (
+        f'<{section_tag} {neighboring_section_attribute}="'
+        f"{secrets.choice(_TOPICS)}-{_slug(9)}"
+        f'"><{field_tag} {field_attribute}="'
+        f"{secrets.choice(('summary', 'message', 'body', 'entry'))}-{_slug(9)}"
+        f'">{html.escape(_fresh_notice())}</{field_tag}></{section_tag}>'
+    )
+    sections = [selected_section, neighboring_section]
+    if secrets.randbelow(2):
+        sections.reverse()
+    layout = "".join(sections)
     return section, selector, layout
 
 
@@ -61,11 +97,7 @@ def _fresh_page(marker: str) -> tuple[str, str, str]:
 def source_workflow(
     target_host: str, target_port: int
 ) -> Iterator[tuple[str, str, str]]:
-    marker = (
-        f"{secrets.choice(('North', 'Central', 'Regional', 'Evening'))} "
-        f"{secrets.choice(('service', 'delivery', 'operations', 'platform'))} "
-        f"update {secrets.randbelow(90000) + 10000}-{_slug(secrets.randbelow(5) + 7)}"
-    )
+    marker = _fresh_notice()
     section, selector, layout = _fresh_page(marker)
     path = (
         f"/{section}/{secrets.choice(('daily', 'service', 'regional', 'public'))}-"
