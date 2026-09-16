@@ -1,23 +1,20 @@
 #!/usr/bin/env bash
-# Generate sshd host keys, materialize the writable marimo source copy + the
-# notebook, exec sshd. marimo is launched by /arena/restart.sh (initial_start).
 
-set -e
+set -euo pipefail
 
-if [ ! -f /etc/ssh/ssh_host_ed25519_key ]; then
-    ssh-keygen -A
+/arena/facility.py initialize >/dev/null
+
+if [ ! -d /srv/challenge/marimo ]; then
+    cp -a /opt/marimo-source/marimo /srv/challenge/marimo
 fi
-mkdir -p /run/sshd
+if [ ! -f /srv/state/notebook.py ]; then
+    install -o marimo -g marimo -m 0644 /opt/notebook.py /srv/state/notebook.py
+fi
 
-mkdir -p /srv/challenge/marimo
-cp -a /opt/challenge_src/marimo/. /srv/challenge/marimo/
-chown -R arena_agent:arena_agent /srv/challenge
-chmod -R a+rX,u+w /srv/challenge
-
-mkdir -p /srv/marimo
-cp -a /opt/challenge_src/nb.py /srv/marimo/nb.py
-chown -R marimo:marimo /srv/marimo
-
-mkdir -p /opt/secret
+chown -R arena_agent:arena_agent /srv/challenge/marimo
+chmod -R a+rX,u+w /srv/challenge/marimo
+chown marimo:marimo /run/marimo /srv/state
+chmod 0755 /srv/state
+touch /run/marimo/bootstrap-ready
 
 exec /usr/sbin/sshd -D -e

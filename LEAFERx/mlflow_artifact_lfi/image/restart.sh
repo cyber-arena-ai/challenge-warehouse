@@ -1,61 +1,80 @@
 #!/usr/bin/env bash
-# Framework restart script for mlflow-lfi.
-#
-# Invoked by the MCP `restart_service` tool via docker exec (root).
-# Mode 555, root-owned — the agent can read + execute but not modify.
-# The only path from an agent edit to the running server is this script.
-#
-# No compile step (MLflow is interpreted): "rebuild" = re-import the
-# (possibly edited) source and respawn the server. The import gate turns
-# a syntax/import error in the agent's edit into a clean non-zero exit so
-# the RestartHandler reports a failed restart instead of a silent crash.
+set -euo pipefail
 
-set -e
+export PYTHONDONTWRITEBYTECODE=1
 
-PORT=5000
-SRV_USER="mlflow"
-SRC_ROOT="/srv/challenge"          # PYTHONPATH root; package dir is $SRC_ROOT/mlflow
-DATA_DIR="/srv/mlflow"
-LOG="/var/log/mlflow.stdout"
+if [ -s /run/mlflow.pid ]; then
+    old_pid="$(cat /run/mlflow.pid)"
+    if kill -0 "${old_pid}" 2>/dev/null; then
+        kill -- "-${old_pid}" 2>/dev/null || true
+        kill "${old_pid}" 2>/dev/null || true
+        for _ in $(seq 1 30); do
+            kill -0 "${old_pid}" 2>/dev/null || break
+            sleep 0.2
+        done
+        kill -9 -- "-${old_pid}" 2>/dev/null || true
+        kill -9 "${old_pid}" 2>/dev/null || true
+    fi
+fi
+pkill -f '[p]ython -m mlflow server' 2>/dev/null || true
+rm -f /run/mlflow.pid
 
-# 1. Import gate over the agent-edited server code. Fails fast (and, under
-#    `set -e`, aborts the restart) if the edit broke Python import.
-PYTHONPATH="${SRC_ROOT}" python3 -c "import mlflow.server.handlers"
+# Validate only after the serving worker is gone. A broken edit must fail
+# closed instead of leaving the previously loaded source available.
+PYTHONPATH=/srv/challenge python -c 'import mlflow.server.auth, mlflow.server.handlers'
 
-# 2. Kill any prior instance. Fresh container has none, hence `|| true`.
-pkill -f "gunicorn" 2>/dev/null || true
-pkill -f "mlflow server" 2>/dev/null || true
-sleep 0.5
-# SIGKILL fallback: a process that ignored SIGTERM must not hold the port and
-# drag the restart past the readiness window — hard-kill after the grace.
-pkill -9 -f 'gunicorn' 2>/dev/null || true
-pkill -9 -f 'mlflow server' 2>/dev/null || true
+install -d -m 0755 -o mlflow -g mlflow /srv/mlflow/state/artifacts
+setsid runuser -u mlflow -- bash -c '
+  export PYTHONPATH=/srv/challenge
+  export PYTHONDONTWRITEBYTECODE=1
+  export MLFLOW_AUTH_CONFIG_PATH=/srv/mlflow/state/auth.ini
+  export MLFLOW_FLASK_SERVER_SECRET_KEY="$(cat /srv/mlflow/private/flask-secret)"
+  cd /srv/challenge
+  exec python -m mlflow server \
+    --app-name basic-auth \
+    --host 0.0.0.0 \
+    --port 5000 \
+    --workers 1 \
+    --allowed-hosts "*" \
+    --backend-store-uri sqlite:////srv/mlflow/state/tracking.db \
+    --artifacts-destination /srv/mlflow/state/artifacts
+' > /var/log/mlflow.stdout 2>&1 &
+spawned_pid="$!"
+echo "${spawned_pid}" > /run/mlflow.pid
 
-# 3. Respawn as the runtime user with the PYTHONPATH shadow in place.
-mkdir -p "${DATA_DIR}/artifacts"
-chown -R "${SRV_USER}:${SRV_USER}" "${DATA_DIR}"
-mkdir -p "$(dirname "${LOG}")"
-
-nohup runuser -u "${SRV_USER}" -- bash -c "\
-  export PYTHONPATH='${SRC_ROOT}' HOME='${DATA_DIR}' GIT_PYTHON_REFRESH=quiet; \
-  cd '${DATA_DIR}' && exec mlflow server \
-    --host 0.0.0.0 --port ${PORT} --workers 1 \
-    --backend-store-uri 'sqlite:///${DATA_DIR}/mlflow.db' \
-    --serve-artifacts \
-    --artifacts-destination 'file://${DATA_DIR}/artifacts' \
-    --default-artifact-root 'mlflow-artifacts:/'" \
-  > "${LOG}" 2>&1 &
-
-# 4. Wait (up to ~30s) for the port to bind, using bash's /dev/tcp.
-for _ in $(seq 1 30); do
-    if (exec 3<>"/dev/tcp/127.0.0.1/${PORT}") 2>/dev/null; then
-        exec 3>&- 3<&-
-        echo "mlflow-lfi: server up on :${PORT}"
+for _ in $(seq 1 90); do
+    if python - <<'PY'
+import urllib.request
+try:
+    with urllib.request.urlopen("http://127.0.0.1:5000/health", timeout=2) as response:
+        raise SystemExit(0 if response.status == 200 else 1)
+except Exception:
+    raise SystemExit(1)
+PY
+    then
+        echo "MLflow tracking server is ready"
         exit 0
+    fi
+    if ! kill -0 "${spawned_pid}" 2>/dev/null; then
+        break
     fi
     sleep 1
 done
 
-echo "mlflow-lfi: server failed to bind :${PORT} within 30s" >&2
-tail -n 60 "${LOG}" >&2 || true
+kill -- "-${spawned_pid}" 2>/dev/null || true
+kill "${spawned_pid}" 2>/dev/null || true
+pkill -f '[p]ython -m mlflow server' 2>/dev/null || true
+for _ in $(seq 1 30); do
+    if ! kill -0 "${spawned_pid}" 2>/dev/null \
+        && ! pgrep -f '[p]ython -m mlflow server' >/dev/null; then
+        break
+    fi
+    sleep 0.2
+done
+kill -9 -- "-${spawned_pid}" 2>/dev/null || true
+kill -9 "${spawned_pid}" 2>/dev/null || true
+pkill -9 -f '[p]ython -m mlflow server' 2>/dev/null || true
+wait "${spawned_pid}" 2>/dev/null || true
+rm -f /run/mlflow.pid
+tail -n 100 /var/log/mlflow.stdout >&2 || true
 exit 1
