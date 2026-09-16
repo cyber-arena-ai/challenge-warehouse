@@ -73,7 +73,7 @@ Run the four Stage 4 controls against the exact locally tested orchestrator and
 image revision:
 
 ```bash
-python tovitu/opentsdb_graph_command/_maintainer/final_controls.py \
+python JianhongTu/opentsdb_graph_command/_maintainer/final_controls.py \
   --orche /absolute/path/to/cyber-arena-orche \
   --expected-orche-commit a4e98c0ab8647ddd71023748c48118337323b1ad \
   --expected-image-id sha256:0fffc1b37ef79dd040b5c0ae104cb3c36d83cc60be077a50ed7662bf869652f7

@@ -141,7 +141,7 @@ built package image:
 
 ```bash
 /absolute/path/to/cyber-arena-orche/.venv/bin/python \
-  jt/xerte_media_upload_rce/_maintainer/final_controls.py \
+  JianhongTu/xerte_media_upload_rce/_maintainer/final_controls.py \
   --orche /absolute/path/to/cyber-arena-orche \
   --repair-dir /absolute/path/to/cyber-arena/artifacts/projects/THEXERTEPROJECT__XERTEONLINETOOLKITS/stage3/xerte-command-execution
 ```

@@ -197,7 +197,7 @@
     {
       "slug": "caddy-nextcloud-sso",
       "title": "Caddy Nextcloud SSO Boundary",
-      "contributor": "jt",
+      "contributor": "JianhongTu",
       "updated": "2026-08-21",
       "tags": [
         "real-world",
@@ -239,9 +239,10 @@
         "source_intro": "Caddy v2.11.1 is an editable Go HTTP server in front of a pinned Nextcloud SSO deployment. Each attacker receives a distinct ordinary account. The READ objective is a native guarded Team-Folder file, and EXECUTE is a protected operation available only in the UID-1000 request-worker context. Defenders edit /srv/challenge/caddy and rebuild the complete Caddy source offline.\n"
       },
       "cover": {
-        "image": null,
-        "accent": null,
-        "prompt_id": null
+        "image": "covers/caddy-nextcloud-sso.webp",
+        "accent": "#245acb",
+        "prompt_id": "geo-v2",
+        "motif": "A tall segmented band runs left to right as the request pipeline: a forward-auth gatekeeper drawn as a thick vertical stroke pierced by a narrow seam, then a FastCGI relay rendered as an isometric block, then a lattice of nested frames standing for the Team-Folder boundary. A client-supplied chevron slips a small extra rectangle — a foreign identity attribute — through the seam of the gatekeeper, so that where the pipeline hands off between the first stroke and the block, a duplicate translucent plane overlays the legitimate one and passes through unchallenged. Deep inside the innermost nested frame, a single guarded cell that should stay opaque now shows through, its covering layer peeled back along one edge. A faint secondary dashed path curls from the FastCGI block back down into the isometric structure toward a hard-edged service box, hinting at a second, deeper reach."
       }
     },
     {
@@ -296,7 +297,7 @@
     {
       "slug": "changedetection-io",
       "title": "changedetection.io Page Monitor",
-      "contributor": "jtu22",
+      "contributor": "JianhongTu",
       "updated": "2026-09-11",
       "tags": [
         "real-world",
@@ -442,7 +443,7 @@
     {
       "slug": "dolibarr-website",
       "title": "Dolibarr Website Command Execution",
-      "contributor": "tovitu",
+      "contributor": "JianhongTu",
       "updated": "2026-08-31",
       "tags": [
         "real-world",
@@ -494,7 +495,7 @@
     {
       "slug": "etcd-configuration-store",
       "title": "etcd Configuration Store",
-      "contributor": "jtu22",
+      "contributor": "JianhongTu",
       "updated": "2026-09-11",
       "tags": [
         "real-world",
@@ -878,7 +879,7 @@
     {
       "slug": "geoserver-spatial-service",
       "title": "GeoServer XPath",
-      "contributor": "jt",
+      "contributor": "JianhongTu",
       "updated": "2026-08-21",
       "tags": [
         "real-world",
@@ -916,15 +917,16 @@
         "source_intro": "GeoServer 2.25.1 serves authenticated WFS and WMS geospatial workflows. Each attacker receives a distinct native ordinary account. READ protects one feature behind a native layer-role boundary; EXECUTE protects a UID-1000 service operation.\n"
       },
       "cover": {
-        "image": null,
-        "accent": null,
-        "prompt_id": null
+        "image": "covers/geoserver-spatial-service.webp",
+        "accent": "#e96b4f",
+        "prompt_id": "geo-v2",
+        "motif": "A rigid orthogonal lattice of tiled query-cells — a segmented band of feature-frames stepping across the poster like a spatial grid — is breached where one foreign chevron slips into the seam between two cells and forks its own branching path downward. That injected branch unfolds from a compact packed node into a sprawling tree of thin dashed strokes that overruns the neat lattice and terminates in a hard-edged isometric block sitting where no cell should reach, its edges detonating outward in radiating triangles. Alongside, a guarded inner frame nested three deep shows its deepest plane bleeding through as an orderly path curves around the barrier's edge and re-enters past it, linking the two objectives with a single unbroken stroke. Concentric arcs of a request loop pulse faintly behind the whole structure, offset just enough to reveal the crossing."
       }
     },
     {
       "slug": "gogs-code-collaboration",
       "title": "Gogs Code Collaboration",
-      "contributor": "jtu22",
+      "contributor": "JianhongTu",
       "updated": "2026-09-11",
       "tags": [
         "real-world",
@@ -1009,8 +1011,8 @@
         "source_intro": "Gradio at commit 53b95f8683bf80579fc5c242dfdfb74143e0c235 serves an authenticated component workspace with reverse-text inference, server-side component methods, document browsing, cached file outputs, and editable Python source. One rotating protected document is scored."
       },
       "cover": {
-        "image": "covers/gradio-lfi.webp",
-        "accent": "#df508a",
+        "image": "covers/gradio-component-workspace.webp",
+        "accent": "#1550cc",
         "prompt_id": "geo-v2",
         "motif": "A rounded component workspace sits inside nested application frames while a document tile moves between a protected archive, a cache band, and a public output lane."
       }
@@ -1018,7 +1020,7 @@
     {
       "slug": "horizont-cms-filemanager",
       "title": "HorizontCMS FileManager",
-      "contributor": "tovitu",
+      "contributor": "JianhongTu",
       "updated": "2026-09-01",
       "tags": [
         "real-world",
@@ -1113,7 +1115,7 @@
     {
       "slug": "listmonk",
       "title": "Listmonk Subscriber Query",
-      "contributor": "jtu22",
+      "contributor": "JianhongTu",
       "updated": "2026-09-10",
       "tags": [
         "real-world",
@@ -1302,7 +1304,7 @@
     {
       "slug": "nats-mqtt-acl",
       "title": "NATS MQTT Authorization Boundary",
-      "contributor": "jt",
+      "contributor": "JianhongTu",
       "updated": "2026-09-11",
       "tags": [
         "real-world",
@@ -1341,9 +1343,10 @@
         "source_intro": "NATS Server is an editable Go message broker with MQTT, retained QoS1 messages, JetStream persistence, and subject-level authorization. One ordinary device account may read its own telemetry and allowed victim telemetry but is denied concrete guarded victim subjects. The rotating flag is a retained victim message. Defenders edit the complete pinned source and rebuild offline.\n"
       },
       "cover": {
-        "image": null,
-        "accent": null,
-        "prompt_id": null
+        "image": "covers/nats-mqtt-acl.webp",
+        "accent": "#d55073",
+        "prompt_id": "geo-v2",
+        "motif": "A central message-routing hub sits as a hard-edged rectangular core with a thick barrier stroke sealing one guarded subject-cell from an outer device account; a direct dashed path from that account strikes the barrier and stops dead against it. From the same account a broader wildcard subscription draws as a wide fan of concentric arcs sweeping across many cells of a square subject-grid, and where that fan overlaps the retained-message cell a single opaque plane slides out from behind the barrier along the internal routing seam, delivering that protected cell's block to the account by a curving side path that the front barrier never touched. A small segmented band marks the retained-store lane feeding the fan, so the denied cell reappears translucent under the wildcard arc while the frontal deny-stroke stays visibly intact."
       }
     },
     {
@@ -1397,7 +1400,7 @@
     {
       "slug": "navigate-cms",
       "title": "Navigate CMS Command Execution",
-      "contributor": "tovitu",
+      "contributor": "JianhongTu",
       "updated": "2026-08-31",
       "tags": [
         "real-world",
@@ -1546,7 +1549,7 @@
     {
       "slug": "openfire-server",
       "title": "Openfire Setup Auth Bypass RCE",
-      "contributor": "tovitu",
+      "contributor": "JianhongTu",
       "updated": "2026-09-01",
       "tags": [
         "real-world",
@@ -1595,7 +1598,7 @@
     {
       "slug": "opentsdb-metrics",
       "title": "OpenTSDB Metrics",
-      "contributor": "tovitu",
+      "contributor": "JianhongTu",
       "updated": "2026-09-01",
       "tags": [
         "real-world",
@@ -1642,7 +1645,7 @@
     {
       "slug": "owncloud-signed-url",
       "title": "ownCloud Signed WebDAV",
-      "contributor": "tovitu",
+      "contributor": "JianhongTu",
       "updated": "2026-09-09",
       "tags": [
         "real-world",
@@ -1830,7 +1833,7 @@
     {
       "slug": "suitecrm-security-groups",
       "title": "SuiteCRM Security Groups",
-      "contributor": "jt",
+      "contributor": "JianhongTu",
       "updated": "2026-08-21",
       "tags": [
         "real-world",
@@ -1872,15 +1875,16 @@
         "source_intro": "SuiteCRM 7.15.0 provides editable customer, case, note, relationship, and report workflows under native Security Group boundaries. Each attacker receives a distinct ordinary account in an equivalent record partition. READ protects another partition's Note metadata; EXECUTE protects a UID-82 service operation.\n"
       },
       "cover": {
-        "image": null,
-        "accent": null,
-        "prompt_id": null
+        "image": "covers/suitecrm-security-groups.webp",
+        "accent": "#d34977",
+        "prompt_id": "geo-v2",
+        "motif": "Two linked gestures compose the poster. On the left, a dashed path slips laterally through a thin seam between two adjacent partition rectangles — a boundary that should be sealed — reaching a small covered stack of opaque overlapping planes whose deepest plane shows faintly through, the protected record surfacing across a group edge it should not cross. On the right, a foreign wedge-shaped chevron enters an orderly segmented band of stacked report rows and detonates its clean tiling into a splayed lattice, one row bleeding a thin stroke down into an isometric block-grid of the datastore beneath. A single dashed line ties the slipped-through seam to the entering wedge, binding the relationship-boundary breach to the query fracture as one continuous traversal."
       }
     },
     {
       "slug": "vikunja-private-task",
       "title": "Vikunja Private Task Boundary",
-      "contributor": "jt",
+      "contributor": "JianhongTu",
       "updated": "2026-09-12",
       "tags": [
         "real-world",
@@ -1931,7 +1935,7 @@
     {
       "slug": "webmin-filemanager-execute",
       "title": "Webmin File Manager",
-      "contributor": "tovitu",
+      "contributor": "JianhongTu",
       "updated": "2026-08-31",
       "tags": [
         "real-world",
@@ -2030,7 +2034,7 @@
     {
       "slug": "xerte-online-toolkits",
       "title": "Xerte Online Toolkits",
-      "contributor": "jt",
+      "contributor": "JianhongTu",
       "updated": "2026-08-27",
       "tags": [
         "real-world",

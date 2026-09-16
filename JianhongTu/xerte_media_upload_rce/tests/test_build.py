@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jt.xerte_media_upload_rce import build
+from JianhongTu.xerte_media_upload_rce import build
 
 
 def test_build_always_uses_current_package_context(monkeypatch):
