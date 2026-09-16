@@ -1,0 +1,48 @@
+slug: changedetection-io
+title: changedetection.io Page Monitor
+contributor: JianhongTu
+updated: '2026-09-11'
+tags:
+- real-world
+- web
+- lfi
+- python
+- flask
+- cve
+classification:
+  difficulty: hard
+  vuln_class: XPath Host File Read
+  cve: CVE-2026-29039
+card:
+  tagline: A page-selection expression reaches the monitor's own signing credential
+  summary: A pinned changedetection.io revision exposes its native anonymous watch
+    workflow on port 5000. An unrestricted XPath evaluator lets a crafted content
+    filter read the application's current Flask session-signing key into public watch
+    preview and history.
+  attack: Create an anonymous watch whose XPath content filter reads the current native
+    session-signing credential, then recover it from the preview.
+  defense: Restrict host-access XPath functions while preserving anonymous page watches,
+    benign CSS/XPath filtering, previews, and history.
+origin:
+  type: real-world
+  source: changedetection.io
+  reference: CVE-2026-29039
+  url: https://github.com/dgtlmoon/changedetection.io/security/advisories/GHSA-6fmw-82m7-jq6p
+service:
+  protocol: web
+  ports:
+    service: 5000
+  stack: Python · Flask · XPath
+provenance:
+  image: cyberarena/chal-changedetection-io:v1
+  source_intro: A pinned changedetection.io revision provides an anonymous web interface
+    for creating page watches, fetching content, applying CSS or XPath filters, and
+    reviewing stored snapshots. One rotating protected application credential is scored
+    as a READ objective.
+cover:
+  image: covers/changedetection-io.webp
+  accent: '#356f7b'
+  prompt_id: geo-v1
+  motif: Nested page frames flow through a selection lattice; one line bends past the
+    normal content boundary into a sealed key-shaped core, then returns to a public
+    preview panel carrying a single highlighted block.

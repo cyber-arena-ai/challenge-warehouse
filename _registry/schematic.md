@@ -50,6 +50,11 @@ title: "aiohttp Path Traversal"# ✎ human display name (slug is too terse); Tit
 contributor: LEAFERx           # ⚙ warehouse dir (credit only)
 updated: 2026-07-20            # ⊹ ISO date (YYYY-MM-DD) — stamped by the generator on every write
 
+show_in_gallery: false         # ✍ editorial gate — omit (= true) unless the challenge must be
+                               #   withheld from the public Games view (e.g. no usable license)
+random_pool: false             # ✍ editorial gate — omit (= true) unless the challenge must never be
+                               #   commissioned by a campaign (e.g. a framework smoke test)
+
 tags:                          # ✎ flat, multi-valued, drawn from the Tag Pool below.
   - web                        #   3–6 tags per challenge, spanning facets (origin / surface / vuln / tech / mechanic).
   - real-world                 #   These drive the card badges AND the Games-view filters.
@@ -116,6 +121,24 @@ origin:
   url: "https://github.com/nautilus-institute/finals-2025"
 classification: { difficulty: hard, vuln_class: "Binary Service Exploitation", cve: null }
 ```
+
+---
+
+## Editorial gates
+
+Two independent booleans, **both omitted by default** — an absent gate means
+"yes". They are ✍ **hand-set**: no generator writes them, and `gen_metadata.py
+--force` carries an existing `false` through, the same way it preserves a cover.
+
+| | `false` means |
+|---|---|
+| `show_in_gallery` | not listed on the public Games view — no card, not in the counts or facets, and its `#slug` deep-link opens nothing. `games.js` filters the index on load. |
+| `random_pool` | never commissioned by a campaign. Campaign configs name their challenges explicitly, so nothing enforces this in code — it is the registry's answer to "may this be played?", for whoever writes that list. |
+
+**Withheld from the gallery implies out of the pool** — a challenge we cannot
+show is one we cannot play. Set BOTH on such a challenge rather than leaving the
+implication to be re-derived by each reader. The converse does not hold: `notes`
+is a smoke test, shown but never played.
 
 ---
 

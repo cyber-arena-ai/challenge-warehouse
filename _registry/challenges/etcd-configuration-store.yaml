@@ -1,0 +1,48 @@
+slug: etcd-configuration-store
+title: etcd Configuration Store
+contributor: JianhongTu
+updated: '2026-09-11'
+tags:
+- real-world
+- web
+- auth-bypass
+- logic-bug
+- go
+- cve
+classification:
+  difficulty: medium
+  vuln_class: Nested transaction authorization bypass
+  cve: CVE-2026-33343
+card:
+  tagline: Cross a guarded key prefix through an atomic nested transaction
+  summary: An etcd member gives each attacker a distinct restricted configuration
+    analyst identity. Ordinary range, update, delete, and nested transaction workflows
+    remain available only inside the analyst prefix, while a rotating service database
+    credential is protected in a separate production keyspace.
+  attack: Authenticate as a configuration analyst and place a protected range request
+    inside a nested v3 transaction to recover the current database credential.
+  defense: Apply recursive transaction authorization, or an equivalent narrow repair,
+    while retaining authentication and complete allowed-prefix transaction behavior.
+origin:
+  type: real-world
+  source: etcd
+  reference: CVE-2026-33343 / GHSA-rfx7-8w68-q57q
+  url: https://github.com/etcd-io/etcd/security/advisories/GHSA-rfx7-8w68-q57q
+service:
+  protocol: web
+  ports:
+    service: 2379
+  stack: Go · etcd v3 HTTP/JSON gateway
+provenance:
+  image: cyberarena/chal-etcd-configuration-store:v1
+  source_intro: etcd commit 6501a01f055926cc5c6d0668b4f0f99a400aa3f4;
+    recursive authorization repair 012f444594b3bce3d72961dba9b459eb5684390a.
+cover:
+  image: covers/etcd-configuration-store.webp
+  accent: '#3f78c5'
+  prompt_id: geo-v2
+  motif: A dense square key-value grid is split by a hard-edged boundary into a
+    broad analyst band and a smaller protected production cell. A segmented transaction
+    frame begins inside the analyst band, folds into a second nested frame, and crosses
+    the boundary to lift one bright credential block from the protected cell. Direct
+    arrows stop cleanly at the boundary while only the inner nested frame continues.

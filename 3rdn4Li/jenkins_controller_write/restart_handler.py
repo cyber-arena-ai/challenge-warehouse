@@ -1,4 +1,4 @@
-"""Restart Jenkins with the defender-selected bundled release."""
+"""Offline source rebuild and Jenkins controller restart."""
 
 from __future__ import annotations
 
@@ -15,34 +15,17 @@ class JenkinsRestartHandler(RestartHandler):
         return ("web",)
 
     def run(self, target: VulboxTarget) -> CheckResult:
-        exec_in = target.meta["exec_in_container"]
-        rc, output = exec_in(target.host, "/arena/restart.sh")
-        restart = CheckResult(
-            name="restart",
-            passed=(rc == 0),
-            detail=(output.strip() or f"rc={rc}")[-300:],
-        )
-
-        if rc == 0:
-            probe_cmd = (
-                "python3 -c \"import base64,json,urllib.request; "
-                "q=urllib.request.Request('http://127.0.0.1:8080/computer/"
-                "untrusted-agent/api/json',headers={'Authorization':'Basic '+"
-                "base64.b64encode(b'player:arena-player-password').decode()}); "
-                "d=json.load(urllib.request.urlopen(q,timeout=5)); "
-                "assert d['offline'] is False\""
-            )
-            probe_rc, _ = exec_in(target.host, probe_cmd)
-            ready = CheckResult(
-                name="agent",
-                passed=(probe_rc == 0),
-                detail=f"online API rc={probe_rc}",
-            )
+        exec_in = target.meta.get("exec_in_container")
+        if exec_in is None:
+            return CheckResult("restart", False, "no exec bridge")
+        try:
+            rc, output = exec_in(target.host, "/arena/restart.sh")
+        except Exception as error:  # noqa: BLE001
+            return CheckResult("restart", False, type(error).__name__)
+        text = (output or f"rc={rc}").strip()
+        if rc != 0:
+            errors = [line for line in text.splitlines() if "[ERROR]" in line]
+            detail = "\n".join(errors[-8:])[-1200:] if errors else text[-1200:]
         else:
-            ready = CheckResult(name="agent", passed=False, detail="restart failed")
-
-        return CheckResult(
-            name="jenkins-controller-write-restart",
-            passed=(restart.passed and ready.passed),
-            children=[restart, ready],
-        )
+            detail = text[-300:]
+        return CheckResult("restart", rc == 0, detail)

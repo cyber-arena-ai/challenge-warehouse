@@ -23,7 +23,7 @@ teams:
 
 nodes:
   - id: obo_team1_dev
-    image: cyberarena/dev-base
+    image: cyberarena/agent-claude
     networks: [obo_team1_net, obo_attack_net_team1]
     install_list: []
     extra_hosts: {host.docker.internal: host-gateway}
@@ -33,7 +33,7 @@ nodes:
     ports: ["127.0.0.1:17281:17280"]
     install_list: []
   - id: obo_team2_dev
-    image: cyberarena/dev-base
+    image: cyberarena/agent-claude
     networks: [obo_team2_net, obo_attack_net_team2]
     install_list: []
     extra_hosts: {host.docker.internal: host-gateway}
