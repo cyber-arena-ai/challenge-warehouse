@@ -1,64 +1,35 @@
-"""Reload the nginx proxy after a defense edit.
-
-/arena/restart.sh runs `nginx -t` (validates the defender's proxy.conf
-syntax) then `nginx -s reload`. The validate step means a syntax error
-surfaces in the `reload` leaf's detail rather than silently crashing nginx.
-
-Two leaves:
-  reload — exit code of restart.sh (includes nginx -t output in detail)
-  smoke  — HTTP GET / through the proxy after reload; confirms the proxy
-           is still serving after the config change.
-"""
+"""Rebuild and replace Nginx UI from defender-edited source."""
 
 from __future__ import annotations
 
 from challenges.interface import CheckResult, RestartHandler, VulboxTarget
 
-RESTART_COMMAND = "/arena/restart.sh"
 
-
-class NginxBackupRestartHandler(RestartHandler):
+class NginxUiRestartHandler(RestartHandler):
     @property
     def name(self) -> str:
-        return "nginx-backup-restart-handler"
+        return "nginx-ui-restart"
 
     @property
     def required_ports(self) -> tuple[str, ...]:
         return ("service",)
 
     def run(self, target: VulboxTarget) -> CheckResult:
-        exec_in = target.meta["exec_in_container"]
-        port = target.ports["service"]
-
-        rc, out = exec_in(target.host, RESTART_COMMAND)
-        script_ok = rc == 0
-        reload_ = CheckResult(
-            name="reload",
-            passed=script_ok,
-            detail=(out.strip() or f"rc={rc}")[-200:],
-        )
-
-        if script_ok:
-            rc, out = exec_in(
+        exec_in = target.meta.get("exec_in_container")
+        if exec_in is None:
+            return CheckResult("restart", False, "no restart executor")
+        rc, output = exec_in(target.host, "/arena/restart.sh")
+        rebuild = CheckResult("rebuild", rc == 0, (output or f"rc={rc}")[-300:])
+        serving = False
+        detail = "skipped"
+        if rebuild.passed:
+            smoke_rc, smoke_output = exec_in(
                 target.host,
-                f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 5 "
-                f"http://127.0.0.1:{port}/",
+                "curl -fsS --max-time 10 http://127.0.0.1:9000/ >/dev/null",
             )
-            code = out.strip() if out else ""
-            smoke = CheckResult(
-                name="smoke",
-                passed=(rc == 0 and bool(code) and code[0] in ("2", "3")),
-                detail=f"HTTP {code}" if code else f"rc={rc}",
-            )
-        else:
-            smoke = CheckResult(
-                name="smoke",
-                passed=False,
-                detail="skipped; restart.sh failed",
-            )
-
+            serving = smoke_rc == 0
+            detail = (smoke_output or f"rc={smoke_rc}")[-300:]
+        smoke = CheckResult("serving", serving, detail)
         return CheckResult(
-            name="nginx-backup-restart",
-            passed=all(c.passed for c in (reload_, smoke)),
-            children=[reload_, smoke],
+            "restart", rebuild.passed and smoke.passed, children=[rebuild, smoke]
         )

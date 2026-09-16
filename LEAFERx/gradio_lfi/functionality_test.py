@@ -1,52 +1,64 @@
-"""Liveness probe for gradio-lfi: process + tcp + http. The CHECKER is the
-framework-run `image/checker.sh` (shipped over stdin), no longer invoked here."""
+"""Shallow liveness probe for the authenticated Gradio service."""
 
 from __future__ import annotations
 
+import socket
+import urllib.error
+import urllib.request
+
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
-
-PROCESS_PATTERN = "/srv/challenge/app.py"
-
-
-def _http_probe(port: int, path: str) -> str:
-    return (
-        "python3 -c \"import urllib.request,sys; "
-        f"r=urllib.request.urlopen('http://127.0.0.1:{port}{path}', timeout=4); "
-        "sys.exit(0 if r.status==200 else 1)\""
-    )
-
-
-def _tcp_probe(port: int) -> str:
-    return (
-        "python3 -c \"import socket; s=socket.socket(); s.settimeout(2); "
-        f"s.connect(('127.0.0.1', {port})); s.close()\""
-    )
 
 
 class GradioFunctionalityTest(FunctionalityTest):
     @property
     def name(self) -> str:
-        return "gradio-lfi-functionality"
+        return "gradio-component-workspace-functionality"
 
     @property
     def required_ports(self) -> tuple[str, ...]:
         return ("web",)
 
     def run(self, target: VulboxTarget) -> CheckResult:
-        exec_in = target.meta["exec_in_container"]
-        port = target.ports["web"]
-
-        rc, _ = exec_in(target.host, f"pgrep -f {PROCESS_PATTERN!r}")
-        process = CheckResult(name="process", passed=(rc == 0), detail=f"pgrep rc={rc}")
-
-        rc, _ = exec_in(target.host, _tcp_probe(port))
-        tcp = CheckResult(name="tcp", passed=(rc == 0), detail=f"socket-connect rc={rc}")
-
-        rc, _ = exec_in(target.host, _http_probe(port, "/config"))
-        http = CheckResult(name="http", passed=(rc == 0), detail=f"GET /config rc={rc}")
-
+        children = [self._process(target), self._tcp(target), self._http(target)]
         return CheckResult(
-            name="gradio-lfi",
-            passed=all(c.passed for c in (process, tcp, http)),
-            children=[process, tcp, http],
+            "gradio-component-workspace",
+            all(child.passed for child in children),
+            children=children,
         )
+
+    @staticmethod
+    def _process(target: VulboxTarget) -> CheckResult:
+        exec_in = target.meta.get("exec_in_container")
+        if not callable(exec_in):
+            return CheckResult("process", False, "no exec bridge")
+        rc, output = exec_in(
+            target.host,
+            "found=0; for pid in $(pgrep -f '[s]rv/challenge/app.py'); do "
+            "uid=$(awk '/^Uid:/{print $2}' /proc/$pid/status 2>/dev/null || true); "
+            "if [ \"$uid\" = 10001 ]; then found=1; "
+            "tr '\\0' ' ' </proc/$pid/cmdline | "
+            "grep -Eq 'FLAG\\{|password|report-' && exit 1; fi; done; "
+            "[ \"$found\" = 1 ] && printf 10001",
+        )
+        uid = (output or "").strip().splitlines()[:1]
+        passed = rc == 0 and uid == ["10001"]
+        return CheckResult("process", passed, f"runtime uid={uid[0] if uid else 'unknown'}")
+
+    @staticmethod
+    def _tcp(target: VulboxTarget) -> CheckResult:
+        try:
+            socket.create_connection((target.host, target.ports["web"]), timeout=4).close()
+            return CheckResult("tcp", True, "public port reachable")
+        except OSError as error:
+            return CheckResult("tcp", False, type(error).__name__)
+
+    @staticmethod
+    def _http(target: VulboxTarget) -> CheckResult:
+        url = f"http://{target.host}:{target.ports['web']}/"
+        try:
+            with urllib.request.urlopen(url, timeout=8) as response:
+                body = response.read(8192).lower()
+            passed = response.status == 200 and b"gradio" in body
+            return CheckResult("http", passed, f"public root HTTP {response.status}")
+        except (OSError, urllib.error.URLError) as error:
+            return CheckResult("http", False, type(error).__name__)
