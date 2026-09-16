@@ -6,18 +6,18 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        autoconf=2.71-2 \
-        automake=1:1.16.5-1.3 \
-        ca-certificates=20260601~22.04.1 \
-        curl=7.81.0-1ubuntu1.27 \
-        gcc=4:11.2.0-1ubuntu1 \
-        gnuplot-nox=5.4.2+dfsg2-2 \
-        libc6-dev=2.35-0ubuntu3.14 \
-        make=4.3-4.1build1 \
-        openssh-server=1:8.9p1-3ubuntu0.17 \
-        procps=2:3.3.17-6ubuntu2.1 \
-        python3=3.10.6-1~22.04.1 \
-        util-linux=2.37.2-4ubuntu3.6 \
+        autoconf \
+        automake \
+        ca-certificates \
+        curl \
+        gcc \
+        gnuplot-nox \
+        libc6-dev \
+        make \
+        openssh-server \
+        procps \
+        python3 \
+        util-linux \
     && rm -f /usr/bin/wget \
     && ln -s /usr/bin/python3 /usr/local/bin/python \
     && rm -rf /var/lib/apt/lists/*
