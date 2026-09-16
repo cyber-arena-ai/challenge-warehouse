@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-14",
-  "count": 25,
+  "generated": "2026-09-15",
+  "count": 26,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -725,6 +725,51 @@
         "accent": "#df508a",
         "prompt_id": "geo-v2",
         "motif": "A single rounded component-block sits inside a tight nested frame representing the served application boundary; from a small side aperture in that frame — a seam that should have stayed sealed — a thick dashed path reaches far outward past the outermost frame to pluck a distant isolated rectangle from a deep, separate lattice. That extracted rectangle is dragged back inward and dropped into a shallow tiled cache-band adjacent to the block, and from that band a second clean stroke exits through the front boundary to a small waiting semicircle, completing the fetch. The composition reads as two coupled hops — a foreign method-call arcing out to seize a form it should never reach, then that form re-emerging through the public opening — with the traversal path drawn as the longest, most disruptive line crossing every frame."
+      }
+    },
+    {
+      "slug": "grafana-protected-contact-point",
+      "title": "Grafana Protected Contact Point",
+      "contributor": "jt",
+      "updated": "2026-08-21",
+      "tags": [
+        "real-world",
+        "web",
+        "recompile",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "Missing Authorization",
+        "cve": "CVE-2026-21724"
+      },
+      "card": {
+        "tagline": "An ordinary Editor crosses a protected alerting-field boundary",
+        "summary": "Grafana 12.3.5 exposes dashboards and alerting workflows to distinct native Editor accounts. A protected webhook URL and the UID-472 service context form independent capability objectives.",
+        "attack": "Modify the current protected contact-point URL or execute the published service operation through the public Grafana interface.",
+        "defense": "Enforce protected-field authorization while preserving contact-point listing, permitted updates, alerting behavior, and offline rebuilds."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "Grafana v12.3.5 (commit 6b96ceff49a8b6a5cb85773061d2ee8b1bef8f56)",
+        "reference": "CVE-2026-21724",
+        "url": "https://github.com/grafana/grafana/releases/tag/v12.3.5"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 3000
+        },
+        "stack": "Grafana 12.3.5 · Go 1.25.8 · SQLite"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-grafana-protected-contact-point:v1",
+        "source_intro": "Grafana 12.3.5 serves authenticated dashboards and alerting workflows. Each attacker receives a distinct native Editor account. WRITE protects one managed contact point's webhook URL; EXECUTE protects a UID-472 service operation.\n"
+      },
+      "cover": {
+        "image": null,
+        "accent": null,
+        "prompt_id": null
       }
     },
     {
