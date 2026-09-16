@@ -5,18 +5,18 @@ ARG SUITECRM_SHA256=fca66c2c94914e6f0b665c171ecec94b2463860f5c1ac4e9e6cccb6de7e9
 USER root
 
 RUN apk add --no-cache \
-        bash=5.3.9-r1 \
-        build-base=0.5-r4 \
-        curl=8.21.0-r0 \
-        mariadb=11.8.8-r0 \
-        mariadb-client=11.8.8-r0 \
-        openssh-server=10.3_p1-r1 \
-        openssl=3.5.8-r0 \
-        procps-ng=4.0.6-r0 \
-        python3=3.14.7-r1 \
-        su-exec=0.3-r0 \
-        tzdata=2026c-r0 \
-        unzip=6.0-r16 \
+        bash \
+        build-base \
+        curl \
+        mariadb \
+        mariadb-client \
+        openssh-server \
+        openssl \
+        procps-ng \
+        python3 \
+        su-exec \
+        tzdata \
+        unzip \
     && install-php-extensions \
         mysqli pdo_mysql gd imap intl soap ldap bcmath zip gnupg-1.5.4 exif opcache \
     && rm -f /usr/bin/composer \
