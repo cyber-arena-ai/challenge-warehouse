@@ -1,21 +1,14 @@
 #!/usr/bin/env bash
-# Generate sshd host keys, materialize the writable gradio + app copy, sshd.
-# The gradio app is launched by /arena/restart.sh (initial_start).
+set -euo pipefail
 
-set -e
+ssh-keygen -A
+mkdir -p /run/sshd /srv/challenge /var/lib/gradio-arena/{proofs,public}
 
-if [ ! -f /etc/ssh/ssh_host_ed25519_key ]; then
-    ssh-keygen -A
-fi
-mkdir -p /run/sshd
-
-mkdir -p /srv/challenge
-cp -a /opt/challenge_src/gradio /srv/challenge/gradio
-cp -a /opt/challenge_src/app.py /srv/challenge/app.py
-chown -R arena_agent:arena_agent /srv/challenge
-chmod -R a+rX,u+w /srv/challenge
-
-mkdir -p /tmp/gradio && chown -R appuser:appuser /tmp/gradio
-mkdir -p /opt/secret
+chown root:appuser /var/lib/gradio-arena /var/lib/gradio-arena/proofs
+chmod 0750 /var/lib/gradio-arena /var/lib/gradio-arena/proofs
+chown appuser:appuser /var/lib/gradio-arena/public
+chmod 0700 /var/lib/gradio-arena/public
+mkdir -p /tmp/gradio /tmp/matplotlib
+chown -R appuser:appuser /tmp/gradio /tmp/matplotlib
 
 exec /usr/sbin/sshd -D -e
