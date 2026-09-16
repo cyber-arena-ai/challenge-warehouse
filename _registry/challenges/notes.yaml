@@ -3,6 +3,7 @@ slug: notes
 title: Notes TCP Daemon
 contributor: YueyangPan
 updated: '2026-07-20'
+random_pool: false              # framework smoke test — shown, but never commissioned in a campaign
 tags:
 - net
 - misc

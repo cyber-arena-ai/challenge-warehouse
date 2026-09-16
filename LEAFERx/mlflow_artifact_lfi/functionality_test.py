@@ -1,60 +1,47 @@
-"""Liveness probe for mlflow-lfi: process + tcp + http.
-
-  process — a gunicorn worker serving `mlflow.server:app` is alive.
-  tcp     — port 5000 accepts a socket connect.
-  http    — GET /health returns 200.
-
-The CHECKER is the framework-run `image/checker.sh` (shipped over stdin), no
-longer invoked here.
-"""
+"""Lightweight liveness checks for MLflow."""
 
 from __future__ import annotations
 
+import socket
+import urllib.error
+import urllib.request
+
 from challenges.interface import CheckResult, FunctionalityTest, VulboxTarget
-
-# gunicorn worker cmdline contains the app spec verbatim.
-PROCESS_PATTERN = "mlflow.server:app"
-
-
-def _http_probe(port: int) -> str:
-    return (
-        "python3 -c \"import urllib.request,sys; "
-        f"r=urllib.request.urlopen('http://127.0.0.1:{port}/health', timeout=3); "
-        "sys.exit(0 if r.status==200 else 1)\""
-    )
-
-
-def _tcp_probe(port: int) -> str:
-    return (
-        "python3 -c \"import socket; s=socket.socket(); s.settimeout(2); "
-        f"s.connect(('127.0.0.1', {port})); s.close()\""
-    )
 
 
 class MlflowFunctionalityTest(FunctionalityTest):
     @property
     def name(self) -> str:
-        return "mlflow-lfi-functionality"
+        return "mlflow-tracking-liveness"
 
     @property
     def required_ports(self) -> tuple[str, ...]:
-        return ("web",)
+        return ("service",)
 
     def run(self, target: VulboxTarget) -> CheckResult:
+        port = target.ports["service"]
         exec_in = target.meta["exec_in_container"]
-        port = target.ports["web"]
-
-        rc, _ = exec_in(target.host, f"pgrep -f {PROCESS_PATTERN!r}")
-        process = CheckResult(name="process", passed=(rc == 0), detail=f"pgrep rc={rc}")
-
-        rc, _ = exec_in(target.host, _tcp_probe(port))
-        tcp = CheckResult(name="tcp", passed=(rc == 0), detail=f"socket-connect rc={rc}")
-
-        rc, _ = exec_in(target.host, _http_probe(port))
-        http = CheckResult(name="http", passed=(rc == 0), detail=f"GET /health rc={rc}")
-
+        try:
+            rc, _ = exec_in(target.host, "pgrep -f '[m]lflow server'")
+            process = CheckResult("process", rc == 0, f"pgrep rc={rc}")
+        except Exception as error:  # noqa: BLE001 - failures are probe data
+            process = CheckResult("process", False, type(error).__name__)
+        try:
+            with socket.create_connection((target.host, port), timeout=3):
+                tcp = CheckResult("tcp", True, "connected")
+        except OSError as error:
+            tcp = CheckResult("tcp", False, type(error).__name__)
+        try:
+            with urllib.request.urlopen(
+                f"http://{target.host}:{port}/health", timeout=5
+            ) as response:
+                status = response.status
+            http = CheckResult("http", status == 200, f"HTTP {status}")
+        except (OSError, urllib.error.URLError) as error:
+            http = CheckResult("http", False, type(error).__name__)
+        children = [process, tcp, http]
         return CheckResult(
-            name="mlflow-lfi",
-            passed=all(c.passed for c in (process, tcp, http)),
-            children=[process, tcp, http],
+            "mlflow-tracking-service",
+            all(child.passed for child in children),
+            children=children,
         )

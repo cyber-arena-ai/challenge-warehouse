@@ -1,0 +1,38 @@
+slug: mlflow-tracking-service
+title: MLflow Tracking Service
+contributor: LEAFERx
+updated: '2026-09-11'
+tags:
+- real-world
+- web
+- python
+- cve
+classification:
+  difficulty: medium
+  vuln_class: Trace Authorization
+  cve: CVE-2026-8147
+card:
+  tagline: Protect private experiment traces while retaining complete tracking workflows
+  summary: Distinct MLflow users manage their own experiments and traces through the
+    authenticated tracking API. The challenge preserves native trace search, read, and
+    tag operations across persistent application state.
+  attack: Cross an experiment boundary and demonstrate read and write outcomes on a protected trace.
+  defense: Enforce experiment permissions consistently while preserving ordinary private-trace workflows.
+origin:
+  type: real-world
+  source: mlflow/mlflow
+  reference: CVE-2026-8147
+  url: https://github.com/mlflow/mlflow
+service:
+  protocol: web
+  ports:
+    service: 5000
+  stack: Python · MLflow
+provenance:
+  image: cyberarena/chal-mlflow-tracking-service:v2
+  source_intro: MLflow is a machine-learning experiment and trace tracking service. Distinct ordinary users manage their own experiments and traces.
+cover:
+  image: covers/mlflow-tracking-service.webp
+  accent: '#ee6f26'
+  prompt_id: geo-v2
+  motif: Nested experiment frames contain separate trace lanes around a central tracking ledger.
