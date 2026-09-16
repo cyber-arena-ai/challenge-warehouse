@@ -1,0 +1,47 @@
+# hand-authored to _registry/schematic.md; cover pass not yet run
+slug: nats-mqtt-acl
+title: NATS MQTT Authorization Boundary
+contributor: jt
+updated: '2026-09-11'
+tags:
+- real-world
+- net
+- go
+- logic-bug
+- recompile
+- cve
+classification:
+  difficulty: hard
+  vuln_class: MQTT Authorization Enforcement
+  cve: CVE-2026-58209
+card:
+  tagline: A denied retained MQTT message crosses an authorization boundary
+  summary: A pinned NATS Server revision gives each attacker an ordinary MQTT device account
+    whose direct access to a guarded victim subject is denied. Internal MQTT routing
+    and retained delivery nevertheless expose the same protected message when a
+    broader wildcard subscription selects it.
+  attack: Reach the current denied retained message through MQTT replay behavior.
+  defense: Enforce concrete subject denies during retained/QoS delivery
+    while preserving own telemetry, public victim subscriptions, MQTT, and JetStream.
+origin:
+  type: real-world
+  source: NATS Server commit 73b3dd9a5ea0fa7bf08b702338676355b29b5fb4
+  reference: CVE-2026-58209
+  url: https://github.com/nats-io/nats-server/commit/73b3dd9a5ea0fa7bf08b702338676355b29b5fb4
+service:
+  protocol: tcp
+  ports:
+    service: 1883
+  stack: Go 1.25 · NATS Server · MQTT · JetStream
+provenance:
+  image: cyberarena/chal-nats-mqtt-acl:v1
+  source_intro: >
+    NATS Server is an editable Go message broker with MQTT, retained QoS1
+    messages, JetStream persistence, and subject-level authorization. One ordinary
+    device account may read its own telemetry and allowed victim telemetry but is
+    denied concrete guarded victim subjects. The rotating flag is a retained victim
+    message. Defenders edit the complete pinned source and rebuild offline.
+cover:
+  image: null
+  accent: null
+  prompt_id: null
