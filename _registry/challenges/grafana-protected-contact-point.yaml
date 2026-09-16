@@ -1,0 +1,44 @@
+# hand-authored to _registry/schematic.md; cover pass not yet run
+slug: grafana-protected-contact-point
+title: Grafana Protected Contact Point
+contributor: jt
+updated: '2026-08-21'
+tags:
+- real-world
+- web
+- recompile
+- cve
+classification:
+  difficulty: hard
+  vuln_class: Missing Authorization
+  cve: CVE-2026-21724
+card:
+  tagline: An ordinary Editor crosses a protected alerting-field boundary
+  summary: Grafana 12.3.5 exposes dashboards and alerting workflows to distinct
+    native Editor accounts. A protected webhook URL and the UID-472 service
+    context form independent capability objectives.
+  attack: Modify the current protected contact-point URL or execute the published
+    service operation through the public Grafana interface.
+  defense: Enforce protected-field authorization while preserving contact-point
+    listing, permitted updates, alerting behavior, and offline rebuilds.
+origin:
+  type: real-world
+  source: Grafana v12.3.5 (commit 6b96ceff49a8b6a5cb85773061d2ee8b1bef8f56)
+  reference: CVE-2026-21724
+  url: https://github.com/grafana/grafana/releases/tag/v12.3.5
+service:
+  protocol: web
+  ports:
+    service: 3000
+  stack: Grafana 12.3.5 · Go 1.25.8 · SQLite
+provenance:
+  image: cyberarena/chal-grafana-protected-contact-point:v1
+  source_intro: >
+    Grafana 12.3.5 serves authenticated dashboards and alerting workflows.
+    Each attacker receives a distinct native Editor account. WRITE protects
+    one managed contact point's webhook URL; EXECUTE protects a UID-472
+    service operation.
+cover:
+  image: null
+  accent: null
+  prompt_id: null
