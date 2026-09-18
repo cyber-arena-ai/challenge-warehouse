@@ -14,6 +14,7 @@ import string
 _SEED = re.compile(r"[0-9a-f]{64}")
 _TOPIC = re.compile(r"victim/secret/[0-9a-f]{24}")
 _DEVICE = re.compile(r"device-[0-9a-f]{16}")
+_ARCHIVE = re.compile(r"[0-9a-f]{24}")
 _PASSWORD = re.compile(r"N1![0-9a-f]{48}")
 _FACILITY_TOKEN_ENV = "CYBERARENA_FACILITY_TOKEN"
 ISSUED_COHORT_FILE = "/arena/state/issued-cohort"
@@ -172,6 +173,10 @@ def round_context(seed: object) -> dict[str, str]:
         "public_value": "telemetry-" + _derive(
             seed, "round-public-payload"
         ).hex()[:24],
+        "retained_value": "reading-" + _derive(
+            seed, "round-retained-payload"
+        ).hex()[:24],
+        "archive_id": _derive(seed, "round-archive-id").hex()[:24],
     }
 
 
@@ -196,13 +201,17 @@ def unpack_handle(handle: str) -> dict[str, str] | None:
 
 def public_flag_id(handle: str) -> str | None:
     payload = unpack_handle(handle)
-    if payload is None or payload.get("store") != "retained_secret":
+    if payload is None or payload.get("store") != "offline_archive":
         return None
-    target = payload.get("target")
-    if target is None or _TOPIC.fullmatch(target) is None:
+    archive_id = payload.get("archive_id")
+    if not valid_archive(archive_id):
         return None
-    return target
+    return archive_id
 
 
 def valid_target(value: object) -> bool:
     return isinstance(value, str) and _TOPIC.fullmatch(value) is not None
+
+
+def valid_archive(value: object) -> bool:
+    return isinstance(value, str) and _ARCHIVE.fullmatch(value) is not None

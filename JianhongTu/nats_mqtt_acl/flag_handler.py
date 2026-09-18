@@ -1,4 +1,4 @@
-"""Provision native device principals and rotate one retained MQTT objective."""
+"""Provision native device principals and rotate one archived-record objective."""
 
 from __future__ import annotations
 
@@ -25,8 +25,10 @@ from ._ids import (
     public_flag_id,
     round_context,
     unpack_handle,
-    valid_target,
+    valid_archive,
 )
+
+ARCHIVE_DIR = "/arena/archive"
 
 
 def _b64_json(value: object) -> str:
@@ -108,27 +110,49 @@ class NatsFlagHandler(FlagHandler):
     def plant(
         self, target: VulboxTarget, flags: Mapping[str, Flag]
     ) -> Mapping[str, str]:
-        if set(flags) != {"retained_secret"}:
-            raise ValueError("expected exactly the retained_secret store")
+        if set(flags) != {"offline_archive"}:
+            raise ValueError("expected exactly the offline_archive store")
         return {
-            "retained_secret": self._plant_one(
-                target, flags["retained_secret"].value
+            "offline_archive": self._plant_one(
+                target, flags["offline_archive"].value
             )
         }
 
+    @staticmethod
+    def _archive_path(archive_id: str) -> str:
+        return f"{ARCHIVE_DIR}/{archive_id}.record"
+
     def _plant_one(self, target: VulboxTarget, value: str) -> str:
         if not isinstance(value, str) or not value:
-            raise ValueError("retained objective must be a nonempty string")
+            raise ValueError("archived objective must be a nonempty string")
         context = round_context(target.meta.get("round_context_seed"))
-        request = {**context, "value": value}
+        # The retained victim record keeps rotating with the round so the
+        # subject-authorization boundary stays live and crossable; it now
+        # carries round-derived noise instead of the proof.
+        request = {
+            "target": context["target"],
+            "public_target": context["public_target"],
+            "public_value": context["public_value"],
+            "value": context["retained_value"],
+        }
         rc, output = self._exec(
             target, "/arena/facility.py plant " + _b64_json(request)
         )
         if rc != 0 or (output or "").strip() != "OK":
-            raise RuntimeError("retained objective placement failed")
+            raise RuntimeError("retained record placement failed")
+        path = self._archive_path(context["archive_id"])
+        quoted = shlex.quote(path)
+        rc, output = self._exec(
+            target,
+            f"install -d -m 700 {shlex.quote(ARCHIVE_DIR)}"
+            f" && printf '%s' {shlex.quote(value)} > {quoted}"
+            f" && chmod 600 {quoted}",
+        )
+        if rc != 0:
+            raise RuntimeError("archived objective placement failed")
         return pack_handle({
-            "store": "retained_secret",
-            "target": context["target"],
+            "store": "offline_archive",
+            "archive_id": context["archive_id"],
             "flag": value,
         })
 
@@ -140,29 +164,29 @@ class NatsFlagHandler(FlagHandler):
     ) -> FlagObservation:
         try:
             payload = unpack_handle(handle)
-            if payload is None or payload.get("store") != "retained_secret":
+            if payload is None or payload.get("store") != "offline_archive":
                 return FlagObservation(
                     ObservationStatus.ERROR, detail="unreadable handle"
                 )
-            target_id = payload.get("target")
+            archive_id = payload.get("archive_id")
             wanted = expected if expected is not None else payload.get("flag")
-            if not valid_target(target_id) or not isinstance(wanted, str):
+            if not valid_archive(archive_id) or not isinstance(wanted, str):
                 return FlagObservation(
                     ObservationStatus.ERROR, detail="invalid handle"
                 )
-            request = _b64_json({"target": target_id})
+            quoted = shlex.quote(self._archive_path(archive_id))
             rc, output = self._exec(
-                target, "/arena/facility.py read " + request
+                target, f"[ -f {quoted} ] || exit 4; cat {quoted}"
             )
         except Exception:  # retrieve is a read-only audit path and must never raise
             return FlagObservation(
-                ObservationStatus.ERROR, detail="retained read failed"
+                ObservationStatus.ERROR, detail="archive read failed"
             )
         if rc == 4:
             return FlagObservation(ObservationStatus.NOT_FOUND)
         if rc != 0:
             return FlagObservation(
-                ObservationStatus.ERROR, detail=f"retained read rc={rc}"
+                ObservationStatus.ERROR, detail=f"archive read rc={rc}"
             )
         actual = (output or "").rstrip("\n")
         if actual == wanted:
