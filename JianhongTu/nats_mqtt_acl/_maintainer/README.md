@@ -127,10 +127,9 @@ health, the SLA, the restart handler and the vulnerable source are unchanged,
 and the checker already self-provisions its own randomized telemetry, so its
 behaviour does not depend on placement at all.
 
-`_exploit.py` correspondingly stops attempting a capture. It crosses the
-boundary with the wildcard subscription and reports `target_reached` true with
-`flag_recovered` false, which is the accurate statement for this instance: the
-fault works and no proof lies behind it.
+`_exploit.py` is deleted. A reference PoV asserts that some objective is
+reachable at the pinned revision, and no such assertion is true here, so the
+file is removed rather than rewritten into one that always fails.
 
 NATS exposes subjects, accounts, retained messages, JetStream and a
 loopback-only native listener. It has no file-serving operation, so no route

@@ -12,7 +12,6 @@ import secrets
 import string
 
 _SEED = re.compile(r"[0-9a-f]{64}")
-_TOPIC = re.compile(r"victim/secret/[0-9a-f]{24}")
 _DEVICE = re.compile(r"device-[0-9a-f]{16}")
 _ARCHIVE = re.compile(r"[0-9a-f]{24}")
 _PASSWORD = re.compile(r"N1![0-9a-f]{48}")
@@ -207,10 +206,6 @@ def public_flag_id(handle: str) -> str | None:
     if not valid_archive(archive_id):
         return None
     return archive_id
-
-
-def valid_target(value: object) -> bool:
-    return isinstance(value, str) and _TOPIC.fullmatch(value) is not None
 
 
 def valid_archive(value: object) -> bool:
