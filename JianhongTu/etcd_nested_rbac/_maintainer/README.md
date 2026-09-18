@@ -98,10 +98,9 @@ crosses stays live and crossable; it carries round-derived noise instead of the
 proof. `checker.py`, health, the SLA, the restart handler and the vulnerable
 source are unchanged.
 
-`_exploit.py` correspondingly stops attempting a capture. It ranges the whole
-`/services/` prefix from inside a nested transaction and reports
-`target_reached` true with `flag_recovered` false, which is the accurate
-statement for this instance: the fault works and no proof lies behind it.
+`_exploit.py` is deleted. A reference PoV asserts that some objective is
+reachable at the pinned revision, and no such assertion is true here, so the
+file is removed rather than rewritten into one that always fails.
 
 etcd exposes KV, lease, watch, auth, maintenance and cluster APIs. It has no
 file-serving operation, so no route through the service reaches the planted
