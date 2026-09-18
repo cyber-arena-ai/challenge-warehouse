@@ -20,7 +20,7 @@ card:
     whose direct access to a guarded victim subject is denied. Internal MQTT routing and retained
     delivery nevertheless expose the same protected message when a broader wildcard subscription
     selects it.
-  attack: Reach the current denied retained message through MQTT replay behavior.
+  attack: Recover the current archived facility record named by the objective locator.
   defense: Enforce concrete subject denies during retained/QoS delivery while preserving own
     telemetry, public victim subscriptions, MQTT, and JetStream.
 origin:

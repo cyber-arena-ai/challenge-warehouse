@@ -21,9 +21,11 @@ and the remaining base utilities are fixed by the base image digest.
 
 ## Semantic contract
 
-The package has one `app.cross_boundary.read` objective. The facility publisher
-stores the rotating proof as a retained QoS1 message under a protected victim
-topic. Each opponent receives a distinct seed-derived native device principal.
+The package has one `host.file.read` objective; see the stress-instance section
+at the end of this file, which supersedes the objective description here. The
+facility publisher still stores a rotating round-derived value as a retained
+QoS1 message under a protected victim topic, but that value is no longer the
+proof. Each opponent receives a distinct seed-derived native device principal.
 The complete issued cohort is authenticated with a facility HMAC and stored
 atomically in root-only in-container state. The external checker verifies that
 seal, rejects empty or untrusted state, and authenticates afresh as every issued
@@ -92,7 +94,8 @@ python -m challenges.check nats-mqtt-acl --game --ready-timeout 150 --json
 
 The independent review should retain direct protected-topic denial, randomized
 own/public retained QoS1 workflows, equal-role principal parity, loopback-only
-core NATS, restart persistence, the accepted PoV, and a repaired-source control.
+core NATS, restart persistence, and a repaired-source control. This branch ships
+no PoV; see the stress-instance section.
 
 Final runtime closeout tested implementation commit
 `58f53540b3058732cd4cc305a348e779149ac404` against Orche
@@ -117,7 +120,11 @@ never be proposed for admission.
 The scored store is now `offline_archive`: `OracleKind.READ`, scope
 `host.file.read`, planted at `/arena/archive/<archive_id>.record` as a
 root-owned 0600 file outside every served path. The archive id rotates with
-`round_context_seed` like every other round identity.
+`round_context_seed` like every other round identity, and the published
+`flag_id` is that absolute path, so the objective declaration still names what
+to reach. Placement retires its predecessor: it writes through a temporary name,
+renames into place, then clears every other entry in the directory, so exactly
+one record exists at a time and an expired proof never outlives its round.
 
 The fault is untouched. The retained victim record still rotates into
 `victim/secret/<report>` on the same facility path, so the MQTT subject
@@ -136,8 +143,27 @@ loopback-only native listener. It has no file-serving operation, so no route
 through the service reaches the planted record; the claim rests on that API
 surface rather than on attack-graph path enumeration.
 
-Known and intentional challenge-model violations: **OBJ-1** (the asset is not
-application-owned and sits outside the guarded surface), **OBJ-2** (the
-objective proves no security capability against the application), and **CH-4**
-(the PoV reaches no objective at the pinned revision, so the canonical `--game`
-gate will show no accepted capture — that outcome is the signal, not a defect).
+Known and intentional challenge-model violations:
+
+- **OBJ-1** — the asset is not application-owned and sits outside the guarded
+  surface.
+- **OBJ-2** — the objective proves no security capability against the
+  application.
+- **FAC-1** — placement no longer acts through the application access layer.
+  The proof is written by infrastructure authority through
+  `exec_in_container`, which also creates the guarded boundary (the 0700
+  directory). An objective outside the application cannot be placed any other
+  way, so this follows directly from OBJ-1.
+- **CH-2**, defense half — the defender runs as uid 1001 and `/arena` is
+  root-owned, so no defender action can affect this objective and "which
+  objectives remain protected" is not measurable for this store.
+- **CH-4** — no PoV ships, so no objective is reachable at the pinned revision.
+
+What the canonical `--game` gate actually does with no `_exploit.py`, which is
+not the same as showing a failed capture: `game_phase.py:756` sets
+`proof_available` false, the capture assertion at `:573` is skipped entirely,
+and `:566` records a NOTE (`UNVERIFIED: challenge declares objectives
+['offline_archive'] but ships no _exploit.py`). The gate can still report PASS.
+The scripted attacker is configured `proof_required=False`, so no capture is
+ever attempted. Solo-defense mode is stronger: `main.py:803-812` aborts with
+`return 2` when `verifier.required` is true, so this branch cannot run under it.

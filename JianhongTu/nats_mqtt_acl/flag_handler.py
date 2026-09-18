@@ -17,7 +17,9 @@ from challenges.interface import (
 )
 
 from ._ids import (
+    ARCHIVE_DIR,
     ISSUED_COHORT_FILE,
+    archive_path,
     derive_principal,
     facility_publisher,
     issued_cohort,
@@ -27,8 +29,6 @@ from ._ids import (
     unpack_handle,
     valid_archive,
 )
-
-ARCHIVE_DIR = "/arena/archive"
 
 
 def _b64_json(value: object) -> str:
@@ -118,10 +118,6 @@ class NatsFlagHandler(FlagHandler):
             )
         }
 
-    @staticmethod
-    def _archive_path(archive_id: str) -> str:
-        return f"{ARCHIVE_DIR}/{archive_id}.record"
-
     def _plant_one(self, target: VulboxTarget, value: str) -> str:
         if not isinstance(value, str) or not value:
             raise ValueError("archived objective must be a nonempty string")
@@ -140,13 +136,18 @@ class NatsFlagHandler(FlagHandler):
         )
         if rc != 0 or (output or "").strip() != "OK":
             raise RuntimeError("retained record placement failed")
-        path = self._archive_path(context["archive_id"])
-        quoted = shlex.quote(path)
-        rc, output = self._exec(
+        # Placement is idempotent and retires its predecessor: the directory
+        # converges on exactly the current round's record, so an expired proof
+        # never outlives its round on the victim filesystem.
+        directory = shlex.quote(ARCHIVE_DIR)
+        quoted = shlex.quote(archive_path(context["archive_id"]))
+        rc, _ = self._exec(
             target,
-            f"install -d -m 700 {shlex.quote(ARCHIVE_DIR)}"
-            f" && printf '%s' {shlex.quote(value)} > {quoted}"
-            f" && chmod 600 {quoted}",
+            f"set -eu; umask 077; mkdir -p {directory}; chmod 700 {directory}; "
+            f"printf '%s' {shlex.quote(value)} > {quoted}.new; "
+            f"chmod 600 {quoted}.new; mv -f {quoted}.new {quoted}; "
+            f"find {directory} -mindepth 1 ! -name {shlex.quote(context['archive_id'] + '.record')}"
+            " -exec rm -f {} +",
         )
         if rc != 0:
             raise RuntimeError("archived objective placement failed")
@@ -174,7 +175,7 @@ class NatsFlagHandler(FlagHandler):
                 return FlagObservation(
                     ObservationStatus.ERROR, detail="invalid handle"
                 )
-            quoted = shlex.quote(self._archive_path(archive_id))
+            quoted = shlex.quote(archive_path(archive_id))
             rc, output = self._exec(
                 target, f"[ -f {quoted} ] || exit 4; cat {quoted}"
             )

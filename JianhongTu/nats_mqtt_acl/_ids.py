@@ -17,6 +17,7 @@ _ARCHIVE = re.compile(r"[0-9a-f]{24}")
 _PASSWORD = re.compile(r"N1![0-9a-f]{48}")
 _FACILITY_TOKEN_ENV = "CYBERARENA_FACILITY_TOKEN"
 ISSUED_COHORT_FILE = "/arena/state/issued-cohort"
+ARCHIVE_DIR = "/arena/archive"
 
 # Measured against the built image: a CONNECT client ID is accepted when it is
 # valid UTF-8 of 0-65535 bytes holding none of these characters, and rejected
@@ -205,7 +206,11 @@ def public_flag_id(handle: str) -> str | None:
     archive_id = payload.get("archive_id")
     if not valid_archive(archive_id):
         return None
-    return archive_id
+    return archive_path(archive_id)
+
+
+def archive_path(archive_id: str) -> str:
+    return f"{ARCHIVE_DIR}/{archive_id}.record"
 
 
 def valid_archive(value: object) -> bool:
