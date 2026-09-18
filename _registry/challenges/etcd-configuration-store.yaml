@@ -19,8 +19,7 @@ card:
     analyst identity. Ordinary range, update, delete, and nested transaction workflows
     remain available only inside the analyst prefix, while a rotating service database
     credential is protected in a separate production keyspace.
-  attack: Authenticate as a configuration analyst and place a protected range request
-    inside a nested v3 transaction to recover the current database credential.
+  attack: Recover the current archived facility record named by the objective locator.
   defense: Apply recursive transaction authorization, or an equivalent narrow repair,
     while retaining authentication and complete allowed-prefix transaction behavior.
 origin:

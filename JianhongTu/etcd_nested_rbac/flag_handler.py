@@ -168,7 +168,11 @@ class EtcdFlagHandler(FlagHandler):
         )
 
     def _delete_archive(self, target: VulboxTarget, record: str) -> None:
-        self._exec(target, f"rm -f {shlex.quote(self._archive_path(record))}")
+        # `.next` is the per-generation temporary name used by _write_archive;
+        # an interrupted write leaves one behind holding that round's proof, so
+        # retiring a generation must clear both names.
+        path = shlex.quote(self._archive_path(record))
+        self._exec(target, f"rm -f {path} {path}.next")
 
     def _mark_issued(self, target: VulboxTarget) -> None:
         temporary = shlex.quote(ISSUED_PATH + ".next")
@@ -328,10 +332,11 @@ class EtcdFlagHandler(FlagHandler):
         if journal.get("previous") is not None and not same_context:
             if previous_key is None:
                 raise RuntimeError("previous objective generation is malformed")
-            self._delete(base, token, previous_key)
             previous_archive = self._generation_archive(journal.get("previous"))
-            if previous_archive is not None:
-                self._delete_archive(target, previous_archive)
+            if previous_archive is None:
+                raise RuntimeError("previous objective generation is malformed")
+            self._delete(base, token, previous_key)
+            self._delete_archive(target, previous_archive)
             journal["previous"] = None
             self._write_journal(target, journal)
 
@@ -342,10 +347,11 @@ class EtcdFlagHandler(FlagHandler):
             pending_key = self._generation_key(pending)
             if pending_key is None:
                 raise RuntimeError("pending objective generation is malformed")
-            self._delete(base, token, pending_key)
             pending_archive = self._generation_archive(pending)
-            if pending_archive is not None:
-                self._delete_archive(target, pending_archive)
+            if pending_archive is None:
+                raise RuntimeError("pending objective generation is malformed")
+            self._delete(base, token, pending_key)
+            self._delete_archive(target, pending_archive)
             journal["pending"] = None
             self._write_journal(target, journal)
 
@@ -410,4 +416,4 @@ class EtcdFlagHandler(FlagHandler):
             )
 
     def flag_id(self, handle: str) -> str | None:
-        return handle if valid_archive(handle) else None
+        return self._archive_path(handle) if valid_archive(handle) else None

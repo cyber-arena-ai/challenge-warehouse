@@ -88,8 +88,11 @@ never be proposed for admission.
 The scored store is now `offline_archive`: `OracleKind.READ`, scope
 `host.file.read`, planted at `/srv/etcd/private/archive/<archive_id>.record` as
 a root-owned 0600 file outside the keyspace. The archive id derives from
-`round_context_seed` like every other round identity, and the journal carries it
-alongside the key so a retired generation removes both.
+`round_context_seed` like every other round identity, and the published
+`flag_id` is that absolute path, so the objective declaration still names what
+to reach. The journal carries the archive id alongside the key, and retiring a
+generation removes the key, the record and the record's `.next` temporary name;
+a malformed archive field fails closed exactly as a malformed key does.
 
 The fault is untouched. The protected key still rotates into
 `/services/production/<id>/credentials/database-password` through the same
@@ -107,8 +110,32 @@ file-serving operation, so no route through the service reaches the planted
 record; the claim rests on that API surface rather than on attack-graph path
 enumeration.
 
-Known and intentional challenge-model violations: **OBJ-1** (the asset is not
-application-owned and sits outside the guarded surface), **OBJ-2** (the
-objective proves no security capability against the application), and **CH-4**
-(the PoV reaches no objective at the pinned revision, so the canonical `--game`
-gate will show no accepted capture — that outcome is the signal, not a defect).
+Known and intentional challenge-model violations:
+
+- **OBJ-1** — the asset is not application-owned and sits outside the guarded
+  surface.
+- **OBJ-2** — the objective proves no security capability against the
+  application.
+- **FAC-1** — placement no longer acts through the application access layer.
+  The proof is written by infrastructure authority through
+  `exec_in_container`, which also creates the guarded boundary (the 0700
+  directory). An objective outside the application cannot be placed any other
+  way, so this follows directly from OBJ-1.
+- **CH-2**, defense half — the record lives under root-owned
+  `/srv/etcd/private`, so no defender action can affect this objective and
+  "which objectives remain protected" is not measurable for this store.
+- **CH-4** — no PoV ships, so no objective is reachable at the pinned revision.
+
+What the canonical `--game` gate actually does with no `_exploit.py`, which is
+not the same as showing a failed capture: `game_phase.py:756` sets
+`proof_available` false, the capture assertion at `:573` is skipped entirely,
+and `:566` records a NOTE (`UNVERIFIED: challenge declares objectives
+['offline_archive'] but ships no _exploit.py`). The gate can still report PASS.
+The scripted attacker is configured `proof_required=False`, so no capture is
+ever attempted. Solo-defense mode is stronger: `main.py:803-812` aborts with
+`return 2` when `verifier.required` is true, so this branch cannot run under it.
+
+Pre-existing and untouched by this branch: `_load_journal` rejects a journal
+whose three slots are all `None`, while the pending-cleanup path can write
+exactly that if the following journal write is interrupted. The window is one
+exec call wide and this change neither widens nor narrows it.
