@@ -14,6 +14,7 @@ TARGET_KEY_RE = re.compile(
 )
 PRINCIPAL_RE = re.compile(r"config-[a-f0-9]{16}")
 ROLE_RE = re.compile(r"workspace-[a-f0-9]{16}")
+ARCHIVE_RE = re.compile(r"[a-f0-9]{24}")
 
 CHECKER_PRINCIPAL_COUNT = 4
 _FACILITY_TOKEN_ENV = "CYBERARENA_FACILITY_TOKEN"
@@ -28,6 +29,10 @@ def derive(seed: str, label: str) -> bytes:
 def target_key(seed: str) -> str:
     identity = derive(seed, "database-password:target-key").hex()[:24]
     return f"/services/production/{identity}/credentials/database-password"
+
+
+def archive_id(seed: str) -> str:
+    return derive(seed, "offline-archive:record-id").hex()[:24]
 
 
 def principal_credentials(seed: str) -> tuple[str, str]:
@@ -77,3 +82,7 @@ def prefix_end(prefix: str) -> str:
 
 def valid_target_key(value: object) -> bool:
     return isinstance(value, str) and TARGET_KEY_RE.fullmatch(value) is not None
+
+
+def valid_archive(value: object) -> bool:
+    return isinstance(value, str) and ARCHIVE_RE.fullmatch(value) is not None

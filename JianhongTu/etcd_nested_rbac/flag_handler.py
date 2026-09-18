@@ -1,4 +1,4 @@
-"""Application-native principals and protected etcd credential placement."""
+"""Application-native principals and archived-record objective placement."""
 
 from __future__ import annotations
 
@@ -20,17 +20,16 @@ from challenges.interface import (
 from ._client import (
     authenticate,
     b64,
-    decoded_values,
     delete_key,
     document,
     put_key,
-    range_key,
     request,
     target_base,
 )
 from ._codec import (
     PRINCIPAL_RE,
     ROLE_RE,
+    archive_id,
     checker_principals,
     derive,
     prefix_end,
@@ -38,15 +37,17 @@ from ._codec import (
     principal_prefix,
     principal_role,
     target_key,
+    valid_archive,
     valid_target_key,
 )
 
 
-STORE = "database-password"
+STORE = "offline_archive"
 LEGACY_ROLE = "configuration-analyst"
 PRIVATE_DIR = "/srv/etcd/private"
 ROOT_PASSWORD_PATH = f"{PRIVATE_DIR}/root-password"
 JOURNAL_PATH = f"{PRIVATE_DIR}/objective-journal.json"
+ARCHIVE_DIR = f"{PRIVATE_DIR}/archive"
 ISSUED_PATH = f"{PRIVATE_DIR}/objective-issued"
 ISSUED_VALUE = "etcd-objective-v1"
 
@@ -147,6 +148,28 @@ class EtcdFlagHandler(FlagHandler):
     ) -> None:
         self._write_private_json(target, JOURNAL_PATH, journal)
 
+    @staticmethod
+    def _archive_path(record: str) -> str:
+        return f"{ARCHIVE_DIR}/{record}.record"
+
+    def _write_archive(
+        self, target: VulboxTarget, record: str, value: str
+    ) -> None:
+        path = self._archive_path(record)
+        temporary = shlex.quote(path + ".next")
+        quoted = shlex.quote(path)
+        encoded = base64.b64encode(value.encode()).decode()
+        self._exec(
+            target,
+            "set -eu; umask 077; "
+            f"install -d -m 700 {shlex.quote(ARCHIVE_DIR)}; "
+            f"printf %s {shlex.quote(encoded)} | base64 -d > {temporary}; "
+            f"chmod 0600 {temporary}; mv -f {temporary} {quoted}",
+        )
+
+    def _delete_archive(self, target: VulboxTarget, record: str) -> None:
+        self._exec(target, f"rm -f {shlex.quote(self._archive_path(record))}")
+
     def _mark_issued(self, target: VulboxTarget) -> None:
         temporary = shlex.quote(ISSUED_PATH + ".next")
         path = shlex.quote(ISSUED_PATH)
@@ -163,6 +186,13 @@ class EtcdFlagHandler(FlagHandler):
             return None
         key = generation.get("key")
         return key if valid_target_key(key) else None
+
+    @staticmethod
+    def _generation_archive(generation: object) -> str | None:
+        if not isinstance(generation, dict):
+            return None
+        record = generation.get("archive")
+        return record if valid_archive(record) else None
 
     @staticmethod
     def _delete(base: str, token: str, key: str) -> None:
@@ -273,8 +303,13 @@ class EtcdFlagHandler(FlagHandler):
         if not isinstance(seed, str):
             raise ValueError("round_context_seed is required")
         key = target_key(seed)
+        record = archive_id(seed)
         context = derive(seed, "database-password:generation").hex()
         proof = flags[STORE].value
+        # The protected key keeps rotating so the prefix-authorization
+        # boundary the fault crosses stays live and crossable; it carries
+        # round-derived noise instead of the proof.
+        noise = derive(seed, "protected-record:value").hex()[:32]
         journal = self._load_journal(target)
         base, token = self._admin(target)
 
@@ -283,7 +318,9 @@ class EtcdFlagHandler(FlagHandler):
             isinstance(current, dict) and current.get("context") == context
         )
         if same_context and (
-            current.get("proof") != proof or current.get("key") != key
+            current.get("proof") != proof
+            or current.get("key") != key
+            or current.get("archive") != record
         ):
             raise RuntimeError("round context was reused with different proof state")
 
@@ -292,6 +329,9 @@ class EtcdFlagHandler(FlagHandler):
             if previous_key is None:
                 raise RuntimeError("previous objective generation is malformed")
             self._delete(base, token, previous_key)
+            previous_archive = self._generation_archive(journal.get("previous"))
+            if previous_archive is not None:
+                self._delete_archive(target, previous_archive)
             journal["previous"] = None
             self._write_journal(target, journal)
 
@@ -303,29 +343,36 @@ class EtcdFlagHandler(FlagHandler):
             if pending_key is None:
                 raise RuntimeError("pending objective generation is malformed")
             self._delete(base, token, pending_key)
+            pending_archive = self._generation_archive(pending)
+            if pending_archive is not None:
+                self._delete_archive(target, pending_archive)
             journal["pending"] = None
             self._write_journal(target, journal)
 
         if same_context:
-            self._put(base, token, key, proof)
-            observed = self.retrieve(target, key, proof)
+            self._put(base, token, key, noise)
+            self._write_archive(target, record, proof)
+            observed = self.retrieve(target, record, proof)
             if observed.status is not ObservationStatus.PRESENT:
                 raise RuntimeError(
                     f"current target verification failed: {observed.status.value}"
                 )
             self._mark_issued(target)
-            return {STORE: key}
+            return {STORE: record}
 
         pending = journal.get("pending")
         if not isinstance(pending, dict):
-            pending = {"context": context, "key": key, "proof": proof}
+            pending = {
+                "context": context, "key": key, "archive": record, "proof": proof,
+            }
             journal["pending"] = pending
             self._write_journal(target, journal)
-        elif pending.get("key") != key:
+        elif pending.get("key") != key or pending.get("archive") != record:
             raise RuntimeError("pending objective generation is malformed")
 
-        self._put(base, token, key, proof)
-        observed = self.retrieve(target, key, proof)
+        self._put(base, token, key, noise)
+        self._write_archive(target, record, proof)
+        observed = self.retrieve(target, record, proof)
         if observed.status is not ObservationStatus.PRESENT:
             raise RuntimeError(f"staged target verification failed: {observed.status.value}")
 
@@ -337,41 +384,30 @@ class EtcdFlagHandler(FlagHandler):
         }
         self._write_journal(target, journal)
         self._mark_issued(target)
-        return {STORE: key}
+        return {STORE: record}
 
     def retrieve(
         self, target: VulboxTarget, handle: str, expected: str | None = None
     ) -> FlagObservation:
-        if not valid_target_key(handle):
+        if not valid_archive(handle):
             return FlagObservation(ObservationStatus.ERROR, detail="invalid handle")
         try:
-            base, token = self._admin(target)
-            status, raw = range_key(base, token, handle)
-            if status in (401, 403):
-                return FlagObservation(
-                    ObservationStatus.AUTH_REJECTED,
-                    detail="root application credential rejected",
-                )
-            if status != 200:
-                return FlagObservation(
-                    ObservationStatus.ERROR, detail=f"protected read HTTP {status}"
-                )
-            values = decoded_values(raw)
-            if not values:
+            state = self._read_file_state(target, self._archive_path(handle))
+            if state == "missing":
                 return FlagObservation(ObservationStatus.NOT_FOUND)
-            if len(values) != 1:
+            if not state.startswith("file\n"):
                 return FlagObservation(
-                    ObservationStatus.ERROR, detail="protected read returned multiple values"
+                    ObservationStatus.ERROR, detail="archived record is malformed"
                 )
-            actual = values[0]
+            actual = state.removeprefix("file\n")
             if expected is not None and actual != expected:
                 return FlagObservation(ObservationStatus.MISMATCH, value=actual)
             return FlagObservation(ObservationStatus.PRESENT, value=actual)
         except Exception as error:  # noqa: BLE001 — retrieve must fail closed
             return FlagObservation(
                 ObservationStatus.ERROR,
-                detail=f"protected read failed: {type(error).__name__}",
+                detail=f"archived read failed: {type(error).__name__}",
             )
 
     def flag_id(self, handle: str) -> str | None:
-        return handle if valid_target_key(handle) else None
+        return handle if valid_archive(handle) else None
