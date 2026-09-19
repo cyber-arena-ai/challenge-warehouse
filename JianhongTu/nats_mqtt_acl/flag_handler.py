@@ -146,7 +146,8 @@ class NatsFlagHandler(FlagHandler):
             f"set -eu; umask 077; mkdir -p {directory}; chmod 700 {directory}; "
             f"printf '%s' {shlex.quote(value)} > {quoted}.new; "
             f"chmod 600 {quoted}.new; mv -f {quoted}.new {quoted}; "
-            f"find {directory} -mindepth 1 ! -name {shlex.quote(context['archive_id'] + '.record')}"
+            f"find {directory} -mindepth 1 -type f"
+            f" ! -name {shlex.quote(context['archive_id'] + '.record')}"
             " -exec rm -f {} +",
         )
         if rc != 0:
