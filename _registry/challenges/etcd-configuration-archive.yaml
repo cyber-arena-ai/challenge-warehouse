@@ -33,7 +33,7 @@ service:
     service: 2379
   stack: Go · etcd v3 HTTP/JSON gateway
 provenance:
-  image: cyberarena/chal-etcd-configuration-store:v1
+  image: cyberarena/chal-etcd-configuration-archive:v1
   source_intro: etcd commit 6501a01f055926cc5c6d0668b4f0f99a400aa3f4;
     recursive authorization repair 012f444594b3bce3d72961dba9b459eb5684390a.
 cover:

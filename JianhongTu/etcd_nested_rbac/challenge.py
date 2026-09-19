@@ -58,7 +58,7 @@ class EtcdConfigurationStoreChallenge(Challenge):
     @cached_property
     def vulbox(self) -> VulboxImage:
         return VulboxImage(
-            reference="cyberarena/chal-etcd-configuration-store:v1",
+            reference="cyberarena/chal-etcd-configuration-archive:v1",
             exposed_ports={"service": 2379},
             build_context=str(_BUILD_CONTEXT),
         )
