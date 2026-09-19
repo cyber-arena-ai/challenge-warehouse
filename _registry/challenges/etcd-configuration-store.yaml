@@ -2,6 +2,7 @@ slug: etcd-configuration-store
 title: etcd Configuration Store
 contributor: JianhongTu
 updated: '2026-09-11'
+reviewer: hongwei
 tags:
 - real-world
 - web

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-16",
+  "generated": "2026-09-18",
   "count": 44,
   "challenges": [
     {
@@ -199,6 +199,7 @@
       "title": "Caddy Nextcloud SSO Boundary",
       "contributor": "JianhongTu",
       "updated": "2026-08-21",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "web",
@@ -299,6 +300,7 @@
       "title": "changedetection.io Page Monitor",
       "contributor": "JianhongTu",
       "updated": "2026-09-11",
+      "reviewer": "1chig0",
       "tags": [
         "real-world",
         "web",
@@ -545,6 +547,7 @@
       "title": "etcd Configuration Store",
       "contributor": "JianhongTu",
       "updated": "2026-09-11",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "web",
@@ -929,6 +932,7 @@
       "title": "GeoServer XPath",
       "contributor": "JianhongTu",
       "updated": "2026-08-21",
+      "reviewer": "1chig0",
       "tags": [
         "real-world",
         "web",
@@ -976,6 +980,7 @@
       "title": "Gogs Code Collaboration",
       "contributor": "JianhongTu",
       "updated": "2026-09-11",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "web",
@@ -1165,6 +1170,7 @@
       "title": "Listmonk Subscriber Query",
       "contributor": "JianhongTu",
       "updated": "2026-09-10",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "web",
@@ -1354,6 +1360,7 @@
       "title": "NATS MQTT Authorization Boundary",
       "contributor": "JianhongTu",
       "updated": "2026-09-11",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "net",
@@ -1504,6 +1511,7 @@
       "title": "Nginx UI Management",
       "contributor": "StellarLuminosity",
       "updated": "2026-09-11",
+      "random_pool": false,
       "tags": [
         "real-world",
         "web",
@@ -1883,6 +1891,7 @@
       "title": "SuiteCRM Security Groups",
       "contributor": "JianhongTu",
       "updated": "2026-08-21",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "web",
@@ -1934,6 +1943,7 @@
       "title": "Vikunja Private Task Boundary",
       "contributor": "JianhongTu",
       "updated": "2026-09-12",
+      "reviewer": "LEAFERx",
       "tags": [
         "real-world",
         "web",
