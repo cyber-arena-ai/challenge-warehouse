@@ -43,7 +43,7 @@ _DOCS = ChallengeDocs(
 
 
 class EtcdConfigurationStoreChallenge(Challenge):
-    name = "etcd-configuration-store"
+    name = "etcd-configuration-archive"
     health_interval_secs = 30.0
 
     def flag_store_specs(self) -> list[FlagStoreSpec]:
