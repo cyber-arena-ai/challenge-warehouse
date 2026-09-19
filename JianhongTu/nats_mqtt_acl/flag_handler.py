@@ -151,11 +151,17 @@ class NatsFlagHandler(FlagHandler):
         )
         if rc != 0:
             raise RuntimeError("archived objective placement failed")
-        return pack_handle({
+        handle = pack_handle({
             "store": "offline_archive",
             "archive_id": context["archive_id"],
             "flag": value,
         })
+        observed = self.retrieve(target, handle, value)
+        if observed.status is not ObservationStatus.PRESENT:
+            raise RuntimeError(
+                f"staged target verification failed: {observed.status.value}"
+            )
+        return handle
 
     def retrieve(
         self,
