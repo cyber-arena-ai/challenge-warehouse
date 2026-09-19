@@ -54,6 +54,8 @@ show_in_gallery: false         # ✍ editorial gate — omit (= true) unless the
                                #   withheld from the public Games view (e.g. no usable license)
 random_pool: false             # ✍ editorial gate — omit (= true) unless the challenge must never be
                                #   commissioned by a campaign (e.g. a framework smoke test)
+reviewer: JianhongTu           # ✍ hand-set — GitHub handle of who reviewed the package (a list for
+                               #   several); omit when unreviewed. Rendered on the card beside the author.
 
 tags:                          # ✎ flat, multi-valued, drawn from the Tag Pool below.
   - web                        #   3–6 tags per challenge, spanning facets (origin / surface / vuln / tech / mechanic).
@@ -134,6 +136,12 @@ Two independent booleans, **both omitted by default** — an absent gate means
 |---|---|
 | `show_in_gallery` | not listed on the public Games view — no card, not in the counts or facets, and its `#slug` deep-link opens nothing. `games.js` filters the index on load. |
 | `random_pool` | never commissioned by a campaign. Campaign configs name their challenges explicitly, so nothing enforces this in code — it is the registry's answer to "may this be played?", for whoever writes that list. |
+
+`reviewer` is the third hand-set field: the GitHub handle (or a list of handles)
+of whoever reviewed the package. Same rules — no generator writes it, `--force`
+carries it through, absent means unreviewed. The Games view shows it in the card
+footer and the detail sheet, with the avatar at `avatar/<handle>.png` when one
+exists.
 
 **Withheld from the gallery implies out of the pool** — a challenge we cannot
 show is one we cannot play. Set BOTH on such a challenge rather than leaving the

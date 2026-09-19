@@ -102,6 +102,11 @@ def check(path: Path) -> list[str]:
         errs.append(f"origin.type {d.get('origin', {}).get('type')!r}")
     if d.get("service", {}).get("protocol") not in {"web", "tcp"}:
         errs.append(f"service.protocol {d.get('service', {}).get('protocol')!r}")
+    rev = d.get("reviewer")
+    if rev is not None:
+        handles = rev if isinstance(rev, list) else [rev]
+        if not handles or not all(isinstance(h, str) and h.strip() for h in handles):
+            errs.append(f"reviewer must be a GitHub handle or a list of them: {rev!r}")
 
     # ---- reconcile against source ----
     pkg = find_pkg(d.get("slug", ""))
