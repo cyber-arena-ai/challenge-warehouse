@@ -1350,7 +1350,7 @@
       }
     },
     {
-      "slug": "nats-mqtt-acl",
+      "slug": "nats-mqtt-archive",
       "title": "NATS MQTT Authorization Boundary",
       "contributor": "JianhongTu",
       "updated": "2026-09-11",
@@ -1391,7 +1391,7 @@
         "source_intro": "NATS Server is an editable Go message broker with MQTT, retained QoS1 messages, JetStream persistence, and subject-level authorization. One ordinary device account may read its own telemetry and allowed victim telemetry but is denied concrete guarded victim subjects. The rotating flag is a retained victim message. Defenders edit the complete pinned source and rebuild offline.\n"
       },
       "cover": {
-        "image": "covers/nats-mqtt-acl.webp",
+        "image": "covers/nats-mqtt-archive.webp",
         "accent": "#d55073",
         "prompt_id": "geo-v2",
         "motif": "A central message-routing hub sits as a hard-edged rectangular core with a thick barrier stroke sealing one guarded subject-cell from an outer device account; a direct dashed path from that account strikes the barrier and stops dead against it. From the same account a broader wildcard subscription draws as a wide fan of concentric arcs sweeping across many cells of a square subject-grid, and where that fan overlaps the retained-message cell a single opaque plane slides out from behind the barrier along the internal routing seam, delivering that protected cell's block to the account by a curving side path that the front barrier never touched. A small segmented band marks the retained-store lane feeding the fan, so the denied cell reappears translucent under the wildcard arc while the frontal deny-stroke stays visibly intact."

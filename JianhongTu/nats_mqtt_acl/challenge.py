@@ -41,7 +41,7 @@ _DOCS = ChallengeDocs(
 
 
 class NatsMqttAclChallenge(Challenge):
-    name = "nats-mqtt-acl"
+    name = "nats-mqtt-archive"
     health_interval_secs = 30.0
 
     def flag_store_specs(self) -> list[FlagStoreSpec]:
