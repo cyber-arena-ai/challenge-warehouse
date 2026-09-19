@@ -139,9 +139,9 @@ Two independent booleans, **both omitted by default** — an absent gate means
 
 `reviewer` is the third hand-set field: the GitHub handle (or a list of handles)
 of whoever reviewed the package. Same rules — no generator writes it, `--force`
-carries it through, absent means unreviewed. The Games view shows it in the card
-footer and the detail sheet, with the avatar at `avatar/<handle>.png` when one
-exists.
+carries it through, absent means unreviewed. The Games view shows it as a dashed-ring
+avatar beside the author's on the card, and as avatar + handle in the detail
+sheet; the avatar is `avatar/<handle>.png`, else the handle's initial.
 
 **Withheld from the gallery implies out of the pool** — a challenge we cannot
 show is one we cannot play. Set BOTH on such a challenge rather than leaving the
