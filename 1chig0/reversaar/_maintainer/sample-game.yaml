@@ -27,7 +27,7 @@ nodes:
     install_list: []
     extra_hosts: {host.docker.internal: host-gateway}
   - id: rv_team1_prod
-    image: cyberarena/chal-reversaar:v1
+    image: cyberarena/chal-reversaar:v2
     networks: [rv_team1_net, rv_game_net, rv_attack_net_team2]
     ports: ["127.0.0.1:8731:7331"]
     install_list: []
@@ -37,7 +37,7 @@ nodes:
     install_list: []
     extra_hosts: {host.docker.internal: host-gateway}
   - id: rv_team2_prod
-    image: cyberarena/chal-reversaar:v1
+    image: cyberarena/chal-reversaar:v2
     networks: [rv_team2_net, rv_game_net, rv_attack_net_team1]
     ports: ["127.0.0.1:8732:7331"]
     install_list: []

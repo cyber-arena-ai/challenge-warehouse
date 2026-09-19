@@ -1868,7 +1868,7 @@
         "stack": "C · HTTP service"
       },
       "provenance": {
-        "image": "cyberarena/chal-reversaar:v1",
+        "image": "cyberarena/chal-reversaar:v2",
         "source_intro": "saarCTF 2024 reversaar — an obfuscated C 'reversing service' on HTTP 7331. Users register/login (POST /api/login, JSON), get a per-user Session cookie, and work with text/array/audio blobs (POST /api/<type>/new, GET /api/<type>/<idx>). The flag is stored in the account of a fixed public user, `vault`. This is a reversing challenge: the auth mechanism must be reverse-engineered to find a way to authenticate as `vault` and read its data; the flaw is not documented. Defense: reverse/audit the auth path (especially the array plugin), remove whatever lets an attacker impersonate another user, and restart_service — legit use must keep working."
       },
       "cover": {
