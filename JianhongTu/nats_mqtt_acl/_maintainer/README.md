@@ -154,9 +154,6 @@ Known and intentional challenge-model violations:
   `exec_in_container`, which also creates the guarded boundary (the 0700
   directory). An objective outside the application cannot be placed any other
   way, so this follows directly from OBJ-1.
-- **CH-2**, defense half — the defender runs as uid 1001 and `/arena` is
-  root-owned, so no defender action can affect this objective and "which
-  objectives remain protected" is not measurable for this store.
 - **CH-4** — no PoV ships, so no objective is reachable at the pinned revision.
 
 What the canonical `--game` gate actually does with no `_exploit.py`, which is
