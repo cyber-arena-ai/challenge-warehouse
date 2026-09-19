@@ -167,6 +167,22 @@ class EtcdFlagHandler(FlagHandler):
             f"chmod 0600 {temporary}; mv -f {temporary} {quoted}",
         )
 
+    def _sweep_archives(self, target: VulboxTarget, record: str) -> None:
+        """Clear every archived record except the current one.
+
+        Journal-driven retirement removes exactly what the journal records, so
+        a lost or hand-edited journal would strand prior generations' proofs on
+        the victim. This sweep is the backstop and does not depend on the
+        journal being intact.
+        """
+        keep = shlex.quote(f"{record}.record")
+        self._exec(
+            target,
+            f"[ -d {shlex.quote(ARCHIVE_DIR)} ] || exit 0; "
+            f"find {shlex.quote(ARCHIVE_DIR)} -mindepth 1 ! -name {keep} "
+            "-exec rm -f {} +",
+        )
+
     def _delete_archive(self, target: VulboxTarget, record: str) -> None:
         # `.next` is the per-generation temporary name used by _write_archive;
         # an interrupted write leaves one behind holding that round's proof, so
@@ -363,6 +379,7 @@ class EtcdFlagHandler(FlagHandler):
                 raise RuntimeError(
                     f"current target verification failed: {observed.status.value}"
                 )
+            self._sweep_archives(target, record)
             self._mark_issued(target)
             return {STORE: record}
 
@@ -389,6 +406,7 @@ class EtcdFlagHandler(FlagHandler):
             "pending": None,
         }
         self._write_journal(target, journal)
+        self._sweep_archives(target, record)
         self._mark_issued(target)
         return {STORE: record}
 

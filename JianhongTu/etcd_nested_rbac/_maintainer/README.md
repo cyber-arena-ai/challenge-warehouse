@@ -92,7 +92,10 @@ a root-owned 0600 file outside the keyspace. The archive id derives from
 `flag_id` is that absolute path, so the objective declaration still names what
 to reach. The journal carries the archive id alongside the key, and retiring a
 generation removes the key, the record and the record's `.next` temporary name;
-a malformed archive field fails closed exactly as a malformed key does.
+a malformed archive field fails closed exactly as a malformed key does. A
+successful plant then sweeps the archive directory for anything that is not the
+current record, so a lost or hand-edited journal cannot strand a prior
+generation's proof on the victim.
 
 The fault is untouched. The protected key still rotates into
 `/services/production/<id>/credentials/database-password` through the same
