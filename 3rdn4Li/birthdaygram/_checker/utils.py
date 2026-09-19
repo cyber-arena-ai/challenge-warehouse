@@ -69,6 +69,8 @@ def check_login(self, session, username, password):
     raise ValueError(f"- Status Code: {resp.status_code}\n- Username: {username}\n- Password: {password}\n- User Url: http//{self.ip}:3000/view/{username}\n- Resp Text: {resp.text}")
 
 def create_image_with_flag(flag):
+  if isinstance(flag, (bytes, bytearray)):   # lsb.hide wants text (see flag_handler)
+    flag = bytes(flag).decode("utf-8")
   img_path = create_rand_png()
   flag = lsb.hide(CUR_DIR + f"/images/{img_path}.png", flag)
   flag.save(CUR_DIR + f"/flags/{img_path}.png")
