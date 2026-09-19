@@ -47,7 +47,11 @@ LEGACY_ROLE = "configuration-analyst"
 PRIVATE_DIR = "/srv/etcd/private"
 ROOT_PASSWORD_PATH = f"{PRIVATE_DIR}/root-password"
 JOURNAL_PATH = f"{PRIVATE_DIR}/objective-journal.json"
-ARCHIVE_DIR = f"{PRIVATE_DIR}/archive"
+# The proof sits in the framework facility directory rather than the
+# challenge's private one. Both are equally out of reach of the fault, which
+# yields a keyspace read and never a file read; the facility path is chosen so
+# the published locator points an attacker at the infrastructure.
+ARCHIVE_DIR = "/arena/archive"
 ISSUED_PATH = f"{PRIVATE_DIR}/objective-issued"
 ISSUED_VALUE = "etcd-objective-v1"
 
