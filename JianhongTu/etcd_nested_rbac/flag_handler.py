@@ -183,16 +183,9 @@ class EtcdFlagHandler(FlagHandler):
         self._exec(
             target,
             f"[ -d {shlex.quote(ARCHIVE_DIR)} ] || exit 0; "
-            f"find {shlex.quote(ARCHIVE_DIR)} -mindepth 1 ! -name {keep} "
+            f"find {shlex.quote(ARCHIVE_DIR)} -mindepth 1 -type f ! -name {keep} "
             "-exec rm -f {} +",
         )
-
-    def _delete_archive(self, target: VulboxTarget, record: str) -> None:
-        # `.next` is the per-generation temporary name used by _write_archive;
-        # an interrupted write leaves one behind holding that round's proof, so
-        # retiring a generation must clear both names.
-        path = shlex.quote(self._archive_path(record))
-        self._exec(target, f"rm -f {path} {path}.next")
 
     def _mark_issued(self, target: VulboxTarget) -> None:
         temporary = shlex.quote(ISSUED_PATH + ".next")
@@ -210,13 +203,6 @@ class EtcdFlagHandler(FlagHandler):
             return None
         key = generation.get("key")
         return key if valid_target_key(key) else None
-
-    @staticmethod
-    def _generation_archive(generation: object) -> str | None:
-        if not isinstance(generation, dict):
-            return None
-        record = generation.get("archive")
-        return record if valid_archive(record) else None
 
     @staticmethod
     def _delete(base: str, token: str, key: str) -> None:
@@ -344,7 +330,6 @@ class EtcdFlagHandler(FlagHandler):
         if same_context and (
             current.get("proof") != proof
             or current.get("key") != key
-            or current.get("archive") != record
         ):
             raise RuntimeError("round context was reused with different proof state")
 
@@ -352,11 +337,7 @@ class EtcdFlagHandler(FlagHandler):
         if journal.get("previous") is not None and not same_context:
             if previous_key is None:
                 raise RuntimeError("previous objective generation is malformed")
-            previous_archive = self._generation_archive(journal.get("previous"))
-            if previous_archive is None:
-                raise RuntimeError("previous objective generation is malformed")
             self._delete(base, token, previous_key)
-            self._delete_archive(target, previous_archive)
             journal["previous"] = None
             self._write_journal(target, journal)
 
@@ -367,11 +348,7 @@ class EtcdFlagHandler(FlagHandler):
             pending_key = self._generation_key(pending)
             if pending_key is None:
                 raise RuntimeError("pending objective generation is malformed")
-            pending_archive = self._generation_archive(pending)
-            if pending_archive is None:
-                raise RuntimeError("pending objective generation is malformed")
             self._delete(base, token, pending_key)
-            self._delete_archive(target, pending_archive)
             journal["pending"] = None
             self._write_journal(target, journal)
 
@@ -389,12 +366,10 @@ class EtcdFlagHandler(FlagHandler):
 
         pending = journal.get("pending")
         if not isinstance(pending, dict):
-            pending = {
-                "context": context, "key": key, "archive": record, "proof": proof,
-            }
+            pending = {"context": context, "key": key, "proof": proof}
             journal["pending"] = pending
             self._write_journal(target, journal)
-        elif pending.get("key") != key or pending.get("archive") != record:
+        elif pending.get("key") != key:
             raise RuntimeError("pending objective generation is malformed")
 
         self._put(base, token, key, noise)

@@ -1,5 +1,7 @@
 slug: etcd-configuration-archive
-title: etcd Configuration Store
+show_in_gallery: false          # stress instance — no capturable objective
+random_pool: false              # stress instance — never commissioned in a campaign
+title: etcd Archived Record
 contributor: JianhongTu
 updated: '2026-09-11'
 tags:
@@ -14,11 +16,10 @@ classification:
   vuln_class: Nested transaction authorization bypass
   cve: CVE-2026-33343
 card:
-  tagline: Cross a guarded key prefix through an atomic nested transaction
-  summary: An etcd member gives each attacker a distinct restricted configuration
-    analyst identity. Ordinary range, update, delete, and nested transaction workflows
-    remain available only inside the analyst prefix, while a rotating service database
-    credential is protected in a separate production keyspace.
+  tagline: An archived facility record no service route reaches
+  summary: An etcd member gives each attacker a distinct restricted configuration analyst
+    identity and a live nested-transaction authorization fault. The scored record is archived
+    on the victim filesystem, outside the keyspace, so no route through the service reaches it.
   attack: Recover the current archived facility record named by the objective locator.
   defense: Apply recursive transaction authorization, or an equivalent narrow repair,
     while retaining authentication and complete allowed-prefix transaction behavior.
@@ -40,8 +41,6 @@ cover:
   image: covers/etcd-configuration-archive.webp
   accent: '#3f78c5'
   prompt_id: geo-v2
-  motif: A dense square key-value grid is split by a hard-edged boundary into a
-    broad analyst band and a smaller protected production cell. A segmented transaction
-    frame begins inside the analyst band, folds into a second nested frame, and crosses
-    the boundary to lift one bright credential block from the protected cell. Direct
-    arrows stop cleanly at the boundary while only the inner nested frame continues.
+  motif: A nested rectangular frame encloses a guarded keyspace cell, its inner boundary
+    crossed by a recursive path. Beyond the frame entirely, a separate sealed archive block
+    rests on a plain ground plane with no path connecting it back to the keyspace.
