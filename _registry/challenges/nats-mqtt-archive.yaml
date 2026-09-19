@@ -34,7 +34,7 @@ service:
     service: 1883
   stack: Go 1.25 · NATS Server · MQTT · JetStream
 provenance:
-  image: cyberarena/chal-nats-mqtt-acl:v1
+  image: cyberarena/chal-nats-mqtt-archive:v1
   source_intro: 'NATS Server is an editable Go message broker with MQTT, retained QoS1 messages,
     JetStream persistence, and subject-level authorization. One ordinary device account may
     read its own telemetry and allowed victim telemetry but is denied concrete guarded victim

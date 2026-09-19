@@ -65,7 +65,7 @@ class NatsMqttAclChallenge(Challenge):
     @cached_property
     def vulbox(self) -> VulboxImage:
         return VulboxImage(
-            reference="cyberarena/chal-nats-mqtt-acl:v1",
+            reference="cyberarena/chal-nats-mqtt-archive:v1",
             exposed_ports={"service": 1883},
             build_context=str(_BUILD_CONTEXT),
         )
