@@ -1455,6 +1455,56 @@
       }
     },
     {
+      "slug": "nats-mqtt-archive",
+      "show_in_gallery": false,
+      "random_pool": false,
+      "title": "NATS MQTT Archived Record",
+      "contributor": "JianhongTu",
+      "updated": "2026-09-11",
+      "tags": [
+        "real-world",
+        "net",
+        "go",
+        "logic-bug",
+        "recompile",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "hard",
+        "vuln_class": "MQTT Authorization Enforcement",
+        "cve": "CVE-2026-58209"
+      },
+      "card": {
+        "tagline": "An archived facility record no service route reaches",
+        "summary": "A pinned NATS Server revision gives each attacker an ordinary MQTT device account and a live subject-authorization fault. The scored record is archived on the victim filesystem, outside every path the broker serves, so no route through the service reaches it.",
+        "attack": "Recover the current archived facility record named by the objective locator.",
+        "defense": "Enforce concrete subject denies during retained/QoS delivery while preserving own telemetry, public victim subscriptions, MQTT, and JetStream."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "NATS Server commit 73b3dd9a5ea0fa7bf08b702338676355b29b5fb4",
+        "reference": "CVE-2026-58209",
+        "url": "https://github.com/nats-io/nats-server/commit/73b3dd9a5ea0fa7bf08b702338676355b29b5fb4"
+      },
+      "service": {
+        "protocol": "tcp",
+        "ports": {
+          "service": 1883
+        },
+        "stack": "Go 1.25 · NATS Server · MQTT · JetStream"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-nats-mqtt-archive:v1",
+        "source_intro": "NATS Server is an editable Go message broker with MQTT, retained QoS1 messages, JetStream persistence, and subject-level authorization. The rotating flag is an archived facility record held on the victim filesystem, outside every path the broker serves. Defenders edit the complete pinned source and rebuild offline."
+      },
+      "cover": {
+        "image": "covers/nats-mqtt-archive.webp",
+        "accent": "#d55073",
+        "prompt_id": "geo-v2",
+        "motif": "A central message-routing hub sits as a hard-edged rectangular core with a thick barrier stroke sealing one guarded subject-cell from an outer device account. Beyond the hub entirely, a separate sealed archive block rests on a plain ground plane with no seam, lane or path of any kind connecting it back to the routing grid."
+      }
+    },
+    {
       "slug": "nautilus-ico",
       "title": "Nautilus Ico Pascal Service",
       "contributor": "YueyangPan",
