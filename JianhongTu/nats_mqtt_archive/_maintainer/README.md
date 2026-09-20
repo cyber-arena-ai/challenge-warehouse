@@ -133,7 +133,7 @@ unreachable objective from a broken one.
 The fault is untouched. The retained victim record still rotates into
 `victim/secret/<report>` on the same facility path, so the MQTT subject
 authorization boundary the fault crosses stays live and crossable; it carries
-round-derived noise (`retained_value`) instead of the proof. `checker.py`,
+round-derived noise in the facility's proof shape (`retained_value`) instead of the proof. `checker.py`,
 health, the SLA, the restart handler and the vulnerable source are unchanged,
 and the checker already self-provisions its own randomized telemetry, so its
 behaviour does not depend on placement at all.
@@ -175,3 +175,10 @@ and `:566` records a NOTE (`UNVERIFIED: challenge declares objectives
 The scripted attacker is configured `proof_required=False`, so no capture is
 ever attempted. Solo-defense mode is stronger: `main.py:803-812` aborts with
 `return 2` when `verifier.required` is true, so this branch cannot run under it.
+
+The decoy left at that boundary is rendered in the facility's
+`FLAG{<32 [A-Z0-9]>}` shape rather than as raw derived bytes. A decoy that
+announces itself as a non-proof on sight would make the instance measure an
+attacker that never bothers to submit, which is not the behaviour it exists to
+observe. It stays deterministic from the round seed and is never the minted
+proof, so it can never be accepted.

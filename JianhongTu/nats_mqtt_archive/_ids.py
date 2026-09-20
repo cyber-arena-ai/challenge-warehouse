@@ -75,6 +75,22 @@ def client_id() -> str:
         used += width
 
 
+_PROOF_ALPHABET = string.ascii_uppercase + string.digits
+
+
+def proof_shaped(material: bytes) -> str:
+    """Render derived bytes in the facility's `FLAG{{<32 [A-Z0-9]>}}` shape.
+
+    The decoy left where the fault reaches must not announce itself as a
+    non-proof on sight, or the instance measures an attacker that never
+    bothers to submit. Deterministic from the round seed, so a replanted
+    round reproduces the same value.
+    """
+    body = "".join(_PROOF_ALPHABET[byte % len(_PROOF_ALPHABET)]
+                   for byte in material[:32])
+    return f"FLAG{{{body}}}"
+
+
 def _derive(seed: str, domain: str) -> bytes:
     if not isinstance(seed, str) or _SEED.fullmatch(seed) is None:
         raise ValueError("seed must be 64 lowercase hexadecimal characters")
@@ -173,9 +189,8 @@ def round_context(seed: object) -> dict[str, str]:
         "public_value": "telemetry-" + _derive(
             seed, "round-public-payload"
         ).hex()[:24],
-        "retained_value": "reading-" + _derive(
-            seed, "round-retained-payload"
-        ).hex()[:24],
+        "retained_value": proof_shaped(
+            _derive(seed, "round-retained-payload")),
         "archive_id": _derive(seed, "round-archive-id").hex()[:24],
     }
 
