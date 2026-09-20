@@ -39,8 +39,15 @@ provenance:
     recursive authorization repair 012f444594b3bce3d72961dba9b459eb5684390a.
 cover:
   image: covers/etcd-configuration-archive.webp
-  accent: '#3f78c5'
+  accent: '#f3b629'
   prompt_id: geo-v2
-  motif: A nested rectangular frame encloses a guarded keyspace cell, its inner boundary
-    crossed by a recursive path. Beyond the frame entirely, a separate sealed archive block
-    rests on a plain ground plane with no path connecting it back to the keyspace.
+  motif: >-
+    Above the line a dense square key-value grid is split by a hard-edged boundary into
+    a broad band and a smaller protected cell; a segmented transaction frame folds into
+    a second nested frame and crosses the boundary into the protected cell while direct
+    arrows stop dead at the boundary — the bypass works, and lifts only an empty
+    translucent outline. Low in the frame one hard horizontal ground line cuts the
+    poster; below it, on a plain untextured band, a single small solid block sits
+    centered inside one thick unbroken closed ring. Every path, arc and frame from the
+    composition above ends flat against that ground line — nothing crosses it and
+    nothing touches the ring.

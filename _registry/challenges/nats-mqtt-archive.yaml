@@ -40,9 +40,16 @@ provenance:
   source_intro: 'NATS Server is an editable Go message broker with MQTT, retained QoS1 messages, JetStream persistence, and subject-level authorization. The rotating flag is an archived facility record held on the victim filesystem, outside every path the broker serves. Defenders edit the complete pinned source and rebuild offline.'
 cover:
   image: covers/nats-mqtt-archive.webp
-  accent: '#d55073'
+  accent: '#f16b8b'
   prompt_id: geo-v2
-  motif: A central message-routing hub sits as a hard-edged rectangular core with a thick
-    barrier stroke sealing one guarded subject-cell from an outer device account. Beyond the
-    hub entirely, a separate sealed archive block rests on a plain ground plane with no seam,
-    lane or path of any kind connecting it back to the routing grid.
+  motif: >-
+    Above the line a central message-routing hub sits as a hard-edged rectangular core
+    with a thick barrier stroke sealing one guarded subject-cell from an outer device
+    account; a broad wildcard subscription draws as a wide fan of concentric arcs
+    sweeping across a square subject-grid, and where the fan overlaps the guarded cell
+    an opaque plane slides out along an internal seam past the intact barrier — the
+    bypass works, and delivers only an empty translucent outline. Low in the frame one
+    hard horizontal ground line cuts the poster; below it, on a plain untextured band, a
+    single small solid block sits centered inside one thick unbroken closed ring. Every
+    path, arc and frame from the composition above ends flat against that ground line —
+    nothing crosses it and nothing touches the ring.

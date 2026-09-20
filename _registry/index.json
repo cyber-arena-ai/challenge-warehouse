@@ -537,9 +537,9 @@
       },
       "cover": {
         "image": "covers/empty-sandbox.webp",
-        "accent": "#e4715c",
+        "accent": "#ee5438",
         "prompt_id": "geo-v2",
-        "motif": "A hard-edged isometric box sits sealed at the center, its single small semicircular port emitting only three plain stacked rectangles — a closed, self-contained service with no path leading inward to the small solid block resting deep within its interior. Around this sealed container run several concentric nested frames representing the surrounding platform boundaries: harness, mounts, tokens, transcripts. The tension is that no dashed path pierces the box itself, yet a single thin dashed line slips through a hairline seam between two of the outer frames, carrying a faint duplicate of that interior block outward past the last boundary — leakage through the platform, never through the service."
+        "motif": "Above the line a hard-edged isometric box sits sealed at the center, its single small semicircular port emitting only three plain stacked rectangles, and around the box run several concentric nested frames with no seam, gap or dashed path anywhere in them. Low in the frame one hard horizontal ground line cuts the poster; below it, on a plain untextured band, a single small solid block sits centered inside one thick unbroken closed ring. Every path, arc and frame from the composition above ends flat against that ground line — nothing crosses it and nothing touches the ring."
       }
     },
     {
@@ -587,9 +587,9 @@
       },
       "cover": {
         "image": "covers/etcd-configuration-archive.webp",
-        "accent": "#3f78c5",
+        "accent": "#f3b629",
         "prompt_id": "geo-v2",
-        "motif": "A nested rectangular frame encloses a guarded keyspace cell, its inner boundary crossed by a recursive path. Beyond the frame entirely, a separate sealed archive block rests on a plain ground plane with no path connecting it back to the keyspace."
+        "motif": "Above the line a dense square key-value grid is split by a hard-edged boundary into a broad band and a smaller protected cell; a segmented transaction frame folds into a second nested frame and crosses the boundary into the protected cell while direct arrows stop dead at the boundary — the bypass works, and lifts only an empty translucent outline. Low in the frame one hard horizontal ground line cuts the poster; below it, on a plain untextured band, a single small solid block sits centered inside one thick unbroken closed ring. Every path, arc and frame from the composition above ends flat against that ground line — nothing crosses it and nothing touches the ring."
       }
     },
     {
@@ -1499,9 +1499,9 @@
       },
       "cover": {
         "image": "covers/nats-mqtt-archive.webp",
-        "accent": "#d55073",
+        "accent": "#f16b8b",
         "prompt_id": "geo-v2",
-        "motif": "A central message-routing hub sits as a hard-edged rectangular core with a thick barrier stroke sealing one guarded subject-cell from an outer device account. Beyond the hub entirely, a separate sealed archive block rests on a plain ground plane with no seam, lane or path of any kind connecting it back to the routing grid."
+        "motif": "Above the line a central message-routing hub sits as a hard-edged rectangular core with a thick barrier stroke sealing one guarded subject-cell from an outer device account; a broad wildcard subscription draws as a wide fan of concentric arcs sweeping across a square subject-grid, and where the fan overlaps the guarded cell an opaque plane slides out along an internal seam past the intact barrier — the bypass works, and delivers only an empty translucent outline. Low in the frame one hard horizontal ground line cuts the poster; below it, on a plain untextured band, a single small solid block sits centered inside one thick unbroken closed ring. Every path, arc and frame from the composition above ends flat against that ground line — nothing crosses it and nothing touches the ring."
       }
     },
     {

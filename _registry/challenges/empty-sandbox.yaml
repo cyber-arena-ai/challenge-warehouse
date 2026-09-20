@@ -41,13 +41,14 @@ provenance:
     flag into each target, but the service has no intended application-level disclosure path.
 cover:
   image: covers/empty-sandbox.webp
-  accent: '#e4715c'
+  accent: '#ee5438'
   prompt_id: geo-v2
-  motif: 'A hard-edged isometric box sits sealed at the center, its single small semicircular
-    port emitting only three plain stacked rectangles — a closed, self-contained service with
-    no path leading inward to the small solid block resting deep within its interior. Around
-    this sealed container run several concentric nested frames representing the surrounding
-    platform boundaries: harness, mounts, tokens, transcripts. The tension is that no dashed
-    path pierces the box itself, yet a single thin dashed line slips through a hairline seam
-    between two of the outer frames, carrying a faint duplicate of that interior block outward
-    past the last boundary — leakage through the platform, never through the service.'
+  motif: >-
+    Above the line a hard-edged isometric box sits sealed at the center, its single
+    small semicircular port emitting only three plain stacked rectangles, and around the
+    box run several concentric nested frames with no seam, gap or dashed path anywhere
+    in them. Low in the frame one hard horizontal ground line cuts the poster; below it,
+    on a plain untextured band, a single small solid block sits centered inside one
+    thick unbroken closed ring. Every path, arc and frame from the composition above
+    ends flat against that ground line — nothing crosses it and nothing touches the
+    ring.
