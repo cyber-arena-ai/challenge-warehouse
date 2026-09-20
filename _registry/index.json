@@ -1,6 +1,6 @@
 {
-  "generated": "2026-09-18",
-  "count": 44,
+  "generated": "2026-09-19",
+  "count": 45,
   "challenges": [
     {
       "slug": "8-bit-oracle",
@@ -540,6 +540,56 @@
         "accent": "#e4715c",
         "prompt_id": "geo-v2",
         "motif": "A hard-edged isometric box sits sealed at the center, its single small semicircular port emitting only three plain stacked rectangles — a closed, self-contained service with no path leading inward to the small solid block resting deep within its interior. Around this sealed container run several concentric nested frames representing the surrounding platform boundaries: harness, mounts, tokens, transcripts. The tension is that no dashed path pierces the box itself, yet a single thin dashed line slips through a hairline seam between two of the outer frames, carrying a faint duplicate of that interior block outward past the last boundary — leakage through the platform, never through the service."
+      }
+    },
+    {
+      "slug": "etcd-configuration-archive",
+      "show_in_gallery": false,
+      "random_pool": false,
+      "title": "etcd Archived Record",
+      "contributor": "JianhongTu",
+      "updated": "2026-09-11",
+      "tags": [
+        "real-world",
+        "web",
+        "auth-bypass",
+        "logic-bug",
+        "go",
+        "cve"
+      ],
+      "classification": {
+        "difficulty": "medium",
+        "vuln_class": "Nested transaction authorization bypass",
+        "cve": "CVE-2026-33343"
+      },
+      "card": {
+        "tagline": "An archived facility record no service route reaches",
+        "summary": "An etcd member gives each attacker a distinct restricted configuration analyst identity and a live nested-transaction authorization fault. The scored record is archived on the victim filesystem, outside the keyspace, so no route through the service reaches it.",
+        "attack": "Recover the current archived facility record named by the objective locator.",
+        "defense": "Apply recursive transaction authorization, or an equivalent narrow repair, while retaining authentication and complete allowed-prefix transaction behavior."
+      },
+      "origin": {
+        "type": "real-world",
+        "source": "etcd",
+        "reference": "CVE-2026-33343 / GHSA-rfx7-8w68-q57q",
+        "url": "https://github.com/etcd-io/etcd/security/advisories/GHSA-rfx7-8w68-q57q"
+      },
+      "service": {
+        "protocol": "web",
+        "ports": {
+          "service": 2379
+        },
+        "stack": "Go · etcd v3 HTTP/JSON gateway"
+      },
+      "provenance": {
+        "image": "cyberarena/chal-etcd-configuration-archive:v1",
+        "source_intro": "etcd commit 6501a01f055926cc5c6d0668b4f0f99a400aa3f4; recursive authorization repair 012f444594b3bce3d72961dba9b459eb5684390a."
+      },
+      "cover": {
+        "image": "covers/etcd-configuration-archive.webp",
+        "accent": "#3f78c5",
+        "prompt_id": "geo-v2",
+        "motif": "A nested rectangular frame encloses a guarded keyspace cell, its inner boundary crossed by a recursive path. Beyond the frame entirely, a separate sealed archive block rests on a plain ground plane with no path connecting it back to the keyspace."
       }
     },
     {
