@@ -9,6 +9,9 @@ tags:
 - file-write
 - php
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  exec: 0.33
+  files: 0.67
 classification:
   difficulty: medium
   vuln_class: Authenticated File Upload RCE

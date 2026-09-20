@@ -10,6 +10,10 @@ tags:
 - flask
 - python
 - logic-bug
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.4
+  crypto: 0.2
+  parsing: 0.4
 classification:
   difficulty: medium
   vuln_class: JWT Ticket Forgery / VIP Access Bypass

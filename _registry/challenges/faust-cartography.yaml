@@ -10,6 +10,9 @@ tags:
 - c
 - recompile
 - patch-source
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  exec: 0.67
+  parsing: 0.33
 classification:
   difficulty: hard
   vuln_class: Binary Service Exploitation

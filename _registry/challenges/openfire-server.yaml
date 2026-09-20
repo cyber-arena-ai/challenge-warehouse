@@ -10,6 +10,9 @@ tags:
 - rce
 - cve
 - recompile
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.67
+  parsing: 0.33
 classification:
   difficulty: hard
   vuln_class: Setup Path Authentication Bypass

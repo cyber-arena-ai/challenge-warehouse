@@ -10,6 +10,9 @@ tags:
 - python
 - flask
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  exec: 0.5
+  files: 0.5
 classification:
   difficulty: hard
   vuln_class: XPath Host File Read

@@ -25,6 +25,7 @@ TAG_POOL = {
     "python", "php", "go", "node", "ruby", "c", "pascal", "flask", "aiohttp",
     "django", "nginx", "docker", "patch-source", "recompile", "config-fix", "cve",
 }
+AXES = {"access", "exec", "files", "crypto", "parsing", "state"}   # schematic.md §Axes
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 REQUIRED = {
     "slug", "title", "contributor", "updated", "tags",
@@ -102,6 +103,13 @@ def check(path: Path) -> list[str]:
         errs.append(f"origin.type {d.get('origin', {}).get('type')!r}")
     if d.get("service", {}).get("protocol") not in {"web", "tcp"}:
         errs.append(f"service.protocol {d.get('service', {}).get('protocol')!r}")
+    ax = d.get("axes")
+    if ax is not None:
+        if not isinstance(ax, dict) or not ax or set(ax) - AXES \
+                or not all(isinstance(v, (int, float)) and 0 < v <= 1 for v in ax.values()):
+            errs.append(f"axes must map a subset of {sorted(AXES)} to weights in (0, 1]: {ax!r}")
+        elif abs(sum(ax.values()) - 1) > 0.02:
+            errs.append(f"axes weights sum to {sum(ax.values()):.2f}, want 1")
     rev = d.get("reviewer")
     if rev is not None:
         handles = rev if isinstance(rev, list) else [rev]

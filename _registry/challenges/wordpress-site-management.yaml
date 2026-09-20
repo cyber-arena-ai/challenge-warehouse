@@ -9,6 +9,10 @@ tags:
 - logic-bug
 - php
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  exec: 0.5
+  parsing: 0.25
+  state: 0.25
 classification:
   difficulty: hard
   vuln_class: Nested REST interpretation and SQL injection chain

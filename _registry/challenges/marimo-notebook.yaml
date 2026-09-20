@@ -7,6 +7,9 @@ tags:
 - web
 - python
 - patch-source
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.67
+  state: 0.33
 classification:
   difficulty: medium
   vuln_class: Application Terminal Boundary

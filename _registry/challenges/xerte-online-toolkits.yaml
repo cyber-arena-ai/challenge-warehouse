@@ -10,6 +10,11 @@ tags:
 - path-traversal
 - php
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.33
+  exec: 0.17
+  files: 0.33
+  parsing: 0.17
 classification:
   difficulty: hard
   vuln_class: Unauthenticated File Upload to Code Execution

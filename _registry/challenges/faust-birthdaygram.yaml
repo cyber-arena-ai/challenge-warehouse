@@ -10,6 +10,9 @@ tags:
 - python
 - auth-bypass
 - info-leak
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.5
+  parsing: 0.5
 classification:
   difficulty: medium
   vuln_class: Broken Access Control / Private Image Disclosure

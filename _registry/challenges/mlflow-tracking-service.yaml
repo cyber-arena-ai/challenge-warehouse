@@ -7,6 +7,8 @@ tags:
 - web
 - python
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 1.0
 classification:
   difficulty: medium
   vuln_class: Trace Authorization

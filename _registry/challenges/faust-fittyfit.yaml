@@ -10,6 +10,8 @@ tags:
 - python
 - path-traversal
 - auth-bypass
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  crypto: 1.0
 classification:
   difficulty: medium
   vuln_class: Broken Access Control on NFT PDF Retrieval

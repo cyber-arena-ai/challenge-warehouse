@@ -9,6 +9,10 @@ tags:
 - file-write
 - php
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.5
+  exec: 0.25
+  files: 0.25
 classification:
   difficulty: hard
   vuln_class: Authentication Bypass and Arbitrary File Write

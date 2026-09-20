@@ -9,6 +9,8 @@ tags:
 - path-traversal
 - rev
 - patch-source
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  files: 1.0
 classification:
   difficulty: hard
   vuln_class: Path Traversal (Jail Escape)

@@ -11,6 +11,9 @@ tags:
 - info-leak
 - go
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.33
+  exec: 0.67
 classification:
   difficulty: medium
   vuln_class: SQL Query Validation Bypass

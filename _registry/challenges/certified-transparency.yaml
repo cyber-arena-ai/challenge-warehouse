@@ -10,6 +10,9 @@ tags:
 - web
 - auth-bypass
 - patch-source
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  crypto: 0.5
+  parsing: 0.5
 classification:
   difficulty: hard
   vuln_class: Cryptographic Signature/Proof Verification Bypass

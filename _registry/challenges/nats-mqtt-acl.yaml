@@ -11,6 +11,9 @@ tags:
 - logic-bug
 - recompile
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.5
+  state: 0.5
 classification:
   difficulty: hard
   vuln_class: MQTT Authorization Enforcement

@@ -8,6 +8,10 @@ tags:
 - web
 - python
 - patch-source
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.5
+  exec: 0.25
+  files: 0.25
 classification:
   difficulty: medium
   vuln_class: Protected Document Boundary

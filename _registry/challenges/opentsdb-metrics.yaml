@@ -8,6 +8,9 @@ tags:
 - command-injection
 - cve
 - recompile
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  exec: 0.67
+  parsing: 0.33
 classification:
   difficulty: medium
   vuln_class: Gnuplot Command Injection

@@ -14,6 +14,10 @@
         "logic-bug",
         "auth-bypass"
       ],
+      "axes": {
+        "crypto": 0.67,
+        "state": 0.33
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Weak Challenge Generation / Authorization Bypass",
@@ -62,6 +66,9 @@
         "aiohttp",
         "cve"
       ],
+      "axes": {
+        "files": 1.0
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Directory Traversal",
@@ -109,6 +116,10 @@
         "python",
         "cve"
       ],
+      "axes": {
+        "access": 0.5,
+        "parsing": 0.5
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Secret Redaction",
@@ -159,6 +170,10 @@
         "python",
         "logic-bug"
       ],
+      "axes": {
+        "access": 0.5,
+        "state": 0.5
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Broken Access Control / Ownership Bypass",
@@ -208,6 +223,10 @@
         "recompile",
         "cve"
       ],
+      "axes": {
+        "access": 0.5,
+        "parsing": 0.5
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Forward-auth Header Confusion",
@@ -259,6 +278,10 @@
         "auth-bypass",
         "patch-source"
       ],
+      "axes": {
+        "crypto": 0.5,
+        "parsing": 0.5
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Cryptographic Signature/Proof Verification Bypass",
@@ -309,6 +332,10 @@
         "flask",
         "cve"
       ],
+      "axes": {
+        "exec": 0.5,
+        "files": 0.5
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "XPath Host File Read",
@@ -407,6 +434,11 @@
         "python",
         "logic-bug"
       ],
+      "axes": {
+        "access": 0.4,
+        "crypto": 0.2,
+        "parsing": 0.4
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "JWT Ticket Forgery / VIP Access Bypass",
@@ -455,6 +487,10 @@
         "command-injection",
         "cve"
       ],
+      "axes": {
+        "exec": 0.67,
+        "parsing": 0.33
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "PHP Filter Bypass",
@@ -607,6 +643,10 @@
         "go",
         "cve"
       ],
+      "axes": {
+        "access": 0.5,
+        "parsing": 0.5
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Nested transaction authorization bypass",
@@ -655,6 +695,10 @@
         "auth-bypass",
         "info-leak"
       ],
+      "axes": {
+        "access": 0.5,
+        "parsing": 0.5
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Broken Access Control / Private Image Disclosure",
@@ -703,6 +747,10 @@
         "recompile",
         "patch-source"
       ],
+      "axes": {
+        "exec": 0.67,
+        "parsing": 0.33
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Binary Service Exploitation",
@@ -751,6 +799,10 @@
         "flask",
         "logic-bug"
       ],
+      "axes": {
+        "access": 0.5,
+        "parsing": 0.5
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Authorization Bypass (IDOR)",
@@ -799,6 +851,9 @@
         "path-traversal",
         "auth-bypass"
       ],
+      "axes": {
+        "crypto": 1.0
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Broken Access Control on NFT PDF Retrieval",
@@ -847,6 +902,10 @@
         "crypto",
         "auth-bypass"
       ],
+      "axes": {
+        "access": 0.67,
+        "parsing": 0.33
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "RSA-Signed Command Execution & Draft Joke Disclosure",
@@ -895,6 +954,11 @@
         "python",
         "flask"
       ],
+      "axes": {
+        "access": 0.25,
+        "crypto": 0.5,
+        "state": 0.25
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Authentication Bypass via ed25519 Token Forgery",
@@ -943,6 +1007,10 @@
         "recompile",
         "info-leak"
       ],
+      "axes": {
+        "access": 0.5,
+        "parsing": 0.5
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Binary Service Exploitation",
@@ -991,6 +1059,10 @@
         "recompile",
         "cve"
       ],
+      "axes": {
+        "exec": 0.67,
+        "parsing": 0.33
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "XPath Expression Injection",
@@ -1040,6 +1112,10 @@
         "go",
         "cve"
       ],
+      "axes": {
+        "exec": 0.67,
+        "parsing": 0.33
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Git argument injection",
@@ -1086,6 +1162,11 @@
         "python",
         "patch-source"
       ],
+      "axes": {
+        "access": 0.5,
+        "exec": 0.25,
+        "files": 0.25
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Protected Document Boundary",
@@ -1134,6 +1215,10 @@
         "php",
         "cve"
       ],
+      "axes": {
+        "exec": 0.33,
+        "files": 0.67
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Authenticated File Upload RCE",
@@ -1181,6 +1266,10 @@
         "cve",
         "patch-source"
       ],
+      "axes": {
+        "files": 0.67,
+        "state": 0.33
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Arbitrary File Write (artifact symlink extraction)",
@@ -1230,6 +1319,10 @@
         "go",
         "cve"
       ],
+      "axes": {
+        "access": 0.33,
+        "exec": 0.67
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "SQL Query Validation Bypass",
@@ -1275,6 +1368,10 @@
         "python",
         "patch-source"
       ],
+      "axes": {
+        "access": 0.67,
+        "state": 0.33
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Application Terminal Boundary",
@@ -1321,6 +1418,9 @@
         "python",
         "cve"
       ],
+      "axes": {
+        "access": 1.0
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Trace Authorization",
@@ -1420,6 +1520,10 @@
         "recompile",
         "cve"
       ],
+      "axes": {
+        "access": 0.5,
+        "state": 0.5
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "MQTT Authorization Enforcement",
@@ -1518,6 +1622,10 @@
         "patch-source",
         "memory-corruption"
       ],
+      "axes": {
+        "files": 0.5,
+        "state": 0.5
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Binary Service Exploitation",
@@ -1566,6 +1674,11 @@
         "php",
         "cve"
       ],
+      "axes": {
+        "access": 0.5,
+        "exec": 0.25,
+        "files": 0.25
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Authentication Bypass and Arbitrary File Write",
@@ -1621,6 +1734,10 @@
         "nginx",
         "cve"
       ],
+      "axes": {
+        "access": 0.67,
+        "files": 0.33
+      },
       "classification": {
         "difficulty": "easy",
         "vuln_class": "Unauthenticated Backup Disclosure",
@@ -1716,6 +1833,10 @@
         "cve",
         "recompile"
       ],
+      "axes": {
+        "access": 0.67,
+        "parsing": 0.33
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Setup Path Authentication Bypass",
@@ -1764,6 +1885,10 @@
         "cve",
         "recompile"
       ],
+      "axes": {
+        "exec": 0.67,
+        "parsing": 0.33
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Gnuplot Command Injection",
@@ -1811,6 +1936,11 @@
         "php",
         "cve"
       ],
+      "axes": {
+        "access": 0.4,
+        "crypto": 0.4,
+        "state": 0.2
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Signed URL Authentication Bypass",
@@ -1857,6 +1987,9 @@
         "python",
         "patch-source"
       ],
+      "axes": {
+        "exec": 1.0
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Application Service Boundary",
@@ -1904,6 +2037,9 @@
         "rev",
         "patch-source"
       ],
+      "axes": {
+        "files": 1.0
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Path Traversal (Jail Escape)",
@@ -1952,6 +2088,10 @@
         "web",
         "binary"
       ],
+      "axes": {
+        "crypto": 0.67,
+        "state": 0.33
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Authentication Bypass via Reverse Engineering",
@@ -2001,6 +2141,10 @@
         "sqli",
         "cve"
       ],
+      "axes": {
+        "access": 0.67,
+        "state": 0.33
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Relationship Authorization and Report SQL Injection",
@@ -2053,6 +2197,10 @@
         "recompile",
         "cve"
       ],
+      "axes": {
+        "access": 0.5,
+        "state": 0.5
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Cross-project Object Authorization",
@@ -2104,6 +2252,11 @@
         "config-fix",
         "cve"
       ],
+      "axes": {
+        "access": 0.5,
+        "exec": 0.25,
+        "files": 0.25
+      },
       "classification": {
         "difficulty": "medium",
         "vuln_class": "Authenticated Module ACL Bypass to Command Execution",
@@ -2152,6 +2305,11 @@
         "php",
         "cve"
       ],
+      "axes": {
+        "exec": 0.5,
+        "parsing": 0.25,
+        "state": 0.25
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Nested REST interpretation and SQL injection chain",
@@ -2203,6 +2361,12 @@
         "php",
         "cve"
       ],
+      "axes": {
+        "access": 0.33,
+        "exec": 0.17,
+        "files": 0.33,
+        "parsing": 0.17
+      },
       "classification": {
         "difficulty": "hard",
         "vuln_class": "Unauthenticated File Upload to Code Execution",

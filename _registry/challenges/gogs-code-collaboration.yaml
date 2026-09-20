@@ -11,6 +11,9 @@ tags:
 - command-injection
 - go
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  exec: 0.67
+  parsing: 0.33
 classification:
   difficulty: hard
   vuln_class: Git argument injection

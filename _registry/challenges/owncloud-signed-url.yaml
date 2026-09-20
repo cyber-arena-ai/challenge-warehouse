@@ -9,6 +9,10 @@ tags:
 - auth-bypass
 - php
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.4
+  crypto: 0.4
+  state: 0.2
 classification:
   difficulty: medium
   vuln_class: Signed URL Authentication Bypass

@@ -8,6 +8,8 @@ tags:
 - web
 - python
 - patch-source
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  exec: 1.0
 classification:
   difficulty: medium
   vuln_class: Application Service Boundary

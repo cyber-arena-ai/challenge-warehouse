@@ -11,6 +11,9 @@ tags:
 - logic-bug
 - sqli
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.67
+  state: 0.33
 classification:
   difficulty: hard
   vuln_class: Relationship Authorization and Report SQL Injection

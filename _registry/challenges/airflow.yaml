@@ -9,6 +9,9 @@ tags:
 - info-leak
 - python
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.5
+  parsing: 0.5
 classification:
   difficulty: medium
   vuln_class: Secret Redaction

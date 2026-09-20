@@ -9,6 +9,9 @@ tags:
 - crypto
 - logic-bug
 - auth-bypass
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  crypto: 0.67
+  state: 0.33
 classification:
   difficulty: hard
   vuln_class: Weak Challenge Generation / Authorization Bypass

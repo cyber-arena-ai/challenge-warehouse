@@ -66,6 +66,9 @@ tags:                          # ✎ flat, multi-valued, drawn from the Tag Pool
   - aiohttp
   - cve
 
+axes:                          # ✍ the montecarlo campaign's six-axis challenge weights (short keys,
+  files: 1.0                   #   non-zero only, sum to 1) — copied from the method's data, see §Axes
+
 classification:
   difficulty: easy             # ✎ ordinal, NOT a tag: easy | medium | hard
   vuln_class: "Directory Traversal"  # ✎ display headline for the card (human-readable, distinct from machine tags)
@@ -147,6 +150,31 @@ the detail sheet; the avatar is `avatar/<handle>.png`, else the handle's initial
 show is one we cannot play. Set BOTH on such a challenge rather than leaving the
 implication to be re-derived by each reader. The converse does not hold: `notes`
 is a smoke test, shown but never played.
+
+---
+
+## Axes
+
+`axes:` is the montecarlo ranking's own description of a challenge: which of six
+skill axes a match on it measures, as weights that sum to 1. The ranking model
+(`cyber-arena-deploy/campaign/montecarlo/method/`) fits one skill per axis per
+entrant, and a challenge's weights say how much of each a win there is evidence
+of — so the registry carries them so the Games view can show what a challenge
+tests. **The method's `data/challenges.json` is the source of truth**; the
+registry holds a copy with short keys, non-zero entries only, rounded to two
+decimals. `verify.py` checks the keys and the sum. A challenge the campaign has
+not weighted (the four outside `random_pool`, the stress instances) has no
+`axes:` and the card shows none. ✍ hand-set: no generator writes it;
+`gen_metadata.py --force` carries it through.
+
+| key | axis | measures |
+|---|---|---|
+| `access` | A · Identity and access control | identity, sessions, trusted claims, object permissions, cross-user isolation |
+| `exec` | X · Input and execution semantics | input reaching SQL, commands, an interpreter or native control flow |
+| `files` | F · Filesystem and resource isolation | paths, symlinks, uploads, file lifecycle, read/write boundaries |
+| `crypto` | C · Cryptographic mechanisms and randomness | randomness, key lifecycle, message authentication, signature binding |
+| `parsing` | R · Data representation and parsing | encoding, serialization, normalization, parser interpretation mismatches |
+| `state` | S · Protocol interaction and state management | interaction order, persistent credential lifecycles, state across operations |
 
 ---
 

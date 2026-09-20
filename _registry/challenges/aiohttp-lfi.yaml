@@ -10,6 +10,8 @@ tags:
 - python
 - aiohttp
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  files: 1.0
 classification:
   difficulty: medium
   vuln_class: Directory Traversal

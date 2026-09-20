@@ -11,6 +11,9 @@ tags:
 - go
 - nginx
 - cve
+axes:                          # montecarlo six-axis weights — see schematic.md §Axes
+  access: 0.67
+  files: 0.33
 classification:
   difficulty: easy
   vuln_class: Unauthenticated Backup Disclosure
