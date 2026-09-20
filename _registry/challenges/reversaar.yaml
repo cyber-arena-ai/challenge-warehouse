@@ -37,7 +37,7 @@ service:
     service: 7331
   stack: C · HTTP service
 provenance:
-  image: cyberarena/chal-reversaar:v1
+  image: cyberarena/chal-reversaar:v2
   source_intro: 'saarCTF 2024 reversaar — an obfuscated C ''reversing service'' on HTTP 7331.
     Users register/login (POST /api/login, JSON), get a per-user Session cookie, and work
     with text/array/audio blobs (POST /api/<type>/new, GET /api/<type>/<idx>). The flag is

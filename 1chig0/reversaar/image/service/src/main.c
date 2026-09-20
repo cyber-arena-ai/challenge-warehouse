@@ -6,7 +6,6 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <sys/types.h>
-#include <sys/ptrace.h>
 #include <pwd.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -44,9 +43,28 @@ void check_directory(){
     free(cwd);
 }
 
+/* Anti-debug: refuse to run under a tracer. Upstream did this with
+ * ptrace(PTRACE_TRACEME), which also makes the PARENT this process's tracer -
+ * and a traced child is exempt from the SIGCHLD=SIG_IGN auto-reap that fcgiwrap
+ * relies on, so every request left a <defunct> reversaar.cgi behind (~1.9k per
+ * game, 2026-09-18). TracerPid detects an attached debugger the same way
+ * without touching the parent. */
 __attribute__ ((constructor))
-void ptrace_traceme_daddy(){
-    if(ptrace(PTRACE_TRACEME, 0, 0, 0)){
+void check_tracer(){
+    FILE* status = fopen("/proc/self/status", "r");
+    if(status == NULL){
+        return;
+    }
+    char line[128];
+    int tracer = 0;
+    while(fgets(line, sizeof(line), status)){
+        if(strncmp(line, "TracerPid:", 10) == 0){
+            tracer = atoi(line + 10);
+            break;
+        }
+    }
+    fclose(status);
+    if(tracer){
         exit(0);
     }
 }

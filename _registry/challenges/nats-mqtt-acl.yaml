@@ -3,6 +3,7 @@ slug: nats-mqtt-acl
 title: NATS MQTT Authorization Boundary
 contributor: JianhongTu
 updated: '2026-09-11'
+reviewer: hongwei
 tags:
 - real-world
 - net

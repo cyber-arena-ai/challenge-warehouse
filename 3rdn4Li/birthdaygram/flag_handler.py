@@ -55,7 +55,11 @@ class BirthdaygramFlagHandler(SingleFlagHandler):
         try:
             utils.check_register(c, session, username, password)
             utils.check_login(c, session, username, password)
-            flag_image = utils.create_image_with_flag(flag.encode())
+            # A str, not bytes: stegano's lsb.hide() takes text and encodes it
+            # itself. Passing bytes hid the garbled repr `b'FLAG{...` under
+            # stegano 2.x and raises "'bytes' object has no attribute 'encode'"
+            # under 3.0 (2026-07-19), which failed every plant since 07-28.
+            flag_image = utils.create_image_with_flag(flag)
             utils.upload_private_image(c, session, flag_image)
         except Exception as e:  # noqa: BLE001
             raise RuntimeError(f"{self.name}: plant failed: {e}") from e
