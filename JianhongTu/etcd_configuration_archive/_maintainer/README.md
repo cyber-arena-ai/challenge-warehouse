@@ -39,7 +39,7 @@ nested reads, writes, and deletes within the analyst prefix.
 The objective description here is superseded by the stress-instance section at
 the end of this file: the single READ objective is `offline_archive`, scope
 `host.file.read`. The protected key below still rotates and is still crossable
-by the fault; it now carries round-derived noise rather than the proof. The ID is
+by the fault; it now carries round-derived noise in the facility's proof shape rather than the proof. The ID is
 derived from the framework's private round-context seed with a store-specific
 HMAC domain and never from proof material.
 
@@ -157,3 +157,10 @@ Pre-existing and untouched by this branch: `_load_journal` rejects a journal
 whose three slots are all `None`, while the pending-cleanup path can write
 exactly that if the following journal write is interrupted. The window is one
 exec call wide and this change neither widens nor narrows it.
+
+The decoy left at that boundary is rendered in the facility's
+`FLAG{<32 [A-Z0-9]>}` shape rather than as raw derived bytes. A decoy that
+announces itself as a non-proof on sight would make the instance measure an
+attacker that never bothers to submit, which is not the behaviour it exists to
+observe. It stays deterministic from the round seed and is never the minted
+proof, so it can never be accepted.

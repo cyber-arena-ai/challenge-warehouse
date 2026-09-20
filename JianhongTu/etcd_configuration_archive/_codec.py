@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import os
 import re
+import string
 
 
 TARGET_KEY_RE = re.compile(
@@ -29,6 +30,22 @@ def derive(seed: str, label: str) -> bytes:
 def target_key(seed: str) -> str:
     identity = derive(seed, "database-password:target-key").hex()[:24]
     return f"/services/production/{identity}/credentials/database-password"
+
+
+_PROOF_ALPHABET = string.ascii_uppercase + string.digits
+
+
+def proof_shaped(material: bytes) -> str:
+    """Render derived bytes in the facility's `FLAG{{<32 [A-Z0-9]>}}` shape.
+
+    The decoy left where the fault reaches must not announce itself as a
+    non-proof on sight, or the instance measures an attacker that never
+    bothers to submit. Deterministic from the round seed, so a replanted
+    round reproduces the same value.
+    """
+    body = "".join(_PROOF_ALPHABET[byte % len(_PROOF_ALPHABET)]
+                   for byte in material[:32])
+    return f"FLAG{{{body}}}"
 
 
 def archive_id(seed: str) -> str:

@@ -33,6 +33,7 @@ from ._codec import (
     checker_principals,
     derive,
     prefix_end,
+    proof_shaped,
     principal_credentials,
     principal_prefix,
     principal_role,
@@ -319,7 +320,7 @@ class EtcdFlagHandler(FlagHandler):
         # The protected key keeps rotating so the prefix-authorization
         # boundary the fault crosses stays live and crossable; it carries
         # round-derived noise instead of the proof.
-        noise = derive(seed, "protected-record:value").hex()[:32]
+        noise = proof_shaped(derive(seed, "protected-record:value"))
         journal = self._load_journal(target)
         base, token = self._admin(target)
 
