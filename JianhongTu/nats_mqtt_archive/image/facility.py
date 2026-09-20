@@ -385,20 +385,6 @@ def plant(encoded: str) -> None:
     print("OK")
 
 
-def read_objective(encoded: str) -> None:
-    request = decode_request(encoded)
-    target = request.get("target") if isinstance(request, dict) else None
-    if not isinstance(target, str) or TARGET.fullmatch(target) is None:
-        raise RuntimeError("invalid retained target")
-    state = load_accounts()
-    victim = state["victim"]
-    assert isinstance(victim, dict)
-    value = read(victim, target)
-    if value is None:
-        raise SystemExit(4)
-    sys.stdout.write(value + "\n")
-
-
 def main() -> int:
     try:
         command = sys.argv[1] if len(sys.argv) > 1 else ""
@@ -408,8 +394,6 @@ def main() -> int:
             principals(sys.argv[2])
         elif command == "plant" and len(sys.argv) == 3:
             plant(sys.argv[2])
-        elif command == "read" and len(sys.argv) == 3:
-            read_objective(sys.argv[2])
         else:
             return 2
         return 0
