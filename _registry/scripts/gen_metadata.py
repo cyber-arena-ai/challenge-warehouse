@@ -172,6 +172,8 @@ async def one(sem, client, cfg, chal, today, force):
             for gate in ("show_in_gallery", "random_pool"):
                 if prev.get(gate) is False:
                     doc[gate] = False
+            if prev.get("reviewer"):
+                doc["reviewer"] = prev["reviewer"]
         path = write_yaml(doc)
         return {"slug": doc["slug"], "path": str(path.relative_to(WAREHOUSE)), "warn": warn,
                 "new_tags": d.get("new_tags") or []}

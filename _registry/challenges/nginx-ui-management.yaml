@@ -3,6 +3,7 @@ slug: nginx-ui-management
 title: Nginx UI Management
 contributor: StellarLuminosity
 updated: '2026-09-11'
+random_pool: false              # checker leaks a headless Chromium per probe (2026-09-18: 14k PIDs on one box) — never commissioned until fixed
 tags:
 - real-world
 - web

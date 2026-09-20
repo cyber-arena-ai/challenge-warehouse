@@ -52,7 +52,7 @@ class ReversaarChallenge(Challenge):
     @cached_property
     def vulbox(self) -> VulboxImage:
         return VulboxImage(
-            reference="cyberarena/chal-reversaar:v1",
+            reference="cyberarena/chal-reversaar:v2",
             exposed_ports={"service": _PORT},
             build_context=str(_BUILD_CONTEXT),
         )

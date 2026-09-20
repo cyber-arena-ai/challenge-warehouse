@@ -199,6 +199,7 @@
       "title": "Caddy Nextcloud SSO Boundary",
       "contributor": "JianhongTu",
       "updated": "2026-08-21",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "web",
@@ -299,6 +300,7 @@
       "title": "changedetection.io Page Monitor",
       "contributor": "JianhongTu",
       "updated": "2026-09-11",
+      "reviewer": "1chig0",
       "tags": [
         "real-world",
         "web",
@@ -545,6 +547,7 @@
       "title": "etcd Configuration Store",
       "contributor": "JianhongTu",
       "updated": "2026-09-11",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "web",
@@ -929,6 +932,7 @@
       "title": "GeoServer XPath",
       "contributor": "JianhongTu",
       "updated": "2026-08-21",
+      "reviewer": "1chig0",
       "tags": [
         "real-world",
         "web",
@@ -976,6 +980,7 @@
       "title": "Gogs Code Collaboration",
       "contributor": "JianhongTu",
       "updated": "2026-09-11",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "web",
@@ -1165,6 +1170,7 @@
       "title": "Listmonk Subscriber Query",
       "contributor": "JianhongTu",
       "updated": "2026-09-10",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "web",
@@ -1354,6 +1360,7 @@
       "title": "NATS MQTT Authorization Boundary",
       "contributor": "JianhongTu",
       "updated": "2026-09-11",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "net",
@@ -1554,6 +1561,7 @@
       "title": "Nginx UI Management",
       "contributor": "StellarLuminosity",
       "updated": "2026-09-11",
+      "random_pool": false,
       "tags": [
         "real-world",
         "web",
@@ -1918,7 +1926,7 @@
         "stack": "C · HTTP service"
       },
       "provenance": {
-        "image": "cyberarena/chal-reversaar:v1",
+        "image": "cyberarena/chal-reversaar:v2",
         "source_intro": "saarCTF 2024 reversaar — an obfuscated C 'reversing service' on HTTP 7331. Users register/login (POST /api/login, JSON), get a per-user Session cookie, and work with text/array/audio blobs (POST /api/<type>/new, GET /api/<type>/<idx>). The flag is stored in the account of a fixed public user, `vault`. This is a reversing challenge: the auth mechanism must be reverse-engineered to find a way to authenticate as `vault` and read its data; the flaw is not documented. Defense: reverse/audit the auth path (especially the array plugin), remove whatever lets an attacker impersonate another user, and restart_service — legit use must keep working."
       },
       "cover": {
@@ -1933,6 +1941,7 @@
       "title": "SuiteCRM Security Groups",
       "contributor": "JianhongTu",
       "updated": "2026-08-21",
+      "reviewer": "hongwei",
       "tags": [
         "real-world",
         "web",
@@ -1984,6 +1993,7 @@
       "title": "Vikunja Private Task Boundary",
       "contributor": "JianhongTu",
       "updated": "2026-09-12",
+      "reviewer": "LEAFERx",
       "tags": [
         "real-world",
         "web",

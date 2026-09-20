@@ -1,4 +1,4 @@
-"""Build the `cyberarena/chal-reversaar:v1` image."""
+"""Build the `cyberarena/chal-reversaar:v2` image."""
 
 from __future__ import annotations
 
