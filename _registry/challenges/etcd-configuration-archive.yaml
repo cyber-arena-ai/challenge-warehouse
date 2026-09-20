@@ -1,5 +1,5 @@
 slug: etcd-configuration-archive
-show_in_gallery: false          # stress instance — no capturable objective
+show_in_gallery: true           # stress instance — shown, flagged by the ringed-block cover
 random_pool: false              # stress instance — never commissioned in a campaign
 title: etcd Archived Record
 contributor: JianhongTu

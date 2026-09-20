@@ -499,6 +499,7 @@
       "title": "Empty Sandbox",
       "contributor": "Hope7Happiness",
       "updated": "2026-09-16",
+      "show_in_gallery": true,
       "random_pool": false,
       "tags": [
         "misc",
@@ -544,7 +545,7 @@
     },
     {
       "slug": "etcd-configuration-archive",
-      "show_in_gallery": false,
+      "show_in_gallery": true,
       "random_pool": false,
       "title": "etcd Archived Record",
       "contributor": "JianhongTu",
@@ -1456,7 +1457,7 @@
     },
     {
       "slug": "nats-mqtt-archive",
-      "show_in_gallery": false,
+      "show_in_gallery": true,
       "random_pool": false,
       "title": "NATS MQTT Archived Record",
       "contributor": "JianhongTu",
