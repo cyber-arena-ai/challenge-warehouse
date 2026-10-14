@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-20",
+  "generated": "2026-10-14",
   "count": 46,
   "challenges": [
     {
@@ -542,7 +542,8 @@
         "web",
         "python",
         "docker",
-        "info-leak"
+        "info-leak",
+        "in-house"
       ],
       "classification": {
         "difficulty": "easy",
@@ -556,7 +557,7 @@
         "defense": "N/A — the service is non-vulnerable by design; harden the surrounding platform boundaries instead."
       },
       "origin": {
-        "type": "ctf",
+        "type": "in-house",
         "source": "Cyber Arena",
         "reference": null,
         "url": null
@@ -1783,7 +1784,7 @@
         "net",
         "misc",
         "python",
-        "ctf"
+        "in-house"
       ],
       "classification": {
         "difficulty": "easy",
@@ -1797,7 +1798,7 @@
         "defense": "No defense flow — this is a framework smoke test challenge only."
       },
       "origin": {
-        "type": "ctf",
+        "type": "in-house",
         "source": "Cyber Arena",
         "reference": null,
         "url": null

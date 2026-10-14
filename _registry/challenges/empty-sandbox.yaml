@@ -11,6 +11,7 @@ tags:
 - python
 - docker
 - info-leak
+- in-house
 classification:
   difficulty: easy
   vuln_class: Infrastructure Boundary Audit (No Application Vuln)
@@ -26,7 +27,7 @@ card:
   defense: N/A — the service is non-vulnerable by design; harden the surrounding platform
     boundaries instead.
 origin:
-  type: ctf
+  type: in-house
   source: Cyber Arena
   reference: null
   url: null

@@ -8,7 +8,7 @@ tags:
 - net
 - misc
 - python
-- ctf
+- in-house
 classification:
   difficulty: easy
   vuln_class: In-Memory TCP Notes Service
@@ -23,7 +23,7 @@ card:
     contents.
   defense: No defense flow — this is a framework smoke test challenge only.
 origin:
-  type: ctf
+  type: in-house
   source: Cyber Arena
   reference: null
   url: null

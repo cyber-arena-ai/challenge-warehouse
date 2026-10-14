@@ -38,7 +38,7 @@ def load_creds(path, section: str) -> dict:
 
 # Tag Pool (must match schematic.md) — used to flag out-of-pool tags for review.
 TAG_POOL = {
-    "ctf", "real-world",
+    "ctf", "real-world", "in-house",
     "web", "binary", "crypto", "rev", "net", "misc",
     "path-traversal", "lfi", "rce", "command-injection", "sqli", "ssrf", "xxe",
     "deserialization", "auth-bypass", "memory-corruption", "info-leak",
@@ -176,6 +176,11 @@ async def one(sem, client, cfg, chal, today, force):
                 doc["reviewer"] = prev["reviewer"]
             if prev.get("axes"):
                 doc["axes"] = prev["axes"]
+            # `in-house` is a hand-set origin the model cannot infer from source
+            if (prev.get("origin") or {}).get("type") == "in-house":
+                doc["origin"] = prev["origin"]
+                doc["tags"] = [t for t in doc.get("tags") or [] if t not in ("ctf", "real-world")] + \
+                              (["in-house"] if "in-house" not in (doc.get("tags") or []) else [])
         path = write_yaml(doc)
         return {"slug": doc["slug"], "path": str(path.relative_to(WAREHOUSE)), "warn": warn,
                 "new_tags": d.get("new_tags") or []}

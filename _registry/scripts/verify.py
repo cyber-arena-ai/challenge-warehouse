@@ -18,7 +18,7 @@ WAREHOUSE = Path(__file__).resolve().parents[2]        # repo root (scripts -> _
 CHAL_DIR = WAREHOUSE / "_registry" / "challenges"
 
 TAG_POOL = {
-    "ctf", "real-world", "web", "binary", "crypto", "rev", "net", "misc",
+    "ctf", "real-world", "in-house", "web", "binary", "crypto", "rev", "net", "misc",
     "path-traversal", "lfi", "rce", "command-injection", "sqli", "ssrf", "xxe",
     "deserialization", "auth-bypass", "memory-corruption", "info-leak",
     "logic-bug", "race-condition", "ssti", "file-write", "jwt", "steganography",
@@ -99,7 +99,7 @@ def check(path: Path) -> list[str]:
         errs.append(f"title > 40 ({len(d['title'])})")
     if len(str(card.get("tagline", ""))) > 90:
         errs.append(f"tagline > 90 ({len(card['tagline'])})")
-    if d.get("origin", {}).get("type") not in {"ctf", "real-world"}:
+    if d.get("origin", {}).get("type") not in {"ctf", "real-world", "in-house"}:
         errs.append(f"origin.type {d.get('origin', {}).get('type')!r}")
     if d.get("service", {}).get("protocol") not in {"web", "tcp"}:
         errs.append(f"service.protocol {d.get('service', {}).get('protocol')!r}")

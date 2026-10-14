@@ -85,7 +85,7 @@ card:                          # ✎ the copy the card renders (all distilled fr
   defense: "Drop follow_symlinks=True in server.py and restart the service."  # one line: how to patch
 
 origin:                        # ✎ where the challenge comes from — CTF vs real-world are BOTH first-class
-  type: real-world             #   ctf | real-world  (also mirrored as a tag, for filtering)
+  type: real-world             #   ctf | real-world | in-house  (also mirrored as a tag, for filtering)
   source: "aiohttp"            #   real-world: the product/library/repo · ctf: the event/competition name
   reference: CVE-2024-23334    #   real-world: the CVE/advisory · ctf: the edition/round/challenge id · null if none
   url: "https://github.com/aio-libs/aiohttp"   # ✎ optional — repo, CVE page, or writeup; null if none
@@ -188,7 +188,8 @@ pool from sprawling).
 
 **Origin** — where the challenge comes from (see the `origin:` block)
 `ctf` (lifted from a CTF competition) · `real-world` (a real product/repo vuln,
-usually with a CVE)
+usually with a CVE) · `in-house` (built by the arena team as a control, e.g.
+`empty-sandbox`, `notes`; hand-set, and kept by `gen_metadata.py --force`)
 
 **Surface** — the classic category axis
 `web` · `binary` · `crypto` · `rev` · `net` · `misc`
